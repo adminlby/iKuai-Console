@@ -1,0 +1,1242 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "协议分流策略管理API",
+    "version": "1.0.0",
+    "description": "提供协议分流策略的完整管理功能，包括：\n- 协议分流策略的增删改查\n- 策略启用/停用管理\n- 支持基于应用协议的流量分流\n- 支持源地址、应用协议、生效时间的复杂条件配置\n- 支持对象组和自定义规则组合\n- 支持接口绑定功能\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "tags": [
+    {
+      "name": "stream-proto",
+      "x-displayName": "协议分流",
+      "description": "协议分流策略管理和配置"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/routing/app-protocols": {
+      "get": {
+        "tags": [
+          "stream-proto"
+        ],
+        "summary": "获取所有协议分流策略",
+        "description": "获取当前配置的所有协议分流策略列表。\n支持分页、过滤和排序功能。\n",
+        "operationId": "listAppProtocols",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "$ref": "#/components/parameters/filterParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取协议分流策略列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppProtocolListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "stream-proto"
+        ],
+        "summary": "添加协议分流策略",
+        "description": "创建新的协议分流策略。支持基于应用协议的流量分流到指定接口。\n可配置源地址、应用协议列表、生效时间等复杂条件。\n",
+        "operationId": "createAppProtocol",
+        "requestBody": {
+          "required": true,
+          "description": "协议分流策略配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppProtocolInput"
+              },
+              "example": {
+                "enabled": "yes",
+                "tagname": "test3",
+                "comment": "",
+                "interface": "wan2",
+                "mode": 0,
+                "prio": 1,
+                "iface_band": 0,
+                "src_addr": {
+                  "custom": [
+                    "192.168.9.169",
+                    "08:9b:4b:00:10:1e"
+                  ],
+                  "object": [
+                    {
+                      "type": 0,
+                      "gp_name": "11",
+                      "gid": "GPIP1"
+                    }
+                  ]
+                },
+                "app_proto": {
+                  "custom": [
+                    "其它HTTP",
+                    "文件传输",
+                    "DNS",
+                    "Baidu"
+                  ]
+                },
+                "time": {
+                  "custom": [
+                    {
+                      "type": "weekly",
+                      "weekdays": "1234567",
+                      "start_time": "00:00",
+                      "end_time": "20:00",
+                      "comment": "test11"
+                    }
+                  ],
+                  "object": [
+                    {
+                      "type": 4,
+                      "gp_name": "11",
+                      "gid": "TIMEGP1"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success",
+                      "rowid": 1
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v4.0/routing/app-protocols/{id}": {
+      "get": {
+        "tags": [
+          "stream-proto"
+        ],
+        "summary": "获取指定协议分流策略",
+        "description": "获取指定ID的协议分流策略详细信息",
+        "operationId": "getAppProtocol",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/appProtocolIdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取协议分流策略信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppProtocolResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "stream-proto"
+        ],
+        "summary": "更新协议分流策略",
+        "description": "完全更新指定ID的协议分流策略\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateAppProtocol",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/appProtocolIdParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "协议分流策略配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppProtocolInput"
+              },
+              "example": {
+                "enabled": "yes",
+                "tagname": "test3",
+                "comment": "",
+                "interface": "wan2",
+                "mode": 0,
+                "prio": 1,
+                "iface_band": 0,
+                "src_addr": {
+                  "custom": [
+                    "192.168.9.169",
+                    "08:9b:4b:00:10:1e"
+                  ],
+                  "object": [
+                    {
+                      "type": 0,
+                      "gp_name": "iKuai-Group",
+                      "gid": "GPIP1"
+                    }
+                  ]
+                },
+                "app_proto": {
+                  "custom": [
+                    "其它HTTP",
+                    "文件传输",
+                    "DNS",
+                    "Baidu"
+                  ]
+                },
+                "time": {
+                  "custom": [
+                    {
+                      "type": "weekly",
+                      "weekdays": "1234567",
+                      "start_time": "00:00",
+                      "end_time": "20:00",
+                      "comment": "test11"
+                    }
+                  ],
+                  "object": [
+                    {
+                      "type": 4,
+                      "gp_name": "iKuai-TimeGroup",
+                      "gid": "TIMEGP1"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "stream-proto"
+        ],
+        "summary": "启用/停用协议分流策略",
+        "description": "启用或停用指定ID的协议分流策略",
+        "operationId": "updateAppProtocolStatus",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/appProtocolIdParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "策略状态更新数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "enabled"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "string",
+                    "enum": [
+                      "yes",
+                      "no"
+                    ],
+                    "description": "策略启用状态，yes为启用，no为停用"
+                  }
+                },
+                "example": {
+                  "enabled": "no"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "stream-proto"
+        ],
+        "summary": "删除协议分流策略",
+        "description": "删除指定ID的协议分流策略",
+        "operationId": "deleteAppProtocol",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/appProtocolIdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功删除协议分流策略",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "appProtocolIdParam": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "协议分流策略ID",
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 1,
+          "example": 1
+        }
+      },
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 20,
+          "example": 20
+        }
+      },
+      "orderParam": {
+        "name": "order",
+        "in": "query",
+        "description": "排序方向，asc为升序（默认），desc为降序",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "asc",
+          "example": "asc"
+        }
+      },
+      "orderByParam": {
+        "name": "order_by",
+        "in": "query",
+        "description": "排序字段，支持id、tagname、interface、prio等字段",
+        "schema": {
+          "type": "string",
+          "default": "id",
+          "example": "id"
+        }
+      },
+      "filterParam": {
+        "name": "filter",
+        "in": "query",
+        "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：\n- ==（等于）\n- !=（不等于）\n- >（大于）\n- >=（大于等于）\n- <（小于）\n- <=（小于等于）\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,filter=field2==value2\n\n使用示例：\n- 单条件：filter=enabled==yes\n- AND条件：filter=prio>10&filter=interface==wan2\n- OR条件：filter=tagname==rule1,filter=tagname==rule2\n",
+        "schema": {
+          "type": "string",
+          "example": "enabled==yes"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "rowid"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "成功状态码，创建接口中为0",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "success"
+          },
+          "rowid": {
+            "type": "integer",
+            "description": "创建操作返回的资源ID",
+            "example": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AppProtocolListResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 25
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AppProtocol"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "AppProtocolResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AppProtocol"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "AppProtocol": {
+        "type": "object",
+        "required": [
+          "id",
+          "tagname",
+          "enabled",
+          "interface",
+          "prio",
+          "comment",
+          "mode",
+          "iface_band"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "主键ID",
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "规则状态，yes为启用，no为停用",
+            "example": "yes"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "名称，支持中文、英文、数字、下划线和连字符，1-15个字符，不能以下划线或连字符开头",
+            "example": "test3"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符",
+            "example": ""
+          },
+          "interface": {
+            "type": "string",
+            "description": "线路接口",
+            "example": "wan2"
+          },
+          "mode": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              3
+            ],
+            "description": "负载方式 0: 新建连接 1:sip 3:sip+dip",
+            "example": 0
+          },
+          "prio": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 63,
+            "description": "优先级（0-63，0最高）",
+            "example": 1
+          },
+          "src_addr": {
+            "$ref": "#/components/schemas/SrcAddrObject"
+          },
+          "app_proto": {
+            "$ref": "#/components/schemas/AppProtoObject"
+          },
+          "iface_band": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "description": "是否绑定接口，0:不绑定, 1:绑定",
+            "example": 0
+          },
+          "time": {
+            "$ref": "#/components/schemas/TimeObject"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AppProtocolInput": {
+        "type": "object",
+        "required": [
+          "tagname",
+          "enabled",
+          "interface",
+          "prio",
+          "mode",
+          "app_proto",
+          "iface_band"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "规则状态，yes为启用（默认），no为停用",
+            "default": "yes"
+          },
+          "tagname": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 15,
+            "description": "名称，支持中文、英文、数字、下划线和连字符，1-15个字符，不能以下划线或连字符开头",
+            "example": "test3"
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "备注信息，最多64个字符",
+            "default": ""
+          },
+          "interface": {
+            "type": "string",
+            "description": "线路接口",
+            "example": "wan2"
+          },
+          "mode": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              3
+            ],
+            "description": "负载方式 0: 新建连接 1:sip 3:sip+dip",
+            "default": 0,
+            "example": 1
+          },
+          "prio": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 63,
+            "description": "优先级（0-63，0最高）",
+            "example": 1
+          },
+          "src_addr": {
+            "$ref": "#/components/schemas/SrcAddrObjectInput"
+          },
+          "app_proto": {
+            "$ref": "#/components/schemas/AppProtoObjectInput"
+          },
+          "iface_band": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "description": "是否绑定接口，0:不绑定（默认）, 1:绑定",
+            "default": 0
+          },
+          "time": {
+            "$ref": "#/components/schemas/TimeObjectInput"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SrcAddrObject": {
+        "type": "object",
+        "description": "源地址对象",
+        "properties": {
+          "custom": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "自定义源地址列表（支持IP和MAC地址）",
+            "example": [
+              "192.168.9.169",
+              "08:9b:4b:00:10:1e"
+            ]
+          },
+          "object": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NetworkObject"
+            },
+            "description": "网络对象列表"
+          }
+        }
+      },
+      "SrcAddrObjectInput": {
+        "type": "object",
+        "description": "源地址对象输入",
+        "properties": {
+          "custom": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "自定义源地址列表（支持IP和MAC地址）",
+            "example": [
+              "192.168.9.169",
+              "08:9b:4b:00:10:1e"
+            ]
+          },
+          "object": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NetworkObject"
+            },
+            "description": "网络对象列表"
+          }
+        }
+      },
+      "AppProtoObject": {
+        "type": "object",
+        "description": "应用协议对象",
+        "properties": {
+          "custom": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "自定义应用协议列表",
+            "example": [
+              "其它HTTP",
+              "文件传输",
+              "DNS",
+              "Baidu"
+            ]
+          }
+        }
+      },
+      "AppProtoObjectInput": {
+        "type": "object",
+        "description": "应用协议对象输入",
+        "properties": {
+          "custom": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "自定义应用协议列表",
+            "example": [
+              "其它HTTP",
+              "文件传输",
+              "DNS",
+              "Baidu"
+            ]
+          }
+        }
+      },
+      "TimeObject": {
+        "type": "object",
+        "description": "生效时间对象",
+        "properties": {
+          "custom": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeCustom"
+            },
+            "description": "自定义时间规则列表"
+          },
+          "object": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NetworkObject"
+            },
+            "description": "时间对象列表"
+          }
+        }
+      },
+      "TimeObjectInput": {
+        "type": "object",
+        "description": "生效时间对象输入",
+        "properties": {
+          "custom": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeCustom"
+            },
+            "description": "自定义时间规则列表"
+          },
+          "object": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NetworkObject"
+            },
+            "description": "时间对象列表"
+          }
+        }
+      },
+      "TimeCustom": {
+        "type": "object",
+        "description": "自定义时间规则",
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "weekly",
+              "date"
+            ],
+            "description": "时间类型，weekly为周期性，date为日期范围"
+          },
+          "weekdays": {
+            "type": "string",
+            "description": "星期几（1-7对应周一到周日），weekly类型时必需",
+            "example": "1234567"
+          },
+          "start_time": {
+            "type": "string",
+            "description": "开始时间",
+            "example": "00:00"
+          },
+          "end_time": {
+            "type": "string",
+            "description": "结束时间",
+            "example": "20:00"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符",
+            "example": "test11"
+          }
+        }
+      },
+      "NetworkObject": {
+        "type": "object",
+        "required": [
+          "type",
+          "gp_name",
+          "gid"
+        ],
+        "properties": {
+          "type": {
+            "type": "integer",
+            "description": "对象类型 0:ipv4 1:ipv6 2:mac 3:port, 4:time, 5:protocol 6:domain",
+            "example": 4
+          },
+          "gp_name": {
+            "type": "string",
+            "description": "对象名称",
+            "example": "11"
+          },
+          "gid": {
+            "type": "string",
+            "description": "对象ID",
+            "example": "GPIP1"
+          }
+        }
+      },
+      "CreateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/CreateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/CreateBusinessErrorResponse"
+          }
+        ],
+        "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "CreateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}

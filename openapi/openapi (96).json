@@ -1,0 +1,420 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "WEB操作日志管理API",
+    "version": "1.0.0",
+    "summary": "用户WEB操作日志查询和管理",
+    "description": "提供用户WEB操作日志的查询和管理功能，包括：\n- 用户WEB操作日志查询\n- 支持过滤和分页功能\n- 用户登录、配置操作等记录\n- IP地址和操作事件信息记录\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com/api/v4",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com/api/v4",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/log/web_activity": {
+      "get": {
+        "summary": "获取WEB操作日志列表",
+        "description": "获取用户WEB操作日志记录列表。\n支持过滤和分页功能，可以查询用户登录、配置操作等记录。\n",
+        "operationId": "listWebActivityLogs",
+        "tags": [
+          "log-web-activity"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：\n- \"==（等于）\"\n- \"!=（不等于）\"\n- \">（大于）\"\n- \">=（大于等于）\"\n- \"<（小于）\"\n- \"<=（小于等于）\"\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,field2==value2\n\n使用示例：\n- 单条件：filter=event==登录\n- AND条件：filter=event==登录&filter=username==admin\n- OR条件：filter=event==登录,event==登出\n- 用户过滤：filter=username==admin\n- IP地址过滤：filter=ip_addr==192.168.99.101\n- 时间范围：filter=timestamp>1763779000&filter=timestamp<1763780000\n",
+            "schema": {
+              "type": "string"
+            },
+            "example": "event==登录"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "模糊匹配字段列表，支持 username, ip_addr, function, event",
+            "schema": {
+              "type": "string"
+            },
+            "example": "username,event"
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "description": "模糊匹配内容",
+            "schema": {
+              "type": "string"
+            },
+            "example": "登录"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取WEB操作日志列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebActivityLogListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "清空WEB操作日志",
+        "description": "清空所有WEB操作日志记录。\n此操作不可恢复，请谨慎操作。\n",
+        "operationId": "clearWebActivityLogs",
+        "tags": [
+          "log-web-activity"
+        ],
+        "responses": {
+          "200": {
+            "description": "WEB操作日志清空成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "description": "清空日志异常",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebActivityLogErrorResponse"
+                },
+                "example": {
+                  "message": "清空WEB操作日志异常"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 50,
+          "example": 50
+        }
+      },
+      "orderParam": {
+        "name": "order",
+        "in": "query",
+        "description": "排序方向，asc为升序（默认），desc为降序",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "asc",
+          "example": "asc"
+        }
+      },
+      "orderByParam": {
+        "name": "order_by",
+        "in": "query",
+        "description": "排序字段，支持id、timestamp、username、event等字段",
+        "schema": {
+          "type": "string",
+          "default": "id",
+          "example": "timestamp"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源冲突（如唯一性冲突，需调整请求逻辑）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "WebActivityLogErrorResponse": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "WEB操作日志业务错误信息描述"
+          }
+        }
+      },
+      "WebActivityLogListResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 2
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/WebActivityLog"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "WebActivityLog": {
+        "type": "object",
+        "required": [
+          "id",
+          "timestamp",
+          "username",
+          "ip_addr",
+          "function",
+          "event"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "日志记录ID",
+            "minimum": 1,
+            "example": 363
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "时间戳（Unix时间戳）",
+            "example": 1763779604
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名",
+            "maxLength": 100,
+            "example": "admin"
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "IP地址",
+            "format": "ipv4",
+            "example": "192.168.99.101"
+          },
+          "function": {
+            "type": "string",
+            "description": "功能模块",
+            "maxLength": 100,
+            "example": "--"
+          },
+          "event": {
+            "type": "string",
+            "description": "操作事件",
+            "maxLength": 200,
+            "example": "登录"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "log-web-activity",
+      "x-displayName": "WEB操作日志管理",
+      "description": "用户WEB操作日志的查询和管理，支持过滤、分页和清空功能"
+    }
+  ]
+}

@@ -1,0 +1,1551 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "MAC地址限速管理API",
+    "version": "1.0.0",
+    "summary": "MAC地址限速管理完整功能",
+    "description": "提供MAC地址限速的完整管理功能，包括：\n- MAC限速规则的创建、查询、更新、删除\n- 规则启用/停用状态控制\n- 支持独立和共享带宽类型\n- 支持IPv4/IPv6协议类型\n- 支持时间配置和对象引用\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/network/qos/mac": {
+      "get": {
+        "summary": "获取MAC限速列表",
+        "description": "获取所有MAC限速规则列表。\n支持分页功能。\n",
+        "operationId": "listMacQos",
+        "tags": [
+          "qos-mac"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码（从1开始）",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "每页记录数",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取MAC限速列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MacQosListResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "total": 1,
+                    "data": [
+                      {
+                        "enabled": "yes",
+                        "upload": 100,
+                        "tagname": "testmac_wan1",
+                        "comment": "",
+                        "mac_addr": {
+                          "custom": [
+                            "08:9b:4b:00:10:6e"
+                          ],
+                          "object": [
+                            {
+                              "type": 2,
+                              "gid": "MACIP1",
+                              "gp_name": "22"
+                            }
+                          ]
+                        },
+                        "ip_type": "4",
+                        "time": {
+                          "custom": [
+                            {
+                              "end_time": "20:00",
+                              "comment": "test11",
+                              "weekdays": "1234567",
+                              "type": "weekly",
+                              "start_time": "00:00"
+                            },
+                            {
+                              "comment": "test11",
+                              "end_time": "2026-05-10T08:00",
+                              "type": "date",
+                              "start_time": "2026-05-01T08:00"
+                            }
+                          ],
+                          "object": [
+                            {
+                              "type": 4,
+                              "gid": "TIMEGP1",
+                              "gp_name": "11"
+                            }
+                          ]
+                        },
+                        "type": 0,
+                        "attr": 0,
+                        "download": 100,
+                        "interface": "wan1",
+                        "id": 1
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "创建MAC限速规则",
+        "description": "创建新的MAC限速规则。\n支持独立和共享带宽配置，以及IPv4/IPv6协议类型选择。\n",
+        "operationId": "createMacQos",
+        "tags": [
+          "qos-mac"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "MAC限速规则配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MacQosCreateInput"
+              },
+              "example": {
+                "upload": "100",
+                "download": "100",
+                "comment": "",
+                "enabled": "yes",
+                "ip_type": "4",
+                "interface": "wan1",
+                "mac_addr": {
+                  "custom": [
+                    "08:9b:4b:00:10:6e"
+                  ],
+                  "object": [
+                    {
+                      "type": 2,
+                      "gp_name": "22",
+                      "gid": "MACIP1"
+                    }
+                  ]
+                },
+                "time": {
+                  "custom": [
+                    {
+                      "type": "weekly",
+                      "weekdays": "1234567",
+                      "start_time": "00:00",
+                      "end_time": "20:00",
+                      "comment": "test11"
+                    },
+                    {
+                      "type": "date",
+                      "start_time": "2026-05-01T08:00",
+                      "end_time": "2026-05-10T08:00",
+                      "comment": "test11"
+                    }
+                  ],
+                  "object": [
+                    {
+                      "type": 4,
+                      "gp_name": "11",
+                      "gid": "TIMEGP1"
+                    }
+                  ]
+                },
+                "tagname": "testmac_wan1"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success",
+                      "rowid": 1
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/network/qos/mac/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "MAC限速规则ID",
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "example": 1
+          }
+        }
+      ],
+      "get": {
+        "summary": "获取指定MAC限速规则",
+        "description": "根据ID获取单个MAC限速规则的详细信息。\n需要提供有效的规则ID。\n",
+        "operationId": "getMacQos",
+        "tags": [
+          "qos-mac"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取MAC限速规则详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MacQosResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新MAC限速规则",
+        "description": "修改指定MAC限速规则的配置信息。\n支持完整更新。\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateMacQos",
+        "tags": [
+          "qos-mac"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "MAC限速规则更新数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MacQosInput"
+              },
+              "example": {
+                "upload": "200",
+                "download": "200",
+                "comment": "updated",
+                "enabled": "yes",
+                "ip_type": "4",
+                "interface": "wan1",
+                "mac_addr": {
+                  "custom": [
+                    "08:9b:4b:00:10:6f"
+                  ]
+                },
+                "tagname": "testmac_wan1_updated"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "启用/停用MAC限速规则",
+        "description": "启用或停用指定MAC限速规则。\n仅支持修改 enabled 字段，传 yes 为启用，传 no 为停用。\n",
+        "operationId": "partialUpdateMacQos",
+        "tags": [
+          "qos-mac"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "MAC限速规则启用/停用数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MacQosPatchInput"
+              },
+              "example": {
+                "enabled": "yes"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除MAC限速规则",
+        "description": "删除指定的MAC限速规则。\n删除后规则将被永久移除，无法恢复。\n",
+        "operationId": "deleteMacQos",
+        "tags": [
+          "qos-mac"
+        ],
+        "responses": {
+          "200": {
+            "description": "MAC限速规则删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "message": "success"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求参数错误"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问MAC限速管理"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "MAC限速规则不存在"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应状态码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "CreateSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应状态码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "success"
+          },
+          "rowid": {
+            "type": "integer",
+            "description": "创建成功后返回的资源ID",
+            "example": 1
+          }
+        },
+        "required": [
+          "message",
+          "rowid"
+        ],
+        "additionalProperties": false
+      },
+      "MacQos": {
+        "type": "object",
+        "required": [
+          "id",
+          "tagname",
+          "enabled"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "规则ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "description": "规则状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "名称，支持中文、英文、数字、下划线和连字符，1-15个字符，不能以下划线或连字符开头",
+            "minLength": 1,
+            "maxLength": 15,
+            "pattern": "^[\\\\u4e00-\\\\u9fa5a-zA-Z0-9][\\\\u4e00-\\\\u9fa5a-zA-Z0-9_-]*$",
+            "example": "testmac_wan1"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符",
+            "maxLength": 64,
+            "example": ""
+          },
+          "mac_addr": {
+            "type": "object",
+            "description": "MAC地址配置",
+            "properties": {
+              "custom": {
+                "type": "array",
+                "description": "自定义MAC地址列表",
+                "items": {
+                  "type": "string",
+                  "pattern": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"
+                },
+                "example": [
+                  "08:9b:4b:00:10:6e"
+                ]
+              },
+              "object": {
+                "type": "array",
+                "description": "MAC对象引用列表",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "integer",
+                      "description": "对象类型（0:ipv4, 1:ipv6, 2:mac, 3:port, 4:time, 5:protocol, 6:domain）",
+                      "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6
+                      ],
+                      "example": 2
+                    },
+                    "gp_name": {
+                      "type": "string",
+                      "description": "对象名称（仅支持中文、英文、数字，长度限制1-15字符）",
+                      "minLength": 1,
+                      "maxLength": 15,
+                      "pattern": "^[\\\\u4e00-\\\\u9fa5a-zA-Z0-9]+$",
+                      "example": "22"
+                    },
+                    "gid": {
+                      "type": "string",
+                      "description": "对象ID",
+                      "example": "MACIP1"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "gp_name",
+                    "gid"
+                  ]
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "type": {
+            "type": "integer",
+            "description": "带宽类型（0:独立, 1:共享）",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "ip_type": {
+            "type": "string",
+            "description": "IP协议类型（4:IPv4, 6:IPv6）",
+            "enum": [
+              "4",
+              "6"
+            ],
+            "example": "4"
+          },
+          "interface": {
+            "type": "string",
+            "description": "外网线路选择",
+            "example": "wan1"
+          },
+          "upload": {
+            "type": "integer",
+            "description": "上传带宽限制（KB/s）",
+            "minimum": 0,
+            "example": 100
+          },
+          "download": {
+            "type": "integer",
+            "description": "下载带宽限制（KB/s）",
+            "minimum": 0,
+            "example": 100
+          },
+          "time": {
+            "type": "object",
+            "description": "生效时间配置",
+            "properties": {
+              "custom": {
+                "type": "array",
+                "description": "自定义时间列表",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "时间类型",
+                      "enum": [
+                        "weekly",
+                        "date"
+                      ],
+                      "example": "weekly"
+                    },
+                    "weekdays": {
+                      "type": "string",
+                      "description": "星期（1234567），weekly类型使用",
+                      "pattern": "^[1-7]*$",
+                      "example": "1234567"
+                    },
+                    "start_time": {
+                      "type": "string",
+                      "description": "开始时间",
+                      "example": "00:00"
+                    },
+                    "end_time": {
+                      "type": "string",
+                      "description": "结束时间",
+                      "example": "20:00"
+                    },
+                    "comment": {
+                      "type": "string",
+                      "description": "备注信息，最多64个字符",
+                      "example": "test11"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              },
+              "object": {
+                "type": "array",
+                "description": "时间对象引用列表",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "integer",
+                      "description": "对象类型",
+                      "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6
+                      ],
+                      "example": 4
+                    },
+                    "gp_name": {
+                      "type": "string",
+                      "description": "对象名称（仅支持中文、英文、数字，长度限制1-15字符）",
+                      "minLength": 1,
+                      "maxLength": 15,
+                      "pattern": "^[\\\\u4e00-\\\\u9fa5a-zA-Z0-9]+$",
+                      "example": "11"
+                    },
+                    "gid": {
+                      "type": "string",
+                      "description": "对象ID",
+                      "example": "TIMEGP1"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "gp_name",
+                    "gid"
+                  ]
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "attr": {
+            "type": "integer",
+            "description": "属性（0:页面操作, 1:快速添加）",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "MacQosCreateInput": {
+        "type": "object",
+        "required": [
+          "tagname",
+          "enabled",
+          "upload",
+          "download"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "description": "规则状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": ""
+          },
+          "tagname": {
+            "type": "string",
+            "description": "名称，支持中文、英文、数字、下划线和连字符，1-15个字符，不能以下划线或连字符开头",
+            "minLength": 1,
+            "maxLength": 15,
+            "example": "testmac_wan1"
+          },
+          "ip_type": {
+            "type": "string",
+            "description": "IP协议类型（4:IPv4, 6:IPv6），默认空代表IPv4",
+            "enum": [
+              "4",
+              "6"
+            ],
+            "example": "4"
+          },
+          "mac_addr": {
+            "type": "object",
+            "description": "MAC地址配置",
+            "properties": {
+              "custom": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"
+                },
+                "example": [
+                  "08:9b:4b:00:10:6e"
+                ]
+              },
+              "object": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "integer",
+                      "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6
+                      ],
+                      "example": 2
+                    },
+                    "gp_name": {
+                      "type": "string",
+                      "example": "22"
+                    },
+                    "gid": {
+                      "type": "string",
+                      "example": "MACIP1"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "gp_name",
+                    "gid"
+                  ]
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "type": {
+            "type": "integer",
+            "description": "带宽类型（0:独立, 1:共享），默认空代表独立限速",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "interface": {
+            "type": "string",
+            "description": "外网线路选择",
+            "example": "wan1"
+          },
+          "upload": {
+            "type": "integer",
+            "description": "上传带宽限制（KB/s）",
+            "minimum": 0,
+            "example": 100
+          },
+          "download": {
+            "type": "integer",
+            "description": "下载带宽限制（KB/s）",
+            "minimum": 0,
+            "example": 100
+          },
+          "time": {
+            "type": "object",
+            "description": "生效时间配置",
+            "properties": {
+              "custom": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "weekly",
+                        "date"
+                      ],
+                      "example": "weekly"
+                    },
+                    "weekdays": {
+                      "type": "string",
+                      "pattern": "^[1-7]*$",
+                      "example": "1234567"
+                    },
+                    "start_time": {
+                      "type": "string",
+                      "example": "00:00"
+                    },
+                    "end_time": {
+                      "type": "string",
+                      "example": "20:00"
+                    },
+                    "comment": {
+                      "type": "string",
+                      "example": "test11"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              },
+              "object": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "integer",
+                      "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6
+                      ],
+                      "example": 4
+                    },
+                    "gp_name": {
+                      "type": "string",
+                      "example": "11"
+                    },
+                    "gid": {
+                      "type": "string",
+                      "example": "TIMEGP1"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "gp_name",
+                    "gid"
+                  ]
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "MacQosInput": {
+        "type": "object",
+        "required": [
+          "tagname",
+          "enabled",
+          "upload",
+          "download",
+          "comment",
+          "mac_addr",
+          "interface"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "description": "规则状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符",
+            "maxLength": 64,
+            "example": ""
+          },
+          "tagname": {
+            "type": "string",
+            "description": "名称，支持中文、英文、数字、下划线和连字符，1-15个字符，不能以下划线或连字符开头",
+            "minLength": 1,
+            "maxLength": 15,
+            "example": "testmac_wan1"
+          },
+          "ip_type": {
+            "type": "string",
+            "description": "IP协议类型（4:IPv4, 6:IPv6）",
+            "enum": [
+              "4",
+              "6"
+            ],
+            "example": "4"
+          },
+          "mac_addr": {
+            "type": "object",
+            "description": "MAC地址配置",
+            "properties": {
+              "custom": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"
+                },
+                "example": [
+                  "08:9b:4b:00:10:6e"
+                ]
+              },
+              "object": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "integer",
+                      "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6
+                      ],
+                      "example": 2
+                    },
+                    "gp_name": {
+                      "type": "string",
+                      "example": "22"
+                    },
+                    "gid": {
+                      "type": "string",
+                      "example": "MACIP1"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "gp_name",
+                    "gid"
+                  ]
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "type": {
+            "type": "integer",
+            "description": "带宽类型（0:独立, 1:共享）",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "interface": {
+            "type": "string",
+            "description": "外网线路选择",
+            "example": "wan1"
+          },
+          "upload": {
+            "type": "integer",
+            "description": "上传带宽限制（KB/s）",
+            "minimum": 0,
+            "example": 100
+          },
+          "download": {
+            "type": "integer",
+            "description": "下载带宽限制（KB/s）",
+            "minimum": 0,
+            "example": 100
+          },
+          "time": {
+            "type": "object",
+            "description": "生效时间配置",
+            "properties": {
+              "custom": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "weekly",
+                        "date"
+                      ],
+                      "example": "weekly"
+                    },
+                    "weekdays": {
+                      "type": "string",
+                      "pattern": "^[1-7]*$",
+                      "example": "1234567"
+                    },
+                    "start_time": {
+                      "type": "string",
+                      "example": "00:00"
+                    },
+                    "end_time": {
+                      "type": "string",
+                      "example": "20:00"
+                    },
+                    "comment": {
+                      "type": "string",
+                      "example": "test11"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              },
+              "object": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "integer",
+                      "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6
+                      ],
+                      "example": 4
+                    },
+                    "gp_name": {
+                      "type": "string",
+                      "example": "11"
+                    },
+                    "gid": {
+                      "type": "string",
+                      "example": "TIMEGP1"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "gp_name",
+                    "gid"
+                  ]
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "MacQosPatchInput": {
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "规则启用状态，yes为启用，no为停用",
+            "example": "yes"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MacQosResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应状态码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/MacQos"
+                }
+              },
+              "total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 1
+              }
+            },
+            "required": [
+              "data",
+              "total"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "MacQosListResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应状态码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "description": "MAC限速规则列表",
+                "items": {
+                  "$ref": "#/components/schemas/MacQos"
+                }
+              },
+              "total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 25
+              }
+            },
+            "required": [
+              "data",
+              "total"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "CreateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/CreateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/CreateBusinessErrorResponse"
+          }
+        ],
+        "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "CreateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "qos-mac",
+      "x-displayName": "MAC限速管理",
+      "description": "MAC地址限速管理，支持独立和共享带宽配置"
+    }
+  ]
+}

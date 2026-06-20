@@ -1,0 +1,1082 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "静态路由策略管理API",
+    "version": "1.0.0",
+    "description": "提供静态路由策略的完整管理功能，包括：\n- 静态路由策略的增删改查\n- 策略启用/停用管理\n- 支持IPv4和IPv6路由配置\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "tags": [
+    {
+      "name": "static-routes",
+      "x-displayName": "静态路由",
+      "description": "静态路由策略管理和配置"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/routing/static-routes": {
+      "get": {
+        "tags": [
+          "static-routes"
+        ],
+        "summary": "获取所有静态路由策略",
+        "description": "获取当前配置的所有静态路由策略列表。\n支持分页、过滤和排序功能。\n",
+        "operationId": "listStaticRoutes",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "$ref": "#/components/parameters/filterParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取静态路由策略列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaticRouteListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "static-routes"
+        ],
+        "summary": "添加静态路由策略",
+        "description": "创建新的静态路由策略。需要指定目标地址、网关、接口等路由信息。\n支持IPv4和IPv6地址类型。\n",
+        "operationId": "createStaticRoute",
+        "requestBody": {
+          "required": true,
+          "description": "静态路由配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaticRouteInput"
+              },
+              "example": {
+                "enabled": "yes",
+                "tagname": "route_to_lan",
+                "comment": "路由到内网段",
+                "interface": "lan1",
+                "dst_addr": "192.168.2.0",
+                "netmask": "255.255.255.0",
+                "gateway": "192.168.1.1",
+                "prio": 1,
+                "ip_type": "4"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success",
+                      "rowid": 1
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    },
+    "/api/v4.0/routing/static-routes/{id}": {
+      "get": {
+        "tags": [
+          "static-routes"
+        ],
+        "summary": "获取指定静态路由策略",
+        "description": "获取指定ID的静态路由策略详细信息",
+        "operationId": "getStaticRoute",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/staticRouteIdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取静态路由策略信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaticRouteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "static-routes"
+        ],
+        "summary": "更新静态路由策略",
+        "description": "完全更新指定ID的静态路由策略\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateStaticRoute",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/staticRouteIdParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "静态路由配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaticRouteUpdateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "static-routes"
+        ],
+        "summary": "启用/停用静态路由策略",
+        "description": "启用或停用指定ID的静态路由策略",
+        "operationId": "updateStaticRouteStatus",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/staticRouteIdParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "策略状态更新数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "enabled"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "string",
+                    "enum": [
+                      "yes",
+                      "no"
+                    ],
+                    "description": "策略启用状态，yes为启用，no为停用"
+                  }
+                },
+                "example": {
+                  "enabled": "no"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "static-routes"
+        ],
+        "summary": "删除静态路由策略",
+        "description": "删除指定ID的静态路由策略",
+        "operationId": "deleteStaticRoute",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/staticRouteIdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功删除静态路由策略",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "staticRouteIdParam": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "静态路由策略ID",
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 1,
+          "example": 1
+        }
+      },
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 20,
+          "example": 20
+        }
+      },
+      "orderParam": {
+        "name": "order",
+        "in": "query",
+        "description": "排序方向，asc为升序（默认），desc为降序",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "asc",
+          "example": "asc"
+        }
+      },
+      "orderByParam": {
+        "name": "order_by",
+        "in": "query",
+        "description": "排序字段，支持id、tagname、interface、prio等字段",
+        "schema": {
+          "type": "string",
+          "default": "id",
+          "example": "id"
+        }
+      },
+      "filterParam": {
+        "name": "filter",
+        "in": "query",
+        "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：\n- ==（等于）\n- !=（不等于）\n- >（大于）\n- >=（大于等于）\n- <（小于）\n- <=（小于等于）\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,filter=field2==value2\n\n使用示例：\n- 单条件：filter=enabled==yes\n- AND条件：filter=prio>1&filter=interface==eth0\n- OR条件：filter=dst_addr==192.168.1.0,filter=dst_addr==192.168.2.0\n",
+        "schema": {
+          "type": "string",
+          "example": "enabled==yes"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "静态路由策略名称或目标地址冲突（如唯一性冲突，需调整请求逻辑）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码，0表示成功",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码，0表示成功",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          },
+          "rowid": {
+            "type": "integer",
+            "description": "创建成功后返回的资源ID",
+            "example": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "additionalProperties": false
+      },
+      "StaticRouteListResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 25
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/StaticRoute"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "StaticRouteResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/StaticRoute"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "StaticRoute": {
+        "type": "object",
+        "required": [
+          "id",
+          "tagname",
+          "enabled",
+          "interface",
+          "dst_addr",
+          "netmask",
+          "gateway",
+          "prio",
+          "ip_type"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "主键ID",
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "策略状态，yes为启用，no为停用",
+            "example": "yes"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "标识名称（支持中文/数字/字母/下划线/连字符，不能以符号开头，1-15字符）",
+            "example": "route_to_lan"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "example": ""
+          },
+          "interface": {
+            "type": "string",
+            "description": "路由接口，auto为自动选择",
+            "example": "wan1"
+          },
+          "dst_addr": {
+            "type": "string",
+            "format": "ipv4",
+            "description": "目的地址",
+            "example": "192.168.2.0"
+          },
+          "netmask": {
+            "type": "string",
+            "description": "网络掩码",
+            "example": "255.255.255.0"
+          },
+          "gateway": {
+            "type": "string",
+            "format": "ipv4",
+            "description": "网关地址（可为空，表示不指定网关）",
+            "example": "192.168.1.1"
+          },
+          "gateway_int": {
+            "type": "integer",
+            "description": "网关地址整数表示（系统自动计算）",
+            "readOnly": true,
+            "example": 3232235777
+          },
+          "prio": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 99,
+            "description": "优先级（1-99，数值越小优先级越高）",
+            "example": 1
+          },
+          "ip_type": {
+            "type": "string",
+            "enum": [
+              "4",
+              "6"
+            ],
+            "description": "IP类型，4为IPv4，6为IPv6",
+            "example": "4"
+          },
+          "dst_addr_int": {
+            "type": "integer",
+            "description": "目的地址整数表示（系统自动计算）",
+            "readOnly": true,
+            "example": 3232235520
+          }
+        },
+        "additionalProperties": false
+      },
+      "StaticRouteInput": {
+        "type": "object",
+        "required": [
+          "tagname",
+          "enabled",
+          "interface",
+          "dst_addr",
+          "netmask",
+          "ip_type",
+          "prio"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "策略状态，yes为启用（默认），no为停用",
+            "default": "yes"
+          },
+          "tagname": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 15,
+            "description": "标识名称（支持中文/数字/字母/下划线/连字符，不能以符号开头，1-15字符）",
+            "example": "route_to_lan"
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "default": ""
+          },
+          "interface": {
+            "type": "string",
+            "description": "路由接口，auto为自动选择",
+            "default": "auto",
+            "example": "wan1"
+          },
+          "dst_addr": {
+            "type": "string",
+            "description": "目的地址",
+            "example": "192.168.2.0"
+          },
+          "netmask": {
+            "type": "string",
+            "description": "网络掩码",
+            "example": "255.255.255.0"
+          },
+          "gateway": {
+            "type": "string",
+            "description": "网关地址",
+            "example": "192.168.1.1"
+          },
+          "prio": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 99,
+            "description": "优先级（1-99，数值越小优先级越高）",
+            "default": 1,
+            "example": 1
+          },
+          "ip_type": {
+            "type": "string",
+            "enum": [
+              "4",
+              "6"
+            ],
+            "description": "IP类型，4为IPv4（默认），6为IPv6",
+            "default": "4",
+            "example": "4"
+          }
+        },
+        "additionalProperties": false
+      },
+      "StaticRouteUpdateInput": {
+        "type": "object",
+        "required": [
+          "tagname",
+          "enabled",
+          "interface",
+          "dst_addr",
+          "netmask",
+          "ip_type",
+          "prio",
+          "comment",
+          "gateway"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "策略状态，yes为启用（默认），no为停用",
+            "default": "yes"
+          },
+          "tagname": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 15,
+            "description": "标识名称（支持中文/数字/字母/下划线/连字符，不能以符号开头，1-15字符）",
+            "example": "route_to_lan"
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "default": ""
+          },
+          "interface": {
+            "type": "string",
+            "description": "路由接口，auto为自动选择",
+            "default": "auto",
+            "example": "wan1"
+          },
+          "dst_addr": {
+            "type": "string",
+            "description": "目的地址",
+            "example": "192.168.2.0"
+          },
+          "netmask": {
+            "type": "string",
+            "description": "网络掩码",
+            "example": "255.255.255.0"
+          },
+          "gateway": {
+            "type": "string",
+            "description": "网关地址",
+            "example": "192.168.1.1"
+          },
+          "prio": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 99,
+            "description": "优先级（1-99，数值越小优先级越高）",
+            "default": 1,
+            "example": 1
+          },
+          "ip_type": {
+            "type": "string",
+            "enum": [
+              "4",
+              "6"
+            ],
+            "description": "IP类型，4为IPv4（默认），6为IPv6",
+            "default": "4",
+            "example": "4"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/CreateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/CreateBusinessErrorResponse"
+          }
+        ],
+        "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "CreateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}

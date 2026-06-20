@@ -1,0 +1,917 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "LAN接口管理API",
+    "version": "1.0.0",
+    "summary": "LAN接口及物理网卡信息查询",
+    "description": "提供LAN接口的完整管理功能，包括：\n- LAN接口配置查询\n- LAN接口配置更新\n- 物理网卡列表及属性信息查询\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/interfaces/lan-config": {
+      "get": {
+        "summary": "获取LAN接口配置",
+        "description": "查询所有LAN接口的配置信息，包括接口名称、绑定网卡、IP地址/掩码、\nDHCP服务器状态、VLAN绑定、链路聚合模式等详细信息。\n",
+        "operationId": "getLanConfig",
+        "tags": [
+          "lan-interfaces"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取LAN接口配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LanConfigResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "data": [
+                      {
+                        "id": 1,
+                        "name": "lan1",
+                        "tagname": "lan1",
+                        "comment": "",
+                        "mac": "",
+                        "speed": 0,
+                        "duplex": 0,
+                        "lan_visit": 1,
+                        "bandmode": 0,
+                        "linkmode": 4,
+                        "policy": 0,
+                        "ip_mask": "192.168.99.1/255.255.255.0",
+                        "bandif": "00:e2:69:00:89:e5,00:e2:69:00:89:e6",
+                        "bandeth": "eth0,eth1,eth2",
+                        "bandflag": "0,0",
+                        "vlan": "vlan1001",
+                        "dhcp_server": 1
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/interfaces/lan-config/{id}": {
+      "put": {
+        "summary": "更新LAN接口配置",
+        "description": "更新指定LAN接口的网卡配置。本接口为全量修改，请求时需传入所有字段，\n未传入的字段可能被重置。\n",
+        "operationId": "updateLanConfig",
+        "tags": [
+          "lan-interfaces"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "LAN接口ID",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1,
+              "example": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LanConfigUpdateRequest"
+              },
+              "example": {
+                "bandif": "00:e2:69:00:89:e5,00:e2:69:00:89:e6",
+                "bandmode": 0,
+                "speed": 0,
+                "duplex": 0,
+                "lan_visit": 1,
+                "ip_mask": "192.168.99.1/255.255.255.0",
+                "mac": "",
+                "comment": "",
+                "linkmode": 4,
+                "policy": 0
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/interfaces/physical": {
+      "get": {
+        "summary": "获取物理网卡列表",
+        "description": "查询所有物理网卡的列表及属性信息，包括驱动类型、网卡类型、\nMAC地址、链路状态、协商速率、双工模式和所属接口名称。\n返回结果以网卡名称（如eth0、eth1）为键的对象格式。\n",
+        "operationId": "getPhysicalInterfaces",
+        "tags": [
+          "lan-interfaces"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取物理网卡列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterfacesPhysicalResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "ether_info": {
+                      "eth0": {
+                        "driver": "igb",
+                        "type": "TP",
+                        "mac": "00:e2:69:00:89:e5",
+                        "link": 1,
+                        "speed": 100,
+                        "duplex": 1,
+                        "model": "Intel Corporation I211 Gigabit Network Connection",
+                        "interface": "lan1",
+                        "lock": 0,
+                        "bindmod": 0
+                      },
+                      "eth1": {
+                        "driver": "igb",
+                        "type": "TP",
+                        "mac": "00:e2:69:00:89:e6",
+                        "link": 1,
+                        "speed": 1000,
+                        "duplex": 1,
+                        "model": "Intel Corporation I211 Gigabit Network Connection",
+                        "interface": "lan1",
+                        "lock": 0,
+                        "bindmod": 0
+                      },
+                      "eth2": {
+                        "driver": "igb",
+                        "type": "TP",
+                        "mac": "00:e2:69:00:89:e7",
+                        "link": 0,
+                        "speed": 0,
+                        "duplex": 0,
+                        "model": "Intel Corporation I211 Gigabit Network Connection",
+                        "interface": "lan1",
+                        "lock": 0,
+                        "bindmod": 0
+                      },
+                      "eth3": {
+                        "driver": "igb",
+                        "type": "TP",
+                        "mac": "00:e2:69:00:89:e8",
+                        "link": 1,
+                        "speed": 1000,
+                        "duplex": 1,
+                        "model": "Intel Corporation I211 Gigabit Network Connection",
+                        "interface": "wan1",
+                        "lock": 0,
+                        "bindmod": 0
+                      },
+                      "vnet": {
+                        "driver": "kvm",
+                        "type": "TP",
+                        "mac": "00:00:00:00:00:00",
+                        "link": 1,
+                        "speed": 1000,
+                        "duplex": 1,
+                        "model": "Kvm Virtual Bridge Enternet Controller",
+                        "interface": "Null",
+                        "lock": 0,
+                        "bindmod": 0
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息",
+            "example": "请求语法错误或参数不合法"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "LanConfigResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码 (0=成功)",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/LanConfigResults"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "LanConfigResults": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "LAN接口配置列表",
+            "items": {
+              "$ref": "#/components/schemas/LanInterface"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "LanInterface": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "tagname",
+          "comment",
+          "mac",
+          "speed",
+          "duplex",
+          "lan_visit",
+          "bandmode",
+          "linkmode",
+          "policy",
+          "ip_mask",
+          "bandif",
+          "bandeth",
+          "bandflag",
+          "vlan",
+          "dhcp_server"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "接口ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "接口名称",
+            "maxLength": 50,
+            "example": "lan1"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "标识名称（支持中文/数字/字母/下划线/连字符，不能以符号开头，1-15字符）",
+            "maxLength": 50,
+            "example": "lan1"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": ""
+          },
+          "mac": {
+            "type": "string",
+            "description": "网卡MAC地址（空字符串表示未设置）",
+            "maxLength": 17,
+            "example": ""
+          },
+          "speed": {
+            "type": "integer",
+            "description": "网卡速率（0=自动, 10/100/1000/10000 Mbps）",
+            "enum": [
+              0,
+              10,
+              100,
+              1000,
+              10000
+            ],
+            "example": 0
+          },
+          "duplex": {
+            "type": "integer",
+            "description": "工作模式（0=自动, 1=全双工, 2=半双工）",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "example": 0
+          },
+          "lan_visit": {
+            "type": "integer",
+            "description": "是否允许其他LAN访问（0=不允许, 1=允许）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "bandmode": {
+            "type": "integer",
+            "description": "绑定模式（0=网桥, 1=汇聚）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "linkmode": {
+            "type": "integer",
+            "description": "链路聚合模式，bandmode=1时有效（2=手工链路聚合, 4=LACP链路聚合）",
+            "enum": [
+              2,
+              4
+            ],
+            "example": 4
+          },
+          "policy": {
+            "type": "integer",
+            "description": "汇聚负载方式（0=layer2, 1=layer3+4, 2=layer2+3）",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "example": 0
+          },
+          "ip_mask": {
+            "type": "string",
+            "description": "网卡IP地址和子网掩码，格式：IP地址/子网掩码",
+            "example": "192.168.99.1/255.255.255.0"
+          },
+          "bandif": {
+            "type": "string",
+            "description": "绑定网卡MAC地址列表（逗号分隔）",
+            "example": "00:e2:69:00:89:e5,00:e2:69:00:89:e6"
+          },
+          "bandeth": {
+            "type": "string",
+            "description": "绑定网卡名称列表（逗号分隔）",
+            "example": "eth0,eth1,eth2"
+          },
+          "bandflag": {
+            "type": "string",
+            "description": "绑定模式列表，bandmode=1时有效（逗号分隔，每项0=网桥/1=汇聚）",
+            "example": "0,0"
+          },
+          "vlan": {
+            "type": "string",
+            "description": "绑定的VLAN接口名称（空字符串表示未绑定VLAN）",
+            "maxLength": 50,
+            "example": "vlan1001"
+          },
+          "dhcp_server": {
+            "type": "integer",
+            "description": "是否启用DHCP服务器（0=不启用, 1=启用）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "InterfacesPhysicalResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/InterfacesPhysicalResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "InterfacesPhysicalResults": {
+        "type": "object",
+        "properties": {
+          "ether_info": {
+            "type": "object",
+            "description": "物理网卡信息，key为网卡名称（如eth0、eth1、vnet等）",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PhysicalNic"
+            },
+            "example": {
+              "eth0": {
+                "driver": "igb",
+                "type": "TP",
+                "mac": "00:e2:69:00:89:e5",
+                "link": 1,
+                "speed": 100,
+                "duplex": 1,
+                "model": "Intel Corporation I211 Gigabit Network Connection",
+                "interface": "lan1",
+                "lock": 0,
+                "bindmod": 0
+              }
+            }
+          }
+        },
+        "required": [
+          "ether_info"
+        ],
+        "additionalProperties": false
+      },
+      "PhysicalNic": {
+        "type": "object",
+        "required": [
+          "driver",
+          "type",
+          "mac",
+          "link",
+          "speed",
+          "duplex",
+          "model",
+          "interface",
+          "lock",
+          "bindmod"
+        ],
+        "properties": {
+          "driver": {
+            "type": "string",
+            "description": "网卡驱动名称",
+            "maxLength": 50,
+            "example": "igb"
+          },
+          "type": {
+            "type": "string",
+            "description": "网卡类型",
+            "enum": [
+              "TP",
+              "FIBRE",
+              "USB",
+              "LTE",
+              "KVM",
+              "WIFI"
+            ],
+            "example": "TP"
+          },
+          "mac": {
+            "type": "string",
+            "description": "MAC地址",
+            "pattern": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$",
+            "example": "00:e2:69:00:89:e5"
+          },
+          "link": {
+            "type": "integer",
+            "description": "网卡链路状态（0=离线, 1=在线）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "speed": {
+            "type": "integer",
+            "description": "网卡协商速率（Mbps，0表示未协商）",
+            "minimum": 0,
+            "example": 1000
+          },
+          "duplex": {
+            "type": "integer",
+            "description": "双工模式（0=半双工, 1=全双工）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "model": {
+            "type": "string",
+            "description": "网卡型号描述",
+            "maxLength": 200,
+            "example": "Intel Corporation I211 Gigabit Network Connection"
+          },
+          "interface": {
+            "type": "string",
+            "description": "网卡所属接口名称（未分配时为\"Null\"）",
+            "maxLength": 50,
+            "example": "lan1"
+          },
+          "lock": {
+            "type": "integer",
+            "description": "锁定状态",
+            "minimum": 0,
+            "example": 0
+          },
+          "bindmod": {
+            "type": "integer",
+            "description": "网卡绑定模式（0=网桥, 1=汇聚）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "操作结果信息",
+            "example": "success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "LanConfigUpdateRequest": {
+        "type": "object",
+        "required": [
+          "bandif",
+          "bandmode",
+          "speed",
+          "duplex",
+          "lan_visit",
+          "ip_mask"
+        ],
+        "properties": {
+          "bandif": {
+            "type": "string",
+            "description": "绑定网卡MAC地址，多个以逗号分隔",
+            "example": "00:e2:69:00:89:e5,00:e2:69:00:89:e6"
+          },
+          "bandmode": {
+            "type": "integer",
+            "description": "绑定模式（0=网桥, 1=汇聚）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "speed": {
+            "type": "integer",
+            "description": "网卡速率（0=自动, 10/100/1000/10000 Mbps）",
+            "enum": [
+              0,
+              10,
+              100,
+              1000,
+              10000
+            ],
+            "example": 0
+          },
+          "duplex": {
+            "type": "integer",
+            "description": "工作模式（0=自动, 1=全双工, 2=半双工）",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "example": 0
+          },
+          "lan_visit": {
+            "type": "integer",
+            "description": "是否允许其他LAN访问（0=不允许, 1=允许）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "ip_mask": {
+            "type": "string",
+            "description": "IP地址和子网掩码，格式：IP/掩码，如 192.168.1.1/255.255.255.0",
+            "example": "192.168.99.1/255.255.255.0"
+          },
+          "mac": {
+            "type": "string",
+            "description": "克隆MAC地址，空字符串表示不克隆",
+            "maxLength": 17,
+            "example": ""
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64字符",
+            "maxLength": 64,
+            "example": ""
+          },
+          "linkmode": {
+            "type": "integer",
+            "description": "链路聚合模式，bandmode=1时有效（2=手工链路聚合, 4=LACP链路聚合）",
+            "enum": [
+              2,
+              4
+            ],
+            "example": 4
+          },
+          "policy": {
+            "type": "integer",
+            "description": "汇聚负载方式（0=layer2, 1=layer3+4, 2=layer2+3）",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer {token}\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "lan-interfaces",
+      "x-displayName": "网络接口",
+      "description": "LAN接口配置及物理网卡信息查询"
+    }
+  ]
+}

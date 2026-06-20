@@ -1,0 +1,42 @@
+import type { ReactNode } from 'react'
+import { IcChevronDown, IcWifi, IcMoon, IcSun } from './icons'
+import { Notifications } from './Notifications'
+
+/** UniFi-style top header: site picker · Network tab · centered wordmark · controls. */
+export function Header({
+  site, online, theme, onToggleTheme, badge,
+}: {
+  site: string
+  online: boolean
+  theme: 'light' | 'dark'
+  onToggleTheme: () => void
+  badge?: ReactNode
+}) {
+  return (
+    <header className="uhead">
+      <button className="site">
+        <span className="sdot" style={online ? undefined : { background: 'var(--text-3)', boxShadow: '0 0 0 3px var(--surface-3)' }} />
+        <span className="snm">{site}</span>
+        <span className="scar"><IcChevronDown /></span>
+      </button>
+
+      <nav className="htabs">
+        <button className="htab on">
+          <span className="htico"><IcWifi /></span>
+          Network
+        </button>
+      </nav>
+
+      <div className="wordmark">iKuai</div>
+
+      <div className="hright">
+        {badge}
+        <button className="hbtn" title={theme === 'light' ? '切换深色' : '切换浅色'} onClick={onToggleTheme}>
+          {theme === 'light' ? <IcMoon /> : <IcSun />}
+        </button>
+        <Notifications />
+        <div className="havatar" title="Joe">J</div>
+      </div>
+    </header>
+  )
+}

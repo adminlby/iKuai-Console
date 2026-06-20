@@ -1,0 +1,1471 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "接口监控管理API",
+    "version": "1.0.0",
+    "summary": "接口状态和流量监控的完整功能",
+    "description": "提供网络接口监控的完整功能，包括：\n- 线路状态监控\n- 线路最近24小时流量负载监控\n- 内外网接口（wan/lan）配置监控\n- 物理网卡列表及属性信息查询\n- IPv6线路详情查询\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/monitoring/interfaces-status": {
+      "get": {
+        "summary": "获取线路状态监控",
+        "description": "获取所有网络接口的线路状态信息，包括线路检查结果（iface_check）和\n流量统计信息（iface_stream）。包含连接状态、IP地址、网关、\n线路检测结果、自动切换状态、实时流量等详细信息。\n不支持query参数。\n",
+        "operationId": "getInterfaceStatus",
+        "tags": [
+          "monitor-interfaces"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取接口状态监控数据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterfaceStatusResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "iface_check": [
+                      {
+                        "id": 1,
+                        "interface": "wan1",
+                        "parent_interface": "wan1",
+                        "ip_addr": "192.168.99.102",
+                        "gateway": "192.168.99.1",
+                        "internet": "DHCP",
+                        "updatetime": "1763805119",
+                        "auto_switch": "已启用",
+                        "result": "success",
+                        "errmsg": "线路检测成功",
+                        "comment": ""
+                      },
+                      {
+                        "id": 2,
+                        "interface": "wan2",
+                        "parent_interface": "wan2",
+                        "ip_addr": "192.168.33.2",
+                        "gateway": "192.168.33.1",
+                        "internet": "DHCP",
+                        "updatetime": "1763804872",
+                        "auto_switch": "已启用",
+                        "result": "success",
+                        "errmsg": "线路检测成功",
+                        "comment": ""
+                      }
+                    ],
+                    "iface_stream": [
+                      {
+                        "interface": "lan1",
+                        "comment": "",
+                        "ip_addr": "192.168.9.1",
+                        "connect_num": "--",
+                        "upload": 41,
+                        "download": 0,
+                        "total_up": 18937856,
+                        "total_down": 99567308,
+                        "updropped": 0,
+                        "downdropped": 0,
+                        "uppacked": 107050,
+                        "downpacked": 58957
+                      },
+                      {
+                        "interface": "wan1",
+                        "comment": "",
+                        "ip_addr": "192.168.99.102",
+                        "connect_num": "1",
+                        "upload": 2406,
+                        "download": 2017,
+                        "total_up": 52160182,
+                        "total_down": 198655160,
+                        "updropped": 0,
+                        "downdropped": 0,
+                        "uppacked": 118002,
+                        "downpacked": 142353
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/interfaces-traffic": {
+      "get": {
+        "summary": "获取线路最近24小时流量负载监控",
+        "description": "获取线路最近24小时的流量统计数据，包括最大/平均上传下载速率、\n丢包率、往返时延等网络质量指标。支持多线路汇总数据。\n不支持limit、page、order、key、pattern、filter参数。\n",
+        "operationId": "getInterfacesTraffic",
+        "tags": [
+          "monitor-interfaces"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取线路流量监控数据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterfacesTrafficResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "wans_stat_history": [
+                      {
+                        "max_upload": "1.22",
+                        "max_download": "1.08",
+                        "drop_rate": "0.00",
+                        "avg_rtt": 6.64,
+                        "max_rtt": 8.64,
+                        "id": 828,
+                        "timestamp": 1764152100,
+                        "interface": "all",
+                        "avg_upload": "0.95",
+                        "min_rtt": 5.95,
+                        "avg_download": "0.85"
+                      },
+                      {
+                        "max_upload": "1.22",
+                        "max_download": "1.08",
+                        "drop_rate": "0.00",
+                        "avg_rtt": 6.35,
+                        "max_rtt": 6.69,
+                        "id": 826,
+                        "timestamp": 1764152100,
+                        "interface": "wan1",
+                        "avg_upload": "0.95",
+                        "min_rtt": 5.95,
+                        "avg_download": "0.85"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/interfaces-config": {
+      "get": {
+        "summary": "获取内外网接口配置监控",
+        "description": "获取内网（LAN）和外网（WAN）接口的配置快照信息，包括接口名称、\nMAC地址、IP地址、子网掩码、网关、DNS、接入模式、绑定模式等详细配置。\n",
+        "operationId": "getInterfacesConfig",
+        "tags": [
+          "monitor-interfaces"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取内外网接口配置监控数据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterfacesConfigResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "snapshoot_lan": [
+                      {
+                        "id": 1,
+                        "comment": "",
+                        "interface": "lan1",
+                        "bandmode": 0,
+                        "linkmode": 4,
+                        "mac": "00:e2:59:00:68:4e",
+                        "member": [
+                          "eth0"
+                        ],
+                        "ip_addr": "192.168.1.253",
+                        "netmask": "255.255.254.0"
+                      },
+                      {
+                        "id": 2,
+                        "comment": "",
+                        "interface": "lan2",
+                        "bandmode": 0,
+                        "linkmode": 4,
+                        "mac": "00:e2:59:00:68:4f",
+                        "member": [
+                          "eth1",
+                          "eth2"
+                        ],
+                        "ip_addr": "192.168.29.253",
+                        "netmask": "255.255.255.0"
+                      }
+                    ],
+                    "snapshoot_wan": [
+                      {
+                        "id": 1,
+                        "comment": "wan1",
+                        "interface": "wan1",
+                        "mac": "00:e2:59:00:68:53",
+                        "member": [
+                          "eth5"
+                        ],
+                        "bandmode": 0,
+                        "linkmode": 4,
+                        "default_route": 1,
+                        "internet": 2,
+                        "ip_addr": "114.241.221.239",
+                        "netmask": "255.255.255.255",
+                        "gateway": "114.241.208.1",
+                        "dns1": "202.106.46.151",
+                        "dns2": "202.106.195.68",
+                        "count_static": 0,
+                        "count_dhcp": 0,
+                        "count_pppoe": 0,
+                        "count_check_fail": 0,
+                        "updatetime": 1773147772,
+                        "check_res": 0,
+                        "errmsg": "线路检测成功",
+                        "power": "",
+                        "isp": "",
+                        "imei": "",
+                        "qnw": "",
+                        "ccid": "",
+                        "isnr": "",
+                        "pcid": ""
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/interfaces-physical": {
+      "get": {
+        "summary": "获取物理网卡列表",
+        "description": "查询物理网卡列表和网卡对应的属性信息，包括驱动、网卡类型、\nMAC地址、连接状态、协商速率、双工模式、网卡型号及所属接口等。\n",
+        "operationId": "listPhysicalInterfaces",
+        "tags": [
+          "monitor-interfaces"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取物理网卡列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhysicalInterfacesResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "ether_info": {
+                      "eth0": {
+                        "driver": "igb",
+                        "type": "TP",
+                        "mac": "00:e2:69:00:89:e5",
+                        "link": 1,
+                        "speed": 100,
+                        "duplex": 1,
+                        "model": "Intel Corporation I211 Gigabit Network Connection",
+                        "interface": "lan1",
+                        "lock": 0,
+                        "bindmod": 0
+                      },
+                      "eth1": {
+                        "driver": "igb",
+                        "type": "TP",
+                        "mac": "00:e2:69:00:89:e6",
+                        "link": 1,
+                        "speed": 1000,
+                        "duplex": 1,
+                        "model": "Intel Corporation I211 Gigabit Network Connection",
+                        "interface": "lan1",
+                        "lock": 0,
+                        "bindmod": 0
+                      },
+                      "vnet": {
+                        "driver": "kvm",
+                        "type": "TP",
+                        "mac": "00:00:00:00:00:00",
+                        "link": 1,
+                        "speed": 1000,
+                        "duplex": 1,
+                        "model": "Kvm Virtual Bridge Enternet Controller",
+                        "interface": "Null",
+                        "lock": 0,
+                        "bindmod": 0
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/interfaces-traffic-v6": {
+      "get": {
+        "summary": "获取IPv6线路详情",
+        "description": "查询IPv6线路详情，包括wan线路IPv6的转发流量负载，\n包含连接数、上行速率、下行速率、总上行流量、总下行流量等信息。\n",
+        "operationId": "getInterfacesTrafficV6",
+        "tags": [
+          "monitor-interfaces"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取IPv6线路详情数据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterfacesTrafficV6Response"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "total": 1,
+                    "data": [
+                      {
+                        "download": 0,
+                        "interface": "vwan666",
+                        "conn": 0,
+                        "upload": 0,
+                        "id": 1,
+                        "total_upload": "0",
+                        "total_download": "0"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息",
+            "example": "请求语法错误或参数不合法"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "InterfaceStatusResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/InterfaceStatusResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "InterfaceStatusResults": {
+        "type": "object",
+        "properties": {
+          "iface_check": {
+            "type": "array",
+            "description": "接口状态检查列表",
+            "items": {
+              "$ref": "#/components/schemas/InterfaceCheck"
+            }
+          },
+          "iface_stream": {
+            "type": "array",
+            "description": "接口流量统计列表",
+            "items": {
+              "$ref": "#/components/schemas/InterfaceStream"
+            }
+          }
+        },
+        "required": [
+          "iface_check",
+          "iface_stream"
+        ],
+        "additionalProperties": false
+      },
+      "InterfaceCheck": {
+        "type": "object",
+        "required": [
+          "id",
+          "interface",
+          "parent_interface",
+          "ip_addr",
+          "gateway",
+          "internet",
+          "updatetime",
+          "auto_switch",
+          "result",
+          "errmsg",
+          "comment"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "接口ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "interface": {
+            "type": "string",
+            "description": "接口名称",
+            "maxLength": 50,
+            "example": "wan1"
+          },
+          "parent_interface": {
+            "type": "string",
+            "description": "父接口名称",
+            "maxLength": 50,
+            "example": "wan1"
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "IP地址",
+            "format": "ipv4",
+            "example": "192.168.99.102"
+          },
+          "gateway": {
+            "type": "string",
+            "description": "网关地址",
+            "format": "ipv4",
+            "example": "192.168.99.1"
+          },
+          "internet": {
+            "type": "string",
+            "description": "接入方式",
+            "enum": [
+              "DHCP",
+              "PPPoE",
+              "Static",
+              "--"
+            ],
+            "example": "DHCP"
+          },
+          "updatetime": {
+            "type": "string",
+            "description": "更新时间戳（Unix时间戳字符串）",
+            "example": "1763805119"
+          },
+          "auto_switch": {
+            "type": "string",
+            "description": "线路自动切换开关状态",
+            "enum": [
+              "已启用",
+              "已停用"
+            ],
+            "example": "已启用"
+          },
+          "result": {
+            "type": "string",
+            "description": "检测结果",
+            "enum": [
+              "success",
+              "failed"
+            ],
+            "example": "success"
+          },
+          "errmsg": {
+            "type": "string",
+            "description": "错误消息或检测信息",
+            "maxLength": 200,
+            "example": "线路检测成功"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "InterfaceStream": {
+        "type": "object",
+        "required": [
+          "interface",
+          "ip_addr",
+          "connect_num",
+          "upload",
+          "download",
+          "total_up",
+          "total_down",
+          "updropped",
+          "downdropped",
+          "uppacked",
+          "downpacked",
+          "comment"
+        ],
+        "properties": {
+          "interface": {
+            "type": "string",
+            "description": "接口名称",
+            "maxLength": 50,
+            "example": "lan1"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": ""
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "IP地址",
+            "format": "ipv4",
+            "example": "192.168.9.1"
+          },
+          "connect_num": {
+            "type": "string",
+            "description": "连接数（lan接口为--）",
+            "example": "1"
+          },
+          "upload": {
+            "type": "integer",
+            "format": "int64",
+            "description": "实时上传速率（B/s）",
+            "minimum": 0,
+            "example": 2406
+          },
+          "download": {
+            "type": "integer",
+            "format": "int64",
+            "description": "实时下载速率（B/s）",
+            "minimum": 0,
+            "example": 2017
+          },
+          "total_up": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总上传字节数",
+            "minimum": 0,
+            "example": 52160182
+          },
+          "total_down": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总下载字节数",
+            "minimum": 0,
+            "example": 198655160
+          },
+          "updropped": {
+            "type": "integer",
+            "format": "int64",
+            "description": "上行丢弃包数",
+            "minimum": 0,
+            "example": 0
+          },
+          "downdropped": {
+            "type": "integer",
+            "format": "int64",
+            "description": "下行丢弃包数",
+            "minimum": 0,
+            "example": 0
+          },
+          "uppacked": {
+            "type": "integer",
+            "format": "int64",
+            "description": "上行包数",
+            "minimum": 0,
+            "example": 118002
+          },
+          "downpacked": {
+            "type": "integer",
+            "format": "int64",
+            "description": "下行包数",
+            "minimum": 0,
+            "example": 142353
+          }
+        },
+        "additionalProperties": false
+      },
+      "InterfacesTrafficResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/InterfacesTrafficResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "InterfacesTrafficResults": {
+        "type": "object",
+        "properties": {
+          "wans_stat_history": {
+            "type": "array",
+            "description": "线路流量历史数据列表",
+            "items": {
+              "$ref": "#/components/schemas/WanStatHistory"
+            }
+          }
+        },
+        "required": [
+          "wans_stat_history"
+        ],
+        "additionalProperties": false
+      },
+      "WanStatHistory": {
+        "type": "object",
+        "required": [
+          "id",
+          "timestamp",
+          "interface",
+          "avg_upload",
+          "max_upload",
+          "avg_download",
+          "max_download",
+          "drop_rate",
+          "avg_rtt",
+          "min_rtt",
+          "max_rtt"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "记录ID",
+            "minimum": 1,
+            "example": 828
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "时间戳（Unix时间戳）",
+            "example": 1764152100
+          },
+          "interface": {
+            "type": "string",
+            "description": "接口名称，all代表所有线路的统计",
+            "maxLength": 50,
+            "example": "all"
+          },
+          "avg_upload": {
+            "type": "string",
+            "description": "平均上行速率（KB/s）",
+            "pattern": "^[0-9]+(\\.[0-9]+)?$",
+            "example": "0.95"
+          },
+          "max_upload": {
+            "type": "string",
+            "description": "最大上行速率（KB/s）",
+            "pattern": "^[0-9]+(\\.[0-9]+)?$",
+            "example": "1.22"
+          },
+          "avg_download": {
+            "type": "string",
+            "description": "平均下行速率（KB/s）",
+            "pattern": "^[0-9]+(\\.[0-9]+)?$",
+            "example": "0.85"
+          },
+          "max_download": {
+            "type": "string",
+            "description": "最大下行速率（KB/s）",
+            "pattern": "^[0-9]+(\\.[0-9]+)?$",
+            "example": "1.08"
+          },
+          "drop_rate": {
+            "type": "string",
+            "description": "丢包率",
+            "pattern": "^[0-9]+(\\.[0-9]+)?$",
+            "example": "0.00"
+          },
+          "avg_rtt": {
+            "type": "number",
+            "format": "float",
+            "description": "平均往返时延（ms）",
+            "minimum": 0,
+            "example": 6.64
+          },
+          "min_rtt": {
+            "type": "number",
+            "format": "float",
+            "description": "最小往返时延（ms）",
+            "minimum": 0,
+            "example": 5.95
+          },
+          "max_rtt": {
+            "type": "number",
+            "format": "float",
+            "description": "最大往返时延（ms）",
+            "minimum": 0,
+            "example": 8.64
+          }
+        },
+        "additionalProperties": false
+      },
+      "InterfacesConfigResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/InterfacesConfigResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "InterfacesConfigResults": {
+        "type": "object",
+        "properties": {
+          "snapshoot_lan": {
+            "type": "array",
+            "description": "LAN接口配置快照列表",
+            "items": {
+              "$ref": "#/components/schemas/LanInterfaceConfig"
+            }
+          },
+          "snapshoot_wan": {
+            "type": "array",
+            "description": "WAN接口配置快照列表",
+            "items": {
+              "$ref": "#/components/schemas/WanInterfaceConfig"
+            }
+          }
+        },
+        "required": [
+          "snapshoot_lan",
+          "snapshoot_wan"
+        ],
+        "additionalProperties": false
+      },
+      "LanInterfaceConfig": {
+        "type": "object",
+        "required": [
+          "id",
+          "comment",
+          "interface",
+          "bandmode",
+          "linkmode",
+          "mac",
+          "member",
+          "ip_addr",
+          "netmask"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "接口ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": ""
+          },
+          "interface": {
+            "type": "string",
+            "description": "接口名称",
+            "maxLength": 50,
+            "example": "lan1"
+          },
+          "bandmode": {
+            "type": "integer",
+            "description": "绑定模式 (0=网桥, 1=汇聚)",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "linkmode": {
+            "type": "integer",
+            "description": "链路聚合模式，bandmode=1时有效 (2=手工链路聚合, 4=LACP链路聚合)",
+            "enum": [
+              2,
+              4
+            ],
+            "example": 4
+          },
+          "mac": {
+            "type": "string",
+            "description": "MAC地址",
+            "pattern": "^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$",
+            "example": "00:e2:59:00:68:4e"
+          },
+          "member": {
+            "type": "array",
+            "description": "网卡成员列表",
+            "items": {
+              "type": "string",
+              "example": "eth0"
+            },
+            "example": [
+              "eth0"
+            ]
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "IP地址",
+            "format": "ipv4",
+            "example": "192.168.1.253"
+          },
+          "netmask": {
+            "type": "string",
+            "description": "子网掩码",
+            "format": "ipv4",
+            "example": "255.255.254.0"
+          }
+        },
+        "additionalProperties": false
+      },
+      "WanInterfaceConfig": {
+        "type": "object",
+        "required": [
+          "id",
+          "comment",
+          "interface",
+          "mac",
+          "member",
+          "bandmode",
+          "default_route",
+          "internet",
+          "ip_addr",
+          "netmask",
+          "gateway",
+          "dns1",
+          "dns2",
+          "count_static",
+          "count_dhcp",
+          "count_pppoe",
+          "count_check_fail",
+          "updatetime",
+          "check_res",
+          "errmsg"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "接口ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": "wan1"
+          },
+          "interface": {
+            "type": "string",
+            "description": "接口名称",
+            "maxLength": 50,
+            "example": "wan1"
+          },
+          "mac": {
+            "type": "string",
+            "description": "MAC地址",
+            "pattern": "^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$",
+            "example": "00:e2:59:00:68:53"
+          },
+          "member": {
+            "type": "array",
+            "description": "网卡成员列表",
+            "items": {
+              "type": "string",
+              "example": "eth5"
+            },
+            "example": [
+              "eth5"
+            ]
+          },
+          "bandmode": {
+            "type": "integer",
+            "description": "绑定模式 (0=网桥, 1=汇聚)",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "linkmode": {
+            "type": "integer",
+            "description": "链路聚合模式，bandmode=1时有效 (2=手工链路聚合, 4=LACP链路聚合)",
+            "enum": [
+              2,
+              4
+            ],
+            "example": 4
+          },
+          "default_route": {
+            "type": "integer",
+            "description": "当前接口是否为默认路由 (0=否, 1=是)",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "internet": {
+            "type": "integer",
+            "description": "接入模式 (0=静态IP, 1=DHCP, 2=ADSL/PPPoE, 3=基于物理网卡的混合模式, 4=基于vlan的混合模式)",
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "example": 2
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "IP地址",
+            "format": "ipv4",
+            "example": "114.241.221.239"
+          },
+          "netmask": {
+            "type": "string",
+            "description": "子网掩码",
+            "format": "ipv4",
+            "example": "255.255.255.255"
+          },
+          "gateway": {
+            "type": "string",
+            "description": "网关",
+            "format": "ipv4",
+            "example": "114.241.208.1"
+          },
+          "dns1": {
+            "type": "string",
+            "description": "DNS1",
+            "format": "ipv4",
+            "example": "202.106.46.151"
+          },
+          "dns2": {
+            "type": "string",
+            "description": "DNS2",
+            "format": "ipv4",
+            "example": "202.106.195.68"
+          },
+          "count_static": {
+            "type": "integer",
+            "description": "静态IP数量（接入模式为3或4时有效）",
+            "minimum": 0,
+            "example": 0
+          },
+          "count_dhcp": {
+            "type": "integer",
+            "description": "DHCP数量（接入模式为3或4时有效）",
+            "minimum": 0,
+            "example": 0
+          },
+          "count_pppoe": {
+            "type": "integer",
+            "description": "ADSL/PPPoE数量（接入模式为3或4时有效）",
+            "minimum": 0,
+            "example": 0
+          },
+          "count_check_fail": {
+            "type": "integer",
+            "description": "线路检测失败次数",
+            "minimum": 0,
+            "example": 0
+          },
+          "updatetime": {
+            "type": "integer",
+            "format": "int64",
+            "description": "更新时间戳（Unix时间戳）",
+            "example": 1773147772
+          },
+          "check_res": {
+            "type": "integer",
+            "description": "线路检测结果码",
+            "example": 0
+          },
+          "errmsg": {
+            "type": "string",
+            "description": "线路连通性检测信息",
+            "maxLength": 200,
+            "example": "线路检测成功"
+          },
+          "power": {
+            "type": "string",
+            "description": "信号强度（4G模块有效）",
+            "example": ""
+          },
+          "isp": {
+            "type": "string",
+            "description": "运营商信息（4G模块有效）",
+            "example": ""
+          },
+          "imei": {
+            "type": "string",
+            "description": "IMEI号（4G模块有效）",
+            "example": ""
+          },
+          "qnw": {
+            "type": "string",
+            "description": "网络制式（4G模块有效）",
+            "example": ""
+          },
+          "ccid": {
+            "type": "string",
+            "description": "SIM卡CCID（4G模块有效）",
+            "example": ""
+          },
+          "isnr": {
+            "type": "string",
+            "description": "信噪比（4G模块有效）",
+            "example": ""
+          },
+          "pcid": {
+            "type": "string",
+            "description": "小区ID（4G模块有效）",
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "PhysicalInterfacesResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/PhysicalInterfacesResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "PhysicalInterfacesResults": {
+        "type": "object",
+        "properties": {
+          "ether_info": {
+            "type": "object",
+            "description": "物理网卡信息，key为网卡名称（如eth0、eth1、vnet等）",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/EtherInfo"
+            }
+          }
+        },
+        "required": [
+          "ether_info"
+        ],
+        "additionalProperties": false
+      },
+      "EtherInfo": {
+        "type": "object",
+        "required": [
+          "driver",
+          "type",
+          "mac",
+          "link",
+          "speed",
+          "duplex",
+          "model",
+          "interface",
+          "lock",
+          "bindmod"
+        ],
+        "properties": {
+          "driver": {
+            "type": "string",
+            "description": "网卡驱动",
+            "example": "igb"
+          },
+          "type": {
+            "type": "string",
+            "description": "网卡类型 (TP=电口, FIBRE=光口, USB, LTE, KVM, WIFI)",
+            "enum": [
+              "TP",
+              "FIBRE",
+              "USB",
+              "LTE",
+              "KVM",
+              "WIFI"
+            ],
+            "example": "TP"
+          },
+          "mac": {
+            "type": "string",
+            "description": "MAC地址",
+            "pattern": "^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$",
+            "example": "00:e2:69:00:89:e5"
+          },
+          "link": {
+            "type": "integer",
+            "description": "网卡状态 (0=离线, 1=在线)",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "speed": {
+            "type": "integer",
+            "description": "网卡协商速率（Mbps）",
+            "minimum": 0,
+            "example": 1000
+          },
+          "duplex": {
+            "type": "integer",
+            "description": "网卡双工模式 (0=半双工, 1=全双工)",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "model": {
+            "type": "string",
+            "description": "网卡型号",
+            "example": "Intel Corporation I211 Gigabit Network Connection"
+          },
+          "interface": {
+            "type": "string",
+            "description": "网卡所属接口名称",
+            "maxLength": 50,
+            "example": "lan1"
+          },
+          "lock": {
+            "type": "integer",
+            "description": "网卡锁定状态",
+            "example": 0
+          },
+          "bindmod": {
+            "type": "integer",
+            "description": "网卡绑定模式 (0=网桥, 1=汇聚)",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "InterfacesTrafficV6Response": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/InterfacesTrafficV6Results"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "InterfacesTrafficV6Results": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "总记录数",
+            "minimum": 0,
+            "example": 1
+          },
+          "data": {
+            "type": "array",
+            "description": "IPv6线路流量数据列表",
+            "items": {
+              "$ref": "#/components/schemas/InterfaceTrafficV6"
+            }
+          }
+        },
+        "required": [
+          "total",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "InterfaceTrafficV6": {
+        "type": "object",
+        "required": [
+          "id",
+          "interface",
+          "conn",
+          "upload",
+          "download",
+          "total_upload",
+          "total_download"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "记录ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "interface": {
+            "type": "string",
+            "description": "接口名称",
+            "maxLength": 50,
+            "example": "vwan666"
+          },
+          "conn": {
+            "type": "integer",
+            "description": "连接数",
+            "minimum": 0,
+            "example": 0
+          },
+          "upload": {
+            "type": "integer",
+            "format": "int64",
+            "description": "上行速率（B/s）",
+            "minimum": 0,
+            "example": 0
+          },
+          "download": {
+            "type": "integer",
+            "format": "int64",
+            "description": "下行速率（B/s）",
+            "minimum": 0,
+            "example": 0
+          },
+          "total_upload": {
+            "type": "string",
+            "description": "总上行流量",
+            "example": "0"
+          },
+          "total_download": {
+            "type": "string",
+            "description": "总下行流量",
+            "example": "0"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer {token}\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "monitor-interfaces",
+      "x-displayName": "接口监控",
+      "description": "网络接口状态和流量监控，支持线路状态、流量统计、接口配置及物理网卡查询"
+    }
+  ]
+}

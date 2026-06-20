@@ -1,0 +1,413 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "推送通知日志管理API",
+    "version": "1.0.0",
+    "summary": "推送通知日志查询和管理",
+    "description": "提供推送通知日志的查询和管理功能，包括：\n- 推送通知日志查询\n- 支持过滤和分页功能\n- 通知类型记录\n- IP地址和事件描述信息记录\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/log/notice": {
+      "get": {
+        "summary": "获取推送通知日志列表",
+        "description": "获取推送通知日志记录列表。\n支持过滤和分页功能，可以查询各类推送通知记录。\n",
+        "operationId": "listNoticeLogs",
+        "tags": [
+          "log-notice"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：\n- \"==（等于）\"\n- \"!=（不等于）\"\n- \">（大于）\"\n- \">=（大于等于）\"\n- \"<（小于）\"\n- \"<=（小于等于）\"\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,field2==value2\n\n使用示例：\n- 单条件：filter=type==email\n- AND条件：filter=type==email&filter=ip_addr==192.168.1.100\n- OR条件：filter=type==email,type==sms\n- 事件过滤：filter=event==通知发送成功\n- 时间范围：filter=timestamp>1762342000&filter=timestamp<1762343000\n",
+            "schema": {
+              "type": "string"
+            },
+            "example": "type==email"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "模糊匹配字段列表，支持 type, ip_addr, event",
+            "schema": {
+              "type": "string"
+            },
+            "example": "type,event"
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "description": "模糊匹配内容",
+            "schema": {
+              "type": "string"
+            },
+            "example": "通知"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取推送通知日志列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoticeLogListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "清空推送通知日志",
+        "description": "清空所有推送通知日志记录。\n此操作不可恢复，请谨慎操作。\n",
+        "operationId": "clearNoticeLogs",
+        "tags": [
+          "log-notice"
+        ],
+        "responses": {
+          "200": {
+            "description": "推送通知日志清空成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "description": "清空日志异常",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoticeLogErrorResponse"
+                },
+                "example": {
+                  "message": "清空推送通知日志异常"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 50,
+          "example": 50
+        }
+      },
+      "orderParam": {
+        "name": "order",
+        "in": "query",
+        "description": "排序方向，asc为升序（默认），desc为降序",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "asc",
+          "example": "asc"
+        }
+      },
+      "orderByParam": {
+        "name": "order_by",
+        "in": "query",
+        "description": "排序字段，支持id、timestamp、type、ip_addr等字段",
+        "schema": {
+          "type": "string",
+          "default": "id",
+          "example": "timestamp"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源冲突（如唯一性冲突，需调整请求逻辑）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "NoticeLogErrorResponse": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "推送通知日志业务错误信息描述"
+          }
+        }
+      },
+      "NoticeLogListResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/NoticeLog"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "NoticeLog": {
+        "type": "object",
+        "required": [
+          "id",
+          "timestamp",
+          "type",
+          "ip_addr",
+          "event"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "日志记录ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "时间戳（Unix时间戳）",
+            "example": 1762342517
+          },
+          "type": {
+            "type": "string",
+            "description": "通知类型",
+            "maxLength": 100,
+            "example": "email"
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "IP地址",
+            "format": "ipv4",
+            "example": "192.168.1.100"
+          },
+          "event": {
+            "type": "string",
+            "description": "事件描述",
+            "maxLength": 500,
+            "example": "通知发送成功"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "log-notice",
+      "x-displayName": "推送通知日志管理",
+      "description": "推送通知日志的查询和管理，支持过滤、分页和清空功能"
+    }
+  ]
+}

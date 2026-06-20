@@ -1,0 +1,614 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "远程访问配置API",
+    "version": "1.0.0",
+    "summary": "远程访问服务的完整管理功能",
+    "description": "提供远程访问服务的完整管理功能，包括：\n- Telnet服务配置\n- SSH服务配置和端口管理\n- Web管理端口配置\n- 外网访问Web管理控制\n- HTTPS强制跳转配置\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/system/remote-access": {
+      "get": {
+        "summary": "获取远程访问配置",
+        "description": "获取当前远程访问服务的配置信息，包括Telnet、SSH服务状态、\nWeb管理端口设置、外网访问权限、HTTPS强制跳转等配置。\n",
+        "operationId": "getRemoteAccessConfig",
+        "tags": [
+          "remote-access"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取远程访问配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RemoteAccessConfigResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新远程访问配置",
+        "description": "更新远程访问服务的配置信息，包括Telnet和SSH服务的启用状态、\n端口配置、Web管理端口设置、外网访问权限、HTTPS强制跳转等。\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateRemoteAccessConfig",
+        "tags": [
+          "remote-access"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "远程访问配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemoteAccessConfigInput"
+              },
+              "example": {
+                "open_telnetd": 0,
+                "open_wanweb": 1,
+                "open_sshd": 1,
+                "sshd_port": 22,
+                "sshd_passwd": "ikuai8.com",
+                "http_port": 80,
+                "https_port": 443,
+                "force_https": 0
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源冲突（如唯一性冲突，需调整请求逻辑）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "RemoteAccessConfigResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/RemoteAccessConfig"
+                }
+              }
+            },
+            "required": [
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "RemoteAccessConfig": {
+        "type": "object",
+        "required": [
+          "id",
+          "open_telnetd",
+          "open_wanweb",
+          "open_sshd",
+          "sshd_port",
+          "sshd_passwd",
+          "open_ftp",
+          "ftp_port",
+          "ftp_access",
+          "http_port",
+          "https_port",
+          "force_https"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "配置ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "open_telnetd": {
+            "type": "integer",
+            "description": "开启telnetd服务，0为关闭，1为开启",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "open_wanweb": {
+            "type": "integer",
+            "description": "外网访问web管理权限，0为不允许访问，1为都允许，2为允许ipv4，3为允许ipv6",
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "default": 0,
+            "example": 1
+          },
+          "open_sshd": {
+            "type": "integer",
+            "description": "开启SSHD服务，0为关闭，1为开启",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 1
+          },
+          "sshd_port": {
+            "type": "integer",
+            "description": "SSHD服务端口，0表示关闭。允许范围10-599和800-65535，排除1234-1241、12345、34567",
+            "minimum": 0,
+            "maximum": 65535,
+            "default": 22,
+            "example": 22
+          },
+          "sshd_passwd": {
+            "type": "string",
+            "description": "SSHD登录密码",
+            "minLength": 6,
+            "maxLength": 64,
+            "example": "ikuai8.com"
+          },
+          "open_ftp": {
+            "type": "integer",
+            "description": "FTP服务开关，0为关闭，1为开启",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "ftp_port": {
+            "type": "integer",
+            "description": "FTP服务端口。允许范围10-599和800-65535，排除1234-1241、12345、34567",
+            "minimum": 10,
+            "maximum": 65535,
+            "default": 21,
+            "example": 21
+          },
+          "ftp_access": {
+            "type": "integer",
+            "description": "是否允许外网访问FTP，0为不允许，1为允许",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 1,
+            "example": 1
+          },
+          "http_port": {
+            "type": "integer",
+            "description": "HTTP管理端口，0表示关闭HTTP。允许范围10-599和800-65535，排除1234-1241、12345、34567",
+            "minimum": 0,
+            "maximum": 65535,
+            "default": 80,
+            "example": 80
+          },
+          "https_port": {
+            "type": "integer",
+            "description": "HTTPS管理端口，0表示关闭HTTPS。允许范围10-599和800-65535，排除1234-1241、12345、34567",
+            "minimum": 0,
+            "maximum": 65535,
+            "default": 443,
+            "example": 443
+          },
+          "force_https": {
+            "type": "integer",
+            "description": "强制使用HTTPS访问，访问HTTP时强制跳转HTTPS，0为不强制，1为强制",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "RemoteAccessConfigInput": {
+        "type": "object",
+        "required": [
+          "open_telnetd",
+          "open_wanweb",
+          "open_sshd",
+          "sshd_port",
+          "sshd_passwd",
+          "http_port",
+          "https_port",
+          "force_https"
+        ],
+        "properties": {
+          "open_telnetd": {
+            "type": "integer",
+            "description": "开启telnetd服务，0为关闭，1为开启",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "open_wanweb": {
+            "type": "integer",
+            "description": "外网访问web管理权限，0为不允许访问，1为都允许，2为允许ipv4，3为允许ipv6",
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "default": 0,
+            "example": 1
+          },
+          "open_sshd": {
+            "type": "integer",
+            "description": "开启SSHD服务，0为关闭，1为开启",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 1
+          },
+          "sshd_port": {
+            "type": "integer",
+            "description": "SSHD服务端口，0表示关闭。允许范围10-599和800-65535，排除1234-1241、12345、34567",
+            "minimum": 0,
+            "maximum": 65535,
+            "default": 22,
+            "example": 22
+          },
+          "sshd_passwd": {
+            "type": "string",
+            "description": "SSHD登录密码",
+            "minLength": 6,
+            "maxLength": 64,
+            "example": "ikuai8.com"
+          },
+          "http_port": {
+            "type": "integer",
+            "description": "HTTP管理端口，0表示关闭HTTP。允许范围10-599和800-65535，排除1234-1241、12345、34567",
+            "minimum": 0,
+            "maximum": 65535,
+            "default": 80,
+            "example": 80
+          },
+          "https_port": {
+            "type": "integer",
+            "description": "HTTPS管理端口，0表示关闭HTTPS。允许范围10-599和800-65535，排除1234-1241、12345、34567",
+            "minimum": 0,
+            "maximum": 65535,
+            "default": 443,
+            "example": 443
+          },
+          "force_https": {
+            "type": "integer",
+            "description": "强制使用HTTPS访问，访问HTTP时强制跳转HTTPS，0为不强制，1为强制",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "remote-access",
+      "x-displayName": "远程访问配置",
+      "description": "远程访问服务配置管理，包括Telnet、SSH、Web管理端口和外网访问权限"
+    }
+  ]
+}

@@ -1,0 +1,773 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "系统固件升级API",
+    "version": "1.0.0",
+    "summary": "系统固件版本检测、信息查询及升级流程管理",
+    "description": "提供系统固件升级的完整流程，按以下顺序调用：\n\n1. **版本检测** — 触发向云端检测是否有新版本\n2. **获取版本信息** — 查询当前版本与最新版本信息\n3. **立即升级** — 触发固件下载并安装\n4. **获取升级状态** — 轮询升级进度与结果\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/system/upgrade:check": {
+      "post": {
+        "summary": "版本检测",
+        "description": "向云端发起版本检测请求，拉取最新版本信息并缓存到本地。无需请求体。\n\n检测完成后，调用「获取版本信息」接口获取最新版本详情。\n",
+        "operationId": "checkUpgradeVersion",
+        "tags": [
+          "upgrade"
+        ],
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：检测请求已发起\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "firmware_channel",
+                          "type": "unsupported",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/system/upgrade": {
+      "get": {
+        "summary": "获取版本信息",
+        "description": "查询当前固件版本与云端最新版本信息，用于判断是否需要升级。\n\n`new_system_ver` 为空或与 `system_ver` 相同时表示已是最新版本。\n",
+        "operationId": "getUpgradeInfo",
+        "tags": [
+          "upgrade"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取版本信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpgradeInfoResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "data": {
+                      "auto_upgrade_lib_dpi": 1,
+                      "auto_upgrade_lib_im": 1,
+                      "auto_upgrade_lib_domain": 1,
+                      "auto_upgrade_sec": 1,
+                      "libproto_ver": "3.0.8",
+                      "libaudit_ver": "3.0.1",
+                      "libdomain_ver": "2.1.0",
+                      "system_ver": "4.0.200",
+                      "version_type": "alpha",
+                      "build_date": "202604081742",
+                      "new_libproto_ver": "3.0.8",
+                      "new_libaudit_ver": "3.0.1",
+                      "new_libdomain_ver": "2.1.0",
+                      "new_system_ver": "3.7.21",
+                      "new_build_date": "202509221910",
+                      "update_content": "修复：\n1. 内外网设置：部分环境网卡无法显示的bug\n2. 系统概况：MLO开启时，AC状态中2.4G和5G终端连接数错误\n",
+                      "ignore_upgrade_ver": "",
+                      "bootguide": "flash",
+                      "firmware_channel": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/system/upgrade:start": {
+      "post": {
+        "summary": "立即升级",
+        "description": "触发系统固件升级，从云端下载最新固件并安装。升级过程为后台异步执行。\n\n请求体必须传入 `type`，且值固定为 `system`。\n\n触发后请轮询「获取升级状态」接口跟踪进度。\n",
+        "operationId": "startUpgrade",
+        "tags": [
+          "upgrade"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "升级请求参数",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartUpgradeRequest"
+              },
+              "example": {
+                "type": "system"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：升级任务已触发\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "new_system_ver",
+                          "type": "missing",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/system/upgrade:status": {
+      "get": {
+        "summary": "获取升级状态",
+        "description": "查询当前固件升级任务的执行状态与进度。\n\n**`status` 状态码说明：**\n- `0`：无升级任务（空闲或升级成功完成）\n- `1`：正在下载固件（`status_msg` 包含下载进度百分比）\n- `2`：正在安装固件\n- `-1`：固件信息获取失败\n- `-2`：固件下载失败\n- `-3`：固件文件解析失败\n- `-4`：固件安装失败\n\n**轮询建议：** 每 2 秒轮询一次，直到 `status <= 0` 为止。\n",
+        "operationId": "getUpgradeStatus",
+        "tags": [
+          "upgrade"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取升级状态",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpgradeStatusResponse"
+                },
+                "examples": {
+                  "idle": {
+                    "summary": "空闲",
+                    "value": {
+                      "code": 0,
+                      "message": "Success",
+                      "results": {
+                        "auto_upgrade": {
+                          "status": 0,
+                          "status_msg": ""
+                        }
+                      }
+                    }
+                  },
+                  "downloading": {
+                    "summary": "正在下载",
+                    "value": {
+                      "code": 0,
+                      "message": "Success",
+                      "results": {
+                        "auto_upgrade": {
+                          "status": 1,
+                          "status_msg": "正在下载 45%"
+                        }
+                      }
+                    }
+                  },
+                  "installing": {
+                    "summary": "正在安装",
+                    "value": {
+                      "code": 0,
+                      "message": "Success",
+                      "results": {
+                        "auto_upgrade": {
+                          "status": 2,
+                          "status_msg": "正在升级固件"
+                        }
+                      }
+                    }
+                  },
+                  "failed": {
+                    "summary": "下载失败",
+                    "value": {
+                      "code": 0,
+                      "message": "Success",
+                      "results": {
+                        "auto_upgrade": {
+                          "status": -2,
+                          "status_msg": "下载失败，请检查网络连接"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息",
+            "example": "请求语法错误或参数不合法"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "success"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "additionalProperties": false
+      },
+      "StartUpgradeRequest": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "升级类型，固定传 `system`",
+            "const": "system",
+            "example": "system"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "additionalProperties": false
+      },
+      "UpgradeInfoResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码 (0=成功)",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/UpgradeInfoResults"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "UpgradeInfoResults": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/UpgradeInfo"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "UpgradeInfo": {
+        "type": "object",
+        "properties": {
+          "auto_upgrade_lib_dpi": {
+            "type": "integer",
+            "description": "DPI 特征库自动升级开关，1=开启，0=关闭",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "auto_upgrade_lib_im": {
+            "type": "integer",
+            "description": "即时通讯特征库自动升级开关，1=开启，0=关闭",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "auto_upgrade_lib_domain": {
+            "type": "integer",
+            "description": "域名特征库自动升级开关，1=开启，0=关闭",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "auto_upgrade_sec": {
+            "type": "integer",
+            "description": "安全规则自动升级开关，1=开启，0=关闭",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "libproto_ver": {
+            "type": "string",
+            "description": "当前协议特征库版本",
+            "example": "3.0.8"
+          },
+          "libaudit_ver": {
+            "type": "string",
+            "description": "当前审计特征库版本",
+            "example": "3.0.1"
+          },
+          "libdomain_ver": {
+            "type": "string",
+            "description": "当前域名特征库版本",
+            "example": "2.1.0"
+          },
+          "system_ver": {
+            "type": "string",
+            "description": "当前系统固件版本号",
+            "example": "4.0.200"
+          },
+          "build_date": {
+            "type": "string",
+            "description": "当前固件编译日期，格式 YYYYMMDDHHmm",
+            "example": "202604081742"
+          },
+          "version_type": {
+            "type": "string",
+            "description": "当前版本类型（如 release、beta、alpha）",
+            "example": "alpha"
+          },
+          "new_libproto_ver": {
+            "type": "string",
+            "description": "可升级的协议特征库版本，无新版本时为空字符串",
+            "example": "3.0.8"
+          },
+          "new_libaudit_ver": {
+            "type": "string",
+            "description": "可升级的审计特征库版本，无新版本时为空字符串",
+            "example": "3.0.1"
+          },
+          "new_libdomain_ver": {
+            "type": "string",
+            "description": "可升级的域名特征库版本，无新版本时为空字符串",
+            "example": "2.1.0"
+          },
+          "new_system_ver": {
+            "type": "string",
+            "description": "最新系统固件版本号，无新版本时为空字符串",
+            "example": "3.7.21"
+          },
+          "new_build_date": {
+            "type": "string",
+            "description": "最新固件编译日期，格式 YYYYMMDDHHmm，无新版本时为空字符串",
+            "example": "202509221910"
+          },
+          "update_content": {
+            "type": "string",
+            "description": "最新版本更新说明，无新版本时为空字符串",
+            "example": "修复：\n1. 内外网设置：部分环境网卡无法显示的bug"
+          },
+          "ignore_upgrade_ver": {
+            "type": "string",
+            "description": "忽略升级的版本号，未设置时为空字符串",
+            "example": ""
+          },
+          "bootguide": {
+            "type": "string",
+            "description": "升级引导方式",
+            "example": "flash"
+          },
+          "firmware_channel": {
+            "type": "integer",
+            "description": "固件渠道：0=正式版，1=体验版，2=Alpha版",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "example": 0
+          }
+        },
+        "required": [
+          "auto_upgrade_lib_dpi",
+          "auto_upgrade_lib_im",
+          "auto_upgrade_lib_domain",
+          "auto_upgrade_sec",
+          "libproto_ver",
+          "libaudit_ver",
+          "libdomain_ver",
+          "system_ver",
+          "build_date",
+          "version_type",
+          "new_libproto_ver",
+          "new_libaudit_ver",
+          "new_libdomain_ver",
+          "new_system_ver",
+          "new_build_date",
+          "update_content",
+          "ignore_upgrade_ver",
+          "bootguide",
+          "firmware_channel"
+        ],
+        "additionalProperties": false
+      },
+      "UpgradeStatusResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码 (0=成功)",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/UpgradeStatusResults"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "UpgradeStatusResults": {
+        "type": "object",
+        "properties": {
+          "auto_upgrade": {
+            "$ref": "#/components/schemas/UpgradeStatus"
+          }
+        },
+        "required": [
+          "auto_upgrade"
+        ],
+        "additionalProperties": false
+      },
+      "UpgradeStatus": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "description": "升级状态码：\n- `0`：空闲 / 升级成功完成\n- `1`：正在下载固件\n- `2`：正在安装固件\n- `-1`：固件信息获取失败\n- `-2`：固件下载失败\n- `-3`：固件文件解析失败\n- `-4`：固件安装失败\n",
+            "enum": [
+              0,
+              1,
+              2,
+              -1,
+              -2,
+              -3,
+              -4
+            ],
+            "example": 0
+          },
+          "status_msg": {
+            "type": "string",
+            "description": "状态描述信息；status=1 时包含下载进度（如 '正在下载 45%'）；失败时包含错误信息",
+            "example": ""
+          }
+        },
+        "required": [
+          "status",
+          "status_msg"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer {token}\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "upgrade",
+      "x-displayName": "系统升级",
+      "description": "固件版本检测、信息查询与升级流程管理"
+    }
+  ]
+}

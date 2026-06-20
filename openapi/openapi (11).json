@@ -1,0 +1,1737 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "WEB登录账号与用户组管理API",
+    "version": "1.0.0",
+    "summary": "WEB管理后台登录账号与权限组的查询和管理功能",
+    "description": "提供 WEB 管理后台登录账号与权限组的查询和管理能力，包括：\n- 用户组列表、详情、新增、修改、删除\n- 登录账号列表、详情、新增、修改、删除\n- 指定账号是否需要修改密码查询\n\n推荐使用流程：\n1. 先创建用户组，定义组权限和允许登录源地址\n2. 再创建登录账号，并通过 `group_id` 绑定到对应用户组\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/system/web-admin/groups": {
+      "get": {
+        "summary": "获取WEB登录用户组列表",
+        "description": "获取 WEB 管理后台登录用户组列表。\n",
+        "operationId": "listWebAdminGroups",
+        "tags": [
+          "web-admin-groups"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码，从 1 开始",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "example": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "每页返回记录数",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 50,
+              "example": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取 WEB 登录用户组列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebAdminGroupListResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "groups_total": 3,
+                    "groups_data": [
+                      {
+                        "id": 1,
+                        "group_name": "admin",
+                        "perm_config": "",
+                        "ip_addr": "0.0.0.0/0"
+                      },
+                      {
+                        "id": 2,
+                        "group_name": "test001",
+                        "perm_config": "monitoring_center:r,monitor_iface:r,ipv6_stream:r",
+                        "ip_addr": "0.0.0.0/0"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "新增WEB登录用户组",
+        "description": "新增一个 WEB 管理后台登录用户组。\n\n用户组是账号权限的载体，建议先创建组，再创建账号。\n",
+        "operationId": "createWebAdminGroup",
+        "tags": [
+          "web-admin-groups"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "WEB 登录用户组创建数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebAdminGroupCreateInput"
+              },
+              "example": {
+                "group_name": "readonly",
+                "ip_addr": "0.0.0.0/0",
+                "perm_config": "monitoring_center:r,network_configuration:r"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success",
+                      "rowid": 3
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/system/web-admin/groups/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "WEB 登录用户组 ID",
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "example": 1
+          }
+        }
+      ],
+      "get": {
+        "summary": "获取单个WEB登录用户组详情",
+        "description": "根据 ID 获取单个 WEB 登录用户组详情。\n",
+        "operationId": "getWebAdminGroup",
+        "tags": [
+          "web-admin-groups"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取 WEB 登录用户组详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebAdminGroupResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "groups_total": 1,
+                    "groups_data": [
+                      {
+                        "id": 1,
+                        "group_name": "admin",
+                        "perm_config": "",
+                        "ip_addr": "0.0.0.0/0"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "全量修改WEB登录用户组",
+        "description": "全量修改指定 ID 的 WEB 登录用户组。\n\n注意：\n- 用户组 `id = 1` 为超级管理员组\n- 该组除名称外，其它属性不应修改\n",
+        "operationId": "updateWebAdminGroup",
+        "tags": [
+          "web-admin-groups"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "WEB 登录用户组更新数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebAdminGroupUpdateInput"
+              },
+              "example": {
+                "group_name": "readonly",
+                "ip_addr": "192.168.3.0/24",
+                "perm_config": "monitoring_center:r,network_configuration:r"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除WEB登录用户组",
+        "description": "删除指定 ID 的 WEB 登录用户组。\n使用前建议确认没有账号仍在引用该组。\n",
+        "operationId": "deleteWebAdminGroup",
+        "tags": [
+          "web-admin-groups"
+        ],
+        "responses": {
+          "200": {
+            "description": "WEB 登录用户组删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/system/web-admin/password-status": {
+      "get": {
+        "summary": "查询账号是否需要修改密码",
+        "description": "查询指定 WEB 登录账号当前是否需要修改密码。\n\n返回说明：\n- `mod_passwd = 0`：当前不需要修改密码\n- `mod_passwd = 1`：当前密码为默认密码，需要修改\n",
+        "operationId": "getWebAdminAccountPasswdStatus",
+        "tags": [
+          "web-admin-accounts"
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "required": true,
+            "description": "要查询的 WEB 登录账号用户名",
+            "schema": {
+              "type": "string",
+              "example": "admin"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取指定账号的修改密码状态",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModPasswdResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "mod_passwd": 0
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/system/web-admin/password": {
+      "put": {
+        "summary": "修改WEB登录账号密码",
+        "description": "修改当前 WEB 登录账号的密码。\n",
+        "operationId": "updateWebAdminPassword",
+        "tags": [
+          "web-admin-accounts"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "WEB 登录账号密码更新数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebAdminPasswordInput"
+              },
+              "example": {
+                "passwd": "0192023a7bbd73250516f069df18b500"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/system/web-admin/accounts": {
+      "get": {
+        "summary": "获取WEB登录账号列表",
+        "description": "获取 WEB 管理后台登录账号列表。\n",
+        "operationId": "listWebAdminAccounts",
+        "tags": [
+          "web-admin-accounts"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码，从 1 开始",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "example": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "每页返回记录数",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 50,
+              "example": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取 WEB 登录账号列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebAdminAccountListResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "accounts_total": 3,
+                    "accounts_data": [
+                      {
+                        "id": 1,
+                        "username": "admin",
+                        "enabled": "yes",
+                        "group_id": 1,
+                        "passwd": "0192023a7bbd73250516f069df18b500",
+                        "force": 0,
+                        "interval": 30,
+                        "sesstimeout": 120,
+                        "comment": ""
+                      },
+                      {
+                        "id": 2,
+                        "username": "test001",
+                        "enabled": "yes",
+                        "group_id": 2,
+                        "passwd": "fa820cc1ad39a4e99283e9fa555035ec",
+                        "force": 0,
+                        "interval": 30,
+                        "sesstimeout": 120,
+                        "comment": ""
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "新增WEB登录账号",
+        "description": "新增一个 WEB 管理后台登录账号。\n\n建议先调用 `/api/v4.0/system/web-admin/groups` 创建用户组，再新增账号。\n",
+        "operationId": "createWebAdminAccount",
+        "tags": [
+          "web-admin-accounts"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "WEB 登录账号创建数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebAdminAccountCreateInput"
+              },
+              "example": {
+                "username": "ops_admin",
+                "passwd": "0192023a7bbd73250516f069df18b500",
+                "enabled": "yes",
+                "group_id": 1,
+                "force": 0,
+                "interval": 30,
+                "sesstimeout": 120,
+                "comment": "运维管理员账号"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success",
+                      "rowid": 3
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/system/web-admin/accounts/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "WEB 登录账号 ID",
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "example": 1
+          }
+        }
+      ],
+      "get": {
+        "summary": "获取单个WEB登录账号详情",
+        "description": "根据 ID 获取单个 WEB 登录账号详情。\n",
+        "operationId": "getWebAdminAccount",
+        "tags": [
+          "web-admin-accounts"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取 WEB 登录账号详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebAdminAccountResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "accounts_total": 1,
+                    "accounts_data": [
+                      {
+                        "id": 1,
+                        "username": "admin",
+                        "enabled": "yes",
+                        "group_id": 1,
+                        "passwd": "0192023a7bbd73250516f069df18b500",
+                        "force": 0,
+                        "interval": 30,
+                        "sesstimeout": 120,
+                        "comment": ""
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "全量修改WEB登录账号",
+        "description": "全量修改指定 ID 的 WEB 登录账号。\n\n账号权限与安全地址范围由 `group_id` 关联的用户组统一定义。\n",
+        "operationId": "updateWebAdminAccount",
+        "tags": [
+          "web-admin-accounts"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "WEB 登录账号更新数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebAdminAccountUpdateInput"
+              },
+              "example": {
+                "username": "ops_admin",
+                "passwd": "0192023a7bbd73250516f069df18b500",
+                "enabled": "yes",
+                "group_id": 1,
+                "force": 0,
+                "interval": 30,
+                "sesstimeout": 120,
+                "comment": "更新后的备注"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除WEB登录账号",
+        "description": "删除指定 ID 的 WEB 登录账号。\n",
+        "operationId": "deleteWebAdminAccount",
+        "tags": [
+          "web-admin-accounts"
+        ],
+        "responses": {
+          "200": {
+            "description": "WEB 登录账号删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数错误"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 401,
+              "message": "未认证或凭证无效"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 403,
+              "message": "无权限访问 WEB 登录账号管理"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 404,
+              "message": "WEB 登录账号不存在"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 500,
+              "message": "服务器内部错误"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "错误状态码",
+            "example": 400
+          },
+          "message": {
+            "type": "string",
+            "description": "错误信息",
+            "example": "请求参数错误"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0 表示成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n`details` 数组中可出现多条记录，表示多个字段或多组唯一性校验同时失败。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/CreateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/CreateBusinessErrorResponse"
+          }
+        ],
+        "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "CreateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "rowid"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0 表示创建成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          },
+          "rowid": {
+            "type": "integer",
+            "format": "int64",
+            "description": "新建记录 ID",
+            "example": 3
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非 0 表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0 表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非 0 表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "WebAdminAccount": {
+        "type": "object",
+        "required": [
+          "id",
+          "enabled",
+          "username",
+          "passwd",
+          "group_id",
+          "sesstimeout",
+          "force",
+          "interval"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "账号 ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息",
+            "maxLength": 255,
+            "example": ""
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名",
+            "example": "admin"
+          },
+          "enabled": {
+            "type": "string",
+            "description": "账号状态，`yes` 为启用，`no` 为停用",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "passwd": {
+            "type": "string",
+            "description": "密码 MD5 值",
+            "pattern": "^[a-fA-F0-9]{32}$",
+            "example": "0192023a7bbd73250516f069df18b500"
+          },
+          "group_id": {
+            "type": "integer",
+            "description": "所属用户组 ID，对应 `usergroup.id`",
+            "minimum": 1,
+            "example": 1
+          },
+          "sesstimeout": {
+            "type": "integer",
+            "description": "会话超时时间，单位分钟，最小值 5",
+            "minimum": 5,
+            "example": 120
+          },
+          "force": {
+            "type": "integer",
+            "description": "定期修改密码开关，0 为关闭，1 为开启",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "interval": {
+            "type": "integer",
+            "description": "定期修改密码周期，单位天，最小值 1，默认 30",
+            "minimum": 1,
+            "example": 30
+          }
+        },
+        "additionalProperties": false
+      },
+      "WebAdminGroup": {
+        "type": "object",
+        "required": [
+          "id",
+          "group_name",
+          "perm_config",
+          "ip_addr"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "用户组 ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "group_name": {
+            "type": "string",
+            "description": "用户组名称",
+            "example": "admin"
+          },
+          "perm_config": {
+            "type": "string",
+            "description": "权限配置字符串，菜单 key 对应设备侧 `menu.json`",
+            "example": "monitoring_center:r,network_configuration:r"
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "安全 IP 地址范围，支持如 `0.0.0.0/0`、`192.168.1.1/255.255.255.0`、`192.168.1.1-192.168.1.200`",
+            "example": "0.0.0.0/0"
+          }
+        },
+        "additionalProperties": false
+      },
+      "WebAdminGroupCreateInput": {
+        "type": "object",
+        "required": [
+          "group_name",
+          "ip_addr",
+          "perm_config"
+        ],
+        "properties": {
+          "group_name": {
+            "type": "string",
+            "description": "用户组名称",
+            "example": "readonly"
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "安全 IP 地址范围",
+            "example": "0.0.0.0/0"
+          },
+          "perm_config": {
+            "type": "string",
+            "description": "权限配置字符串，菜单 key 对应设备侧 `menu.json`",
+            "example": "monitoring_center:r,network_configuration:r"
+          }
+        },
+        "additionalProperties": false
+      },
+      "WebAdminGroupUpdateInput": {
+        "type": "object",
+        "description": "WEB 登录用户组全量更新输入。\n当目标组 `id = 1` 时，建议仅修改 `group_name`。\n",
+        "required": [
+          "group_name",
+          "ip_addr",
+          "perm_config"
+        ],
+        "properties": {
+          "group_name": {
+            "type": "string",
+            "description": "用户组名称",
+            "example": "readonly"
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "安全 IP 地址范围",
+            "example": "192.168.3.0/24"
+          },
+          "perm_config": {
+            "type": "string",
+            "description": "权限配置字符串，菜单 key 对应设备侧 `menu.json`",
+            "example": "monitoring_center:r,network_configuration:r"
+          }
+        },
+        "additionalProperties": false
+      },
+      "WebAdminPasswordInput": {
+        "type": "object",
+        "required": [
+          "passwd"
+        ],
+        "properties": {
+          "passwd": {
+            "type": "string",
+            "description": "新密码的 MD5 值",
+            "pattern": "^[a-fA-F0-9]{32}$",
+            "example": "0192023a7bbd73250516f069df18b500"
+          }
+        },
+        "additionalProperties": false
+      },
+      "WebAdminAccountCreateInput": {
+        "type": "object",
+        "required": [
+          "username",
+          "passwd",
+          "enabled",
+          "group_id",
+          "force",
+          "interval",
+          "sesstimeout"
+        ],
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "用户名",
+            "example": "ops_admin"
+          },
+          "passwd": {
+            "type": "string",
+            "description": "登录密码的 MD5 值",
+            "pattern": "^[a-fA-F0-9]{32}$",
+            "example": "0192023a7bbd73250516f069df18b500"
+          },
+          "enabled": {
+            "type": "string",
+            "description": "账号状态，`yes` 为启用，`no` 为停用",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "group_id": {
+            "type": "integer",
+            "description": "所属用户组 ID。账号权限由该用户组提供，应先创建用户组再新增账号",
+            "minimum": 1,
+            "example": 1
+          },
+          "force": {
+            "type": "integer",
+            "description": "定期修改密码开关",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "interval": {
+            "type": "integer",
+            "description": "定期修改密码周期，单位天，最小值 1，默认 30",
+            "minimum": 1,
+            "example": 30
+          },
+          "sesstimeout": {
+            "type": "integer",
+            "description": "会话超时时间，单位分钟，最小值 5",
+            "minimum": 5,
+            "example": 120
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息",
+            "maxLength": 255,
+            "example": "运维管理员账号"
+          }
+        },
+        "additionalProperties": false
+      },
+      "WebAdminAccountUpdateInput": {
+        "type": "object",
+        "required": [
+          "username",
+          "passwd",
+          "enabled",
+          "group_id",
+          "force",
+          "interval",
+          "sesstimeout"
+        ],
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "用户名",
+            "example": "ops_admin"
+          },
+          "passwd": {
+            "type": "string",
+            "description": "登录密码的 MD5 值",
+            "pattern": "^[a-fA-F0-9]{32}$",
+            "example": "0192023a7bbd73250516f069df18b500"
+          },
+          "enabled": {
+            "type": "string",
+            "description": "账号状态，`yes` 为启用，`no` 为停用",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "group_id": {
+            "type": "integer",
+            "description": "所属用户组 ID。账号权限由该用户组提供",
+            "minimum": 1,
+            "example": 1
+          },
+          "force": {
+            "type": "integer",
+            "description": "定期修改密码开关",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "interval": {
+            "type": "integer",
+            "description": "定期修改密码周期，单位天，最小值 1，默认 30",
+            "minimum": 1,
+            "example": 30
+          },
+          "sesstimeout": {
+            "type": "integer",
+            "description": "会话超时时间，单位分钟，最小值 5",
+            "minimum": 5,
+            "example": 120
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息",
+            "maxLength": 255,
+            "example": "更新后的备注"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ModPasswdResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应状态码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "mod_passwd": {
+                "type": "integer",
+                "description": "是否需要修改密码，`0` 为不需要，`1` 表示当前密码为默认密码，需要修改",
+                "enum": [
+                  0,
+                  1
+                ],
+                "example": 0
+              }
+            },
+            "required": [
+              "mod_passwd"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "WebAdminAccountResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应状态码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "accounts_total": {
+                "type": "integer",
+                "example": 1
+              },
+              "accounts_data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/WebAdminAccount"
+                }
+              }
+            },
+            "required": [
+              "accounts_total",
+              "accounts_data"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "WebAdminAccountListResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应状态码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "accounts_total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 3
+              },
+              "accounts_data": {
+                "type": "array",
+                "description": "WEB 登录账号列表",
+                "items": {
+                  "$ref": "#/components/schemas/WebAdminAccount"
+                }
+              }
+            },
+            "required": [
+              "accounts_total",
+              "accounts_data"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "WebAdminGroupResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应状态码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "groups_total": {
+                "type": "integer",
+                "example": 1
+              },
+              "groups_data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/WebAdminGroup"
+                }
+              }
+            },
+            "required": [
+              "groups_total",
+              "groups_data"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "WebAdminGroupListResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应状态码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "groups_total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 3
+              },
+              "groups_data": {
+                "type": "array",
+                "description": "WEB 登录用户组列表",
+                "items": {
+                  "$ref": "#/components/schemas/WebAdminGroup"
+                }
+              }
+            },
+            "required": [
+              "groups_total",
+              "groups_data"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用 JWT Bearer Token 进行认证。\n在请求头中添加：Authorization: Bearer {token}\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "web-admin-groups",
+      "x-displayName": "WEB登录用户组管理",
+      "description": "WEB 管理后台登录用户组与权限配置管理"
+    },
+    {
+      "name": "web-admin-accounts",
+      "x-displayName": "WEB登录账号管理",
+      "description": "WEB 管理后台登录账号的查询与维护，账号通过 `group_id` 绑定用户组"
+    }
+  ]
+}

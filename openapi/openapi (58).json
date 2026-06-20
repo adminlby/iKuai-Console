@@ -1,0 +1,1598 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OpenVPN客户端管理API",
+    "version": "1.0.0",
+    "summary": "OpenVPN客户端的完整管理功能",
+    "description": "提供OpenVPN客户端的完整管理功能，包括：\n- OpenVPN客户端的创建、查询、更新、删除\n- 客户端启用/停用状态控制\n- 支持分页、模糊匹配和过滤功能\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com/api/v4.0",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com/api/v4.0",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/vpn/openvpn/clients": {
+      "get": {
+        "summary": "获取OpenVPN客户端列表",
+        "description": "获取所有OpenVPN客户端配置列表。\n支持分页、排序、模糊匹配和过滤功能。\n",
+        "operationId": "listOpenvpnClients",
+        "tags": [
+          "OpenVPN客户端"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "模糊匹配字段名称，与 pattern 参数联合使用",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "comment",
+                "remote_addr",
+                "interface",
+                "username",
+                "proto",
+                "dev_type",
+                "cipher"
+              ],
+              "example": "name"
+            }
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "description": "模糊匹配内容，与 key 参数联合使用",
+            "schema": {
+              "type": "string",
+              "example": "test"
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：==、!=、>、>=、<、<=\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,field2==value2\n\n使用示例：\n- 单条件：filter=enabled==yes\n- AND条件：filter=enabled==yes&filter=interface==wan1\n- OR条件：filter=name==test1,name==test2\n",
+            "schema": {
+              "type": "string",
+              "example": "enabled==yes"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取OpenVPN客户端列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenvpnClientListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "创建OpenVPN客户端",
+        "description": "添加新的OpenVPN客户端配置。\n\n**条件必填字段：**\n- `username`、`password`：当 method=0（账号认证）时必填\n- `tls_auth`、`cert`、`key`：当 method=1（tls-auth）或 method=2（tls-crypt）时必填\n- `timing_rst_week`、`timing_rst_time`：当 timing_rst_switch=1 时必填\n- `ca`：使用转义后的单行 PEM 字符串，原始换行替换为 `@`，原始空格替换为 `#`\n",
+        "operationId": "createOpenvpnClient",
+        "tags": [
+          "OpenVPN客户端"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "OpenVPN客户端配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenvpnClientInput"
+              },
+              "example": {
+                "enabled": "yes",
+                "name": "ovpn_office",
+                "comment": "主办公室OpenVPN连接",
+                "remote_addr": "vpn.ikuai.cn",
+                "remote_port": 1194,
+                "method": 0,
+                "username": "vpnuser",
+                "password": "vpnpassword",
+                "interface": "wan1",
+                "proto": "udp",
+                "dev_type": "tun",
+                "cipher": "AES-256-CBC",
+                "comp_lzo": "1",
+                "tun_mtu": 1400,
+                "ca": "-----BEGIN#CERTIFICATE-----@MIIDQTCCAimgAwIBAgIJAMqVcmi6/37xMA0GCSqGSIb3DQEBCwUAMDcxCzAJBgNV@BAYTAkNOMQ4wDAYDVQQKDAVpS3VhaTEYMBYGA1UEAwwPaUt1YWkgRGV2aWNlIENB@MB4XDTI2MDIwNjEwMzExMFoXDTM2MDIwNDEwMzExMFowNzELMAkGA1UEBhMCQ04x@DjAMBgNVBAoMBWlLdWFpMRgwFgYDVQQDDA9pS3VhaSBEZXZpY2UgQ0EwggEiMA0G@CSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCeCJGD4jX3PY5IdOYRv0gxfYPYikOc@hQkF5XAWQZgFxnuelDEkzl7RCOFVqsnwY/npOzI7VSsyLACPNkOdvyEvO+QGfRli@3zx0EfwRHGhLQbt/TDT0D9IZCab2oswdYjORtXcIe5dT3j2i8M2vv6wnJ7ip8GKu@ahfgJzakBZIRcQyEopTCmNbC5VAdCb/gQ0ezPnogPG6pbxxgE8OJIGH0+IgMFFTv@0wKVOCyHJgZNAZNnzP3yi5SCJvBnfU4wadXDAztGtq5El5l2lBP7s3KH65u0M/46@wo5NHyxZhn+M8S86EE4RkAeHI+1FqJASjW9ivNTRphFZMyW/Q4qbdEtrAgMBAAGj@UDBOMB0GA1UdDgQWBBRYp/q+2podeA2lc3khLBN+RGf+5TAfBgNVHSMEGDAWgBRY@p/q+2podeA2lc3khLBN+RGf+5TAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBCwUA@A4IBAQCHj5mxVYnaQcvMpjpWdXBS6XVpdiRpuqzRoqOYEnhzXOwwqnJ/EkJwa0RH@wFZUZrQC9bbxnIz+9kmlQKoTwtzzd9GVZeb3JeU9fcd/1BJdRLRiqqXw1EW0+QOV@7NCP1NqVMUsornypW1Y0JPcNfcvx/+oQXIIsS3EjOn+ye3ZASSRNi6+4zXNX2l53@8revjpAVnww0FS/zDeFGD9c9n6aYxvLxqXaBgNO3eOb2EAQAuNwncOvXZ9hBY8rz@A9jTuDVM1inhzROPguwt+j2moZedLm8DRgQxHjIkVvIOsq/50ApOVlGBCHjGJsay@tj3+p42yHrbmuCKvE6cCc0m2fhpw@-----END#CERTIFICATE-----@",
+                "accept_push_route": "0",
+                "route": "",
+                "timing_rst_switch": "0",
+                "check_link_mode": 1,
+                "check_link_host": "www.baidu.com",
+                "extra_config": ""
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OpenVPN客户端创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/vpn/openvpn/clients/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/openvpnClientIdParam"
+        }
+      ],
+      "get": {
+        "summary": "获取指定OpenVPN客户端",
+        "description": "根据ID获取单个OpenVPN客户端的详细配置信息。\n",
+        "operationId": "getOpenvpnClient",
+        "tags": [
+          "OpenVPN客户端"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取OpenVPN客户端详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenvpnClientResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新OpenVPN客户端",
+        "description": "完全更新现有的OpenVPN客户端配置。\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateOpenvpnClient",
+        "tags": [
+          "OpenVPN客户端"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "完整的OpenVPN客户端配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenvpnClientUpdateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "启用/停用OpenVPN客户端",
+        "description": "部分更新现有的OpenVPN客户端配置。\n主要用于启用/停用客户端状态。\n",
+        "operationId": "patchOpenvpnClient",
+        "tags": [
+          "OpenVPN客户端"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "部分更新数据（如启用状态）",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "enabled"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "string",
+                    "enum": [
+                      "yes",
+                      "no"
+                    ],
+                    "description": "客户端启用状态",
+                    "example": "yes"
+                  }
+                },
+                "example": {
+                  "enabled": "yes"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除OpenVPN客户端",
+        "description": "删除指定的OpenVPN客户端配置。\n删除后无法恢复，请谨慎操作。\n",
+        "operationId": "deleteOpenvpnClient",
+        "tags": [
+          "OpenVPN客户端"
+        ],
+        "responses": {
+          "200": {
+            "description": "OpenVPN客户端删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "openvpnClientIdParam": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "OpenVPN客户端ID",
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 1,
+          "example": 1
+        }
+      },
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 20,
+          "example": 20
+        }
+      },
+      "orderParam": {
+        "name": "order",
+        "in": "query",
+        "description": "排序方向，asc为升序（默认），desc为降序",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "asc",
+          "example": "asc"
+        }
+      },
+      "orderByParam": {
+        "name": "order_by",
+        "in": "query",
+        "description": "排序字段，支持id、name、remote_addr、interface等字段",
+        "schema": {
+          "type": "string",
+          "default": "id",
+          "example": "id"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源冲突（如唯一性冲突，需调整请求逻辑）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      },
+      "OpenvpnClientResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/OpenvpnClient"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "OpenvpnClientListResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 25
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/OpenvpnClient"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "OpenvpnClient": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "comment",
+          "remote_addr",
+          "remote_port",
+          "username",
+          "password",
+          "interface",
+          "enabled",
+          "proto",
+          "dev_type",
+          "cipher",
+          "method",
+          "tls_auth",
+          "ca",
+          "cert",
+          "key",
+          "redirect_gateway",
+          "accept_push_route",
+          "route",
+          "comp_lzo",
+          "tun_mtu",
+          "tunnel_ip",
+          "check_link_mode",
+          "check_link_host",
+          "timing_rst_switch",
+          "timing_rst_week",
+          "timing_rst_time",
+          "extra_config"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "客户端ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "客户端连接名称，必须以ovpn开头，仅支持英文、数字、下划线，5-15字符，不可重复",
+            "pattern": "^ovpn[0-9A-Za-z_]{1,11}$",
+            "minLength": 5,
+            "maxLength": 15,
+            "example": "ovpn_office"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符",
+            "maxLength": 64,
+            "example": "主办公室OpenVPN连接"
+          },
+          "remote_addr": {
+            "type": "string",
+            "description": "OpenVPN服务器地址，支持IPv4、IPv6或域名",
+            "example": "vpn.ikuai.cn"
+          },
+          "remote_port": {
+            "type": "integer",
+            "description": "OpenVPN服务器端口",
+            "minimum": 1,
+            "maximum": 65535,
+            "example": 1194
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名，method=0时必填",
+            "maxLength": 60,
+            "example": "vpnuser"
+          },
+          "password": {
+            "type": "string",
+            "description": "密码，method=0时必填",
+            "maxLength": 64,
+            "example": "vpnpassword"
+          },
+          "interface": {
+            "type": "string",
+            "description": "绑定的网络接口，auto表示自动选择，或指定WAN接口名称",
+            "example": "wan1"
+          },
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "客户端启用状态，yes为启用，no为停用",
+            "example": "yes"
+          },
+          "proto": {
+            "type": "string",
+            "enum": [
+              "udp",
+              "tcp"
+            ],
+            "description": "传输协议",
+            "example": "udp"
+          },
+          "dev_type": {
+            "type": "string",
+            "enum": [
+              "tun",
+              "tap"
+            ],
+            "description": "设备类型",
+            "example": "tun"
+          },
+          "cipher": {
+            "type": "string",
+            "description": "加密算法",
+            "enum": [
+              "BF-CBC",
+              "BF-CFB",
+              "BF-OFB",
+              "DES-CFB",
+              "DES-CBC",
+              "RC2-CBC",
+              "RC2-CFB",
+              "RC2-OFB",
+              "DES-EDE-CBC",
+              "DES-EDE3-CBC",
+              "DES-OFB",
+              "DES-EDE-CFB",
+              "DES-EDE3-CFB",
+              "DES-EDE-OFB",
+              "DES-EDE3-OFB",
+              "DESX-CBC",
+              "RC2-40-CBC",
+              "CAST5-CBC",
+              "CAST5-CFB",
+              "CAST5-OFB",
+              "RC2-64-CBC",
+              "AES-128-CBC",
+              "AES-128-OFB",
+              "AES-128-CFB",
+              "AES-192-CBC",
+              "AES-192-OFB",
+              "AES-192-CFB",
+              "AES-256-CBC",
+              "AES-256-OFB",
+              "AES-256-CFB",
+              "AES-128-CFB1",
+              "AES-192-CFB1",
+              "AES-256-CFB1",
+              "AES-128-CFB8",
+              "AES-192-CFB8",
+              "AES-256-CFB8",
+              "AES-256-GCM",
+              "DES-CFB1",
+              "DES-CFB8",
+              "DES-EDE3-CFB1",
+              "DES-EDE3-CFB8",
+              "SEED-CBC",
+              "SEED-OFB",
+              "SEED-CFB",
+              "none"
+            ],
+            "example": "AES-256-CBC"
+          },
+          "method": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "description": "认证方式，0=账号认证，1=tls-auth，2=tls-crypt",
+            "example": 0
+          },
+          "tls_auth": {
+            "type": "string",
+            "description": "静态密钥，method=1或method=2时必填",
+            "example": ""
+          },
+          "ca": {
+            "type": "string",
+            "description": "CA证书，使用转义后的单行 PEM 字符串传递：\n- 原始换行符替换为 `@`\n- 原始空格替换为 `#`\n按上述规则还原后，应得到可被 OpenSSL 以 X.509 证书方式正常解析的 PEM 内容。\n",
+            "example": "-----BEGIN#CERTIFICATE-----@MIIDQTCCAimgAwIBAgIJAMqVcmi6/37xMA0GCSqGSIb3DQEBCwUAMDcxCzAJBgNV@BAYTAkNOMQ4wDAYDVQQKDAVpS3VhaTEYMBYGA1UEAwwPaUt1YWkgRGV2aWNlIENB@MB4XDTI2MDIwNjEwMzExMFoXDTM2MDIwNDEwMzExMFowNzELMAkGA1UEBhMCQ04x@DjAMBgNVBAoMBWlLdWFpMRgwFgYDVQQDDA9pS3VhaSBEZXZpY2UgQ0EwggEiMA0G@CSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCeCJGD4jX3PY5IdOYRv0gxfYPYikOc@hQkF5XAWQZgFxnuelDEkzl7RCOFVqsnwY/npOzI7VSsyLACPNkOdvyEvO+QGfRli@3zx0EfwRHGhLQbt/TDT0D9IZCab2oswdYjORtXcIe5dT3j2i8M2vv6wnJ7ip8GKu@ahfgJzakBZIRcQyEopTCmNbC5VAdCb/gQ0ezPnogPG6pbxxgE8OJIGH0+IgMFFTv@0wKVOCyHJgZNAZNnzP3yi5SCJvBnfU4wadXDAztGtq5El5l2lBP7s3KH65u0M/46@wo5NHyxZhn+M8S86EE4RkAeHI+1FqJASjW9ivNTRphFZMyW/Q4qbdEtrAgMBAAGj@UDBOMB0GA1UdDgQWBBRYp/q+2podeA2lc3khLBN+RGf+5TAfBgNVHSMEGDAWgBRY@p/q+2podeA2lc3khLBN+RGf+5TAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBCwUA@A4IBAQCHj5mxVYnaQcvMpjpWdXBS6XVpdiRpuqzRoqOYEnhzXOwwqnJ/EkJwa0RH@wFZUZrQC9bbxnIz+9kmlQKoTwtzzd9GVZeb3JeU9fcd/1BJdRLRiqqXw1EW0+QOV@7NCP1NqVMUsornypW1Y0JPcNfcvx/+oQXIIsS3EjOn+ye3ZASSRNi6+4zXNX2l53@8revjpAVnww0FS/zDeFGD9c9n6aYxvLxqXaBgNO3eOb2EAQAuNwncOvXZ9hBY8rz@A9jTuDVM1inhzROPguwt+j2moZedLm8DRgQxHjIkVvIOsq/50ApOVlGBCHjGJsay@tj3+p42yHrbmuCKvE6cCc0m2fhpw@-----END#CERTIFICATE-----@"
+          },
+          "cert": {
+            "type": "string",
+            "description": "客户端证书，method=1 或 method=2 时必填，使用转义后的单行 PEM 字符串传递：\n- 原始换行符替换为 `@`\n- 原始空格替换为 `#`\n按上述规则还原后，应得到可被 OpenSSL 以 X.509 证书方式正常解析的 PEM 内容。\n",
+            "example": "-----BEGIN#CERTIFICATE-----@MIIDWjCCAkKgAwIBAgIJAOclientCertDemoMA0GCSqGSIb3DQEBCwUAMDcxCzAJ@BgNVBAYTAkNOMQ4wDAYDVQQKDAVpS3VhaTEYMBYGA1UEAwwPaUt1YWkgQ2xpZW50@Q0EwHhcNMjYwMjA2MTAzMTEwWhcNMzYwMjA0MTAzMTEwWjA6MQswCQYDVQQGEwJD@TjEOMAwGA1UECgwFaUt1YWkxGzAZBgNVBAMMEm9wZW52cG4tY2xpZW50LWNlcnQw@ggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCclientCertDemoData@1111111111111111111111111111111111111111111111111111111111111111@2222222222222222222222222222222222222222222222222222222222222222@AgMBAAGjUDBOMB0GA1UdDgQWBBRclientCertDemo1111111111111111111111@MA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAAzzzzyyyyxxxxwwww@1111111111111111111111111111111111111111111111111111111111111111@2222222222222222222222222222222222222222222222222222222222222222@-----END#CERTIFICATE-----@"
+          },
+          "key": {
+            "type": "string",
+            "description": "客户端私钥，method=1 或 method=2 时必填，使用转义后的单行 PEM 字符串传递：\n- 原始换行符替换为 `@`\n- 原始空格替换为 `#`\n按上述规则还原后，应得到可被 OpenSSL 正常识别的 PEM 私钥内容。\n",
+            "example": "-----BEGIN#RSA#PRIVATE#KEY-----@MIIEowIBAAKCAQEAsclientPrivateKeyDemoData1111111111111111111111111@2222222222222222222222222222222222222222222222222222222222222222@3333333333333333333333333333333333333333333333333333333333333333@AoIBAFclientPrivateKeyDemoPayload444444444444444444444444444444444@5555555555555555555555555555555555555555555555555555555555555555@6666666666666666666666666666666666666666666666666666666666666666@-----END#RSA#PRIVATE#KEY-----@"
+          },
+          "redirect_gateway": {
+            "type": "string",
+            "description": "重定向网关，1为开启",
+            "example": ""
+          },
+          "accept_push_route": {
+            "type": "string",
+            "enum": [
+              "0",
+              "1"
+            ],
+            "description": "是否接受路由推送，0为拒绝，1为接受",
+            "example": "0"
+          },
+          "route": {
+            "type": "string",
+            "description": "自定义路由，多条逗号分隔，格式为IP/掩码",
+            "example": "192.168.1.0/24"
+          },
+          "comp_lzo": {
+            "type": "string",
+            "enum": [
+              "0",
+              "1"
+            ],
+            "description": "LZO压缩，0为关闭，1为开启",
+            "example": "1"
+          },
+          "tun_mtu": {
+            "type": "integer",
+            "description": "隧道MTU",
+            "minimum": 1000,
+            "maximum": 1500,
+            "example": 1400
+          },
+          "tunnel_ip": {
+            "type": "string",
+            "description": "隧道IP地址（只读，系统自动获取）",
+            "example": "10.8.0.2"
+          },
+          "check_link_mode": {
+            "type": "integer",
+            "description": "线路检测模式",
+            "enum": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "example": 1
+          },
+          "check_link_host": {
+            "type": "string",
+            "description": "线路检测地址，支持IPv4或域名",
+            "example": "www.baidu.com"
+          },
+          "timing_rst_switch": {
+            "type": "string",
+            "enum": [
+              "",
+              "0",
+              "1"
+            ],
+            "description": "定时重拨开关，空或0为关闭，1为开启",
+            "example": "0"
+          },
+          "timing_rst_week": {
+            "type": "string",
+            "description": "定时重拨星期，timing_rst_switch=1时必填，1-7代表周一到周日",
+            "example": ""
+          },
+          "timing_rst_time": {
+            "type": "string",
+            "description": "定时重拨时间，timing_rst_switch=1时必填，HH:MM格式",
+            "example": ""
+          },
+          "extra_config": {
+            "type": "string",
+            "description": "附加配置参数",
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "OpenvpnClientInput": {
+        "type": "object",
+        "required": [
+          "enabled",
+          "name",
+          "remote_addr",
+          "remote_port",
+          "method",
+          "interface",
+          "proto",
+          "dev_type",
+          "cipher",
+          "tun_mtu",
+          "ca",
+          "comp_lzo",
+          "accept_push_route",
+          "check_link_mode",
+          "check_link_host",
+          "timing_rst_switch"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "客户端启用状态，yes为启用，no为停用",
+            "example": "yes"
+          },
+          "name": {
+            "type": "string",
+            "description": "客户端连接名称，必须以ovpn开头，仅支持英文、数字、下划线，5-15字符，不可重复",
+            "pattern": "^ovpn[0-9A-Za-z_]{1,11}$",
+            "minLength": 5,
+            "maxLength": 15,
+            "example": "ovpn_office"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符",
+            "maxLength": 64,
+            "example": "主办公室OpenVPN连接"
+          },
+          "remote_addr": {
+            "type": "string",
+            "description": "OpenVPN服务器地址，支持IPv4、IPv6或域名",
+            "example": "vpn.ikuai.cn"
+          },
+          "remote_port": {
+            "type": "integer",
+            "description": "OpenVPN服务器端口",
+            "minimum": 1,
+            "maximum": 65535,
+            "example": 1194
+          },
+          "method": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "description": "认证方式，0=账号认证，1=tls-auth，2=tls-crypt",
+            "example": 0
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名，method=0时必填",
+            "maxLength": 60,
+            "example": "vpnuser"
+          },
+          "password": {
+            "type": "string",
+            "description": "密码，method=0时必填",
+            "maxLength": 64,
+            "example": "vpnpassword"
+          },
+          "interface": {
+            "type": "string",
+            "description": "绑定的网络接口，auto表示自动选择，或指定WAN接口名称",
+            "example": "wan1"
+          },
+          "proto": {
+            "type": "string",
+            "enum": [
+              "udp",
+              "tcp"
+            ],
+            "description": "传输协议",
+            "example": "udp"
+          },
+          "dev_type": {
+            "type": "string",
+            "enum": [
+              "tun",
+              "tap"
+            ],
+            "description": "设备类型",
+            "example": "tun"
+          },
+          "cipher": {
+            "type": "string",
+            "description": "加密算法",
+            "enum": [
+              "BF-CBC",
+              "BF-CFB",
+              "BF-OFB",
+              "DES-CFB",
+              "DES-CBC",
+              "RC2-CBC",
+              "RC2-CFB",
+              "RC2-OFB",
+              "DES-EDE-CBC",
+              "DES-EDE3-CBC",
+              "DES-OFB",
+              "DES-EDE-CFB",
+              "DES-EDE3-CFB",
+              "DES-EDE-OFB",
+              "DES-EDE3-OFB",
+              "DESX-CBC",
+              "RC2-40-CBC",
+              "CAST5-CBC",
+              "CAST5-CFB",
+              "CAST5-OFB",
+              "RC2-64-CBC",
+              "AES-128-CBC",
+              "AES-128-OFB",
+              "AES-128-CFB",
+              "AES-192-CBC",
+              "AES-192-OFB",
+              "AES-192-CFB",
+              "AES-256-CBC",
+              "AES-256-OFB",
+              "AES-256-CFB",
+              "AES-128-CFB1",
+              "AES-192-CFB1",
+              "AES-256-CFB1",
+              "AES-128-CFB8",
+              "AES-192-CFB8",
+              "AES-256-CFB8",
+              "AES-256-GCM",
+              "DES-CFB1",
+              "DES-CFB8",
+              "DES-EDE3-CFB1",
+              "DES-EDE3-CFB8",
+              "SEED-CBC",
+              "SEED-OFB",
+              "SEED-CFB",
+              "none"
+            ],
+            "example": "AES-256-CBC"
+          },
+          "tls_auth": {
+            "type": "string",
+            "description": "静态密钥，method=1或method=2时必填",
+            "example": ""
+          },
+          "ca": {
+            "type": "string",
+            "description": "CA证书，使用转义后的单行 PEM 字符串传递：\n- 原始换行符替换为 `@`\n- 原始空格替换为 `#`\n按上述规则还原后，应得到可被 OpenSSL 以 X.509 证书方式正常解析的 PEM 内容。\n",
+            "example": "-----BEGIN#CERTIFICATE-----@MIIDQTCCAimgAwIBAgIJAMqVcmi6/37xMA0GCSqGSIb3DQEBCwUAMDcxCzAJBgNV@BAYTAkNOMQ4wDAYDVQQKDAVpS3VhaTEYMBYGA1UEAwwPaUt1YWkgRGV2aWNlIENB@MB4XDTI2MDIwNjEwMzExMFoXDTM2MDIwNDEwMzExMFowNzELMAkGA1UEBhMCQ04x@DjAMBgNVBAoMBWlLdWFpMRgwFgYDVQQDDA9pS3VhaSBEZXZpY2UgQ0EwggEiMA0G@CSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCeCJGD4jX3PY5IdOYRv0gxfYPYikOc@hQkF5XAWQZgFxnuelDEkzl7RCOFVqsnwY/npOzI7VSsyLACPNkOdvyEvO+QGfRli@3zx0EfwRHGhLQbt/TDT0D9IZCab2oswdYjORtXcIe5dT3j2i8M2vv6wnJ7ip8GKu@ahfgJzakBZIRcQyEopTCmNbC5VAdCb/gQ0ezPnogPG6pbxxgE8OJIGH0+IgMFFTv@0wKVOCyHJgZNAZNnzP3yi5SCJvBnfU4wadXDAztGtq5El5l2lBP7s3KH65u0M/46@wo5NHyxZhn+M8S86EE4RkAeHI+1FqJASjW9ivNTRphFZMyW/Q4qbdEtrAgMBAAGj@UDBOMB0GA1UdDgQWBBRYp/q+2podeA2lc3khLBN+RGf+5TAfBgNVHSMEGDAWgBRY@p/q+2podeA2lc3khLBN+RGf+5TAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBCwUA@A4IBAQCHj5mxVYnaQcvMpjpWdXBS6XVpdiRpuqzRoqOYEnhzXOwwqnJ/EkJwa0RH@wFZUZrQC9bbxnIz+9kmlQKoTwtzzd9GVZeb3JeU9fcd/1BJdRLRiqqXw1EW0+QOV@7NCP1NqVMUsornypW1Y0JPcNfcvx/+oQXIIsS3EjOn+ye3ZASSRNi6+4zXNX2l53@8revjpAVnww0FS/zDeFGD9c9n6aYxvLxqXaBgNO3eOb2EAQAuNwncOvXZ9hBY8rz@A9jTuDVM1inhzROPguwt+j2moZedLm8DRgQxHjIkVvIOsq/50ApOVlGBCHjGJsay@tj3+p42yHrbmuCKvE6cCc0m2fhpw@-----END#CERTIFICATE-----@"
+          },
+          "cert": {
+            "type": "string",
+            "description": "客户端证书，method=1 或 method=2 时必填，使用转义后的单行 PEM 字符串传递：\n- 原始换行符替换为 `@`\n- 原始空格替换为 `#`\n按上述规则还原后，应得到可被 OpenSSL 以 X.509 证书方式正常解析的 PEM 内容。\n",
+            "example": "-----BEGIN#CERTIFICATE-----@MIIDWjCCAkKgAwIBAgIJAOclientCertDemoMA0GCSqGSIb3DQEBCwUAMDcxCzAJ@BgNVBAYTAkNOMQ4wDAYDVQQKDAVpS3VhaTEYMBYGA1UEAwwPaUt1YWkgQ2xpZW50@Q0EwHhcNMjYwMjA2MTAzMTEwWhcNMzYwMjA0MTAzMTEwWjA6MQswCQYDVQQGEwJD@TjEOMAwGA1UECgwFaUt1YWkxGzAZBgNVBAMMEm9wZW52cG4tY2xpZW50LWNlcnQw@ggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCclientCertDemoData@1111111111111111111111111111111111111111111111111111111111111111@2222222222222222222222222222222222222222222222222222222222222222@AgMBAAGjUDBOMB0GA1UdDgQWBBRclientCertDemo1111111111111111111111@MA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAAzzzzyyyyxxxxwwww@1111111111111111111111111111111111111111111111111111111111111111@2222222222222222222222222222222222222222222222222222222222222222@-----END#CERTIFICATE-----@"
+          },
+          "key": {
+            "type": "string",
+            "description": "客户端私钥，method=1 或 method=2 时必填，使用转义后的单行 PEM 字符串传递：\n- 原始换行符替换为 `@`\n- 原始空格替换为 `#`\n按上述规则还原后，应得到可被 OpenSSL 正常识别的 PEM 私钥内容。\n",
+            "example": "-----BEGIN#RSA#PRIVATE#KEY-----@MIIEowIBAAKCAQEAsclientPrivateKeyDemoData1111111111111111111111111@2222222222222222222222222222222222222222222222222222222222222222@3333333333333333333333333333333333333333333333333333333333333333@AoIBAFclientPrivateKeyDemoPayload444444444444444444444444444444444@5555555555555555555555555555555555555555555555555555555555555555@6666666666666666666666666666666666666666666666666666666666666666@-----END#RSA#PRIVATE#KEY-----@"
+          },
+          "redirect_gateway": {
+            "type": "string",
+            "description": "重定向网关，1为开启",
+            "example": ""
+          },
+          "accept_push_route": {
+            "type": "string",
+            "enum": [
+              "0",
+              "1"
+            ],
+            "description": "是否接受路由推送，0为拒绝，1为接受",
+            "example": "0"
+          },
+          "route": {
+            "type": "string",
+            "description": "自定义路由，多条逗号分隔，格式为IP/掩码",
+            "example": ""
+          },
+          "comp_lzo": {
+            "type": "string",
+            "enum": [
+              "0",
+              "1"
+            ],
+            "description": "LZO压缩，0为关闭，1为开启",
+            "example": "1"
+          },
+          "tun_mtu": {
+            "type": "integer",
+            "description": "隧道MTU",
+            "minimum": 1000,
+            "maximum": 1500,
+            "example": 1400
+          },
+          "check_link_mode": {
+            "type": "integer",
+            "description": "线路检测模式",
+            "enum": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "example": 1
+          },
+          "check_link_host": {
+            "type": "string",
+            "description": "线路检测地址，支持IPv4或域名",
+            "example": "www.baidu.com"
+          },
+          "timing_rst_switch": {
+            "type": "string",
+            "enum": [
+              "",
+              "0",
+              "1"
+            ],
+            "description": "定时重拨开关，空或0为关闭，1为开启",
+            "example": "0"
+          },
+          "timing_rst_week": {
+            "type": "string",
+            "description": "定时重拨星期，timing_rst_switch=1时必填，1-7代表周一到周日",
+            "example": ""
+          },
+          "timing_rst_time": {
+            "type": "string",
+            "description": "定时重拨时间，timing_rst_switch=1时必填，HH:MM格式",
+            "example": ""
+          },
+          "extra_config": {
+            "type": "string",
+            "description": "附加配置参数",
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "OpenvpnClientUpdateInput": {
+        "type": "object",
+        "required": [
+          "id",
+          "enabled",
+          "name",
+          "remote_addr",
+          "remote_port",
+          "method",
+          "interface",
+          "proto",
+          "dev_type",
+          "cipher",
+          "tun_mtu",
+          "ca",
+          "comp_lzo",
+          "accept_push_route",
+          "check_link_mode",
+          "check_link_host",
+          "timing_rst_switch",
+          "tls_auth",
+          "cert",
+          "key",
+          "username",
+          "password",
+          "extra_config",
+          "route",
+          "comment",
+          "timing_rst_week",
+          "timing_rst_time"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "客户端ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "客户端启用状态，yes为启用，no为停用",
+            "example": "yes"
+          },
+          "name": {
+            "type": "string",
+            "description": "客户端连接名称，必须以ovpn开头，仅支持英文、数字、下划线，5-15字符，不可重复",
+            "pattern": "^ovpn[0-9A-Za-z_]{1,11}$",
+            "minLength": 5,
+            "maxLength": 15,
+            "example": "ovpn_office"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符",
+            "maxLength": 64,
+            "example": "主办公室OpenVPN连接"
+          },
+          "remote_addr": {
+            "type": "string",
+            "description": "OpenVPN服务器地址，支持IPv4、IPv6或域名",
+            "example": "vpn.ikuai.cn"
+          },
+          "remote_port": {
+            "type": "integer",
+            "description": "OpenVPN服务器端口",
+            "minimum": 1,
+            "maximum": 65535,
+            "example": 1194
+          },
+          "method": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "description": "认证方式，0=账号认证，1=tls-auth，2=tls-crypt",
+            "example": 0
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名，method=0时必填",
+            "maxLength": 60,
+            "example": "vpnuser"
+          },
+          "password": {
+            "type": "string",
+            "description": "密码，method=0时必填",
+            "maxLength": 64,
+            "example": "vpnpassword"
+          },
+          "interface": {
+            "type": "string",
+            "description": "绑定的网络接口，auto表示自动选择，或指定WAN接口名称",
+            "example": "wan1"
+          },
+          "proto": {
+            "type": "string",
+            "enum": [
+              "udp",
+              "tcp"
+            ],
+            "description": "传输协议",
+            "example": "udp"
+          },
+          "dev_type": {
+            "type": "string",
+            "enum": [
+              "tun",
+              "tap"
+            ],
+            "description": "设备类型",
+            "example": "tun"
+          },
+          "cipher": {
+            "type": "string",
+            "description": "加密算法",
+            "enum": [
+              "BF-CBC",
+              "BF-CFB",
+              "BF-OFB",
+              "DES-CFB",
+              "DES-CBC",
+              "RC2-CBC",
+              "RC2-CFB",
+              "RC2-OFB",
+              "DES-EDE-CBC",
+              "DES-EDE3-CBC",
+              "DES-OFB",
+              "DES-EDE-CFB",
+              "DES-EDE3-CFB",
+              "DES-EDE-OFB",
+              "DES-EDE3-OFB",
+              "DESX-CBC",
+              "RC2-40-CBC",
+              "CAST5-CBC",
+              "CAST5-CFB",
+              "CAST5-OFB",
+              "RC2-64-CBC",
+              "AES-128-CBC",
+              "AES-128-OFB",
+              "AES-128-CFB",
+              "AES-192-CBC",
+              "AES-192-OFB",
+              "AES-192-CFB",
+              "AES-256-CBC",
+              "AES-256-OFB",
+              "AES-256-CFB",
+              "AES-128-CFB1",
+              "AES-192-CFB1",
+              "AES-256-CFB1",
+              "AES-128-CFB8",
+              "AES-192-CFB8",
+              "AES-256-CFB8",
+              "AES-256-GCM",
+              "DES-CFB1",
+              "DES-CFB8",
+              "DES-EDE3-CFB1",
+              "DES-EDE3-CFB8",
+              "SEED-CBC",
+              "SEED-OFB",
+              "SEED-CFB",
+              "none"
+            ],
+            "example": "AES-256-CBC"
+          },
+          "tls_auth": {
+            "type": "string",
+            "description": "静态密钥，method=1或method=2时必填",
+            "example": ""
+          },
+          "ca": {
+            "type": "string",
+            "description": "CA证书，使用转义后的单行 PEM 字符串传递：\n- 原始换行符替换为 `@`\n- 原始空格替换为 `#`\n按上述规则还原后，应得到可被 OpenSSL 以 X.509 证书方式正常解析的 PEM 内容。\n",
+            "example": "-----BEGIN#CERTIFICATE-----@MIIDQTCCAimgAwIBAgIJAMqVcmi6/37xMA0GCSqGSIb3DQEBCwUAMDcxCzAJBgNV@BAYTAkNOMQ4wDAYDVQQKDAVpS3VhaTEYMBYGA1UEAwwPaUt1YWkgRGV2aWNlIENB@MB4XDTI2MDIwNjEwMzExMFoXDTM2MDIwNDEwMzExMFowNzELMAkGA1UEBhMCQ04x@DjAMBgNVBAoMBWlLdWFpMRgwFgYDVQQDDA9pS3VhaSBEZXZpY2UgQ0EwggEiMA0G@CSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCeCJGD4jX3PY5IdOYRv0gxfYPYikOc@hQkF5XAWQZgFxnuelDEkzl7RCOFVqsnwY/npOzI7VSsyLACPNkOdvyEvO+QGfRli@3zx0EfwRHGhLQbt/TDT0D9IZCab2oswdYjORtXcIe5dT3j2i8M2vv6wnJ7ip8GKu@ahfgJzakBZIRcQyEopTCmNbC5VAdCb/gQ0ezPnogPG6pbxxgE8OJIGH0+IgMFFTv@0wKVOCyHJgZNAZNnzP3yi5SCJvBnfU4wadXDAztGtq5El5l2lBP7s3KH65u0M/46@wo5NHyxZhn+M8S86EE4RkAeHI+1FqJASjW9ivNTRphFZMyW/Q4qbdEtrAgMBAAGj@UDBOMB0GA1UdDgQWBBRYp/q+2podeA2lc3khLBN+RGf+5TAfBgNVHSMEGDAWgBRY@p/q+2podeA2lc3khLBN+RGf+5TAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBCwUA@A4IBAQCHj5mxVYnaQcvMpjpWdXBS6XVpdiRpuqzRoqOYEnhzXOwwqnJ/EkJwa0RH@wFZUZrQC9bbxnIz+9kmlQKoTwtzzd9GVZeb3JeU9fcd/1BJdRLRiqqXw1EW0+QOV@7NCP1NqVMUsornypW1Y0JPcNfcvx/+oQXIIsS3EjOn+ye3ZASSRNi6+4zXNX2l53@8revjpAVnww0FS/zDeFGD9c9n6aYxvLxqXaBgNO3eOb2EAQAuNwncOvXZ9hBY8rz@A9jTuDVM1inhzROPguwt+j2moZedLm8DRgQxHjIkVvIOsq/50ApOVlGBCHjGJsay@tj3+p42yHrbmuCKvE6cCc0m2fhpw@-----END#CERTIFICATE-----@"
+          },
+          "cert": {
+            "type": "string",
+            "description": "客户端证书，method=1 或 method=2 时必填，使用转义后的单行 PEM 字符串传递：\n- 原始换行符替换为 `@`\n- 原始空格替换为 `#`\n按上述规则还原后，应得到可被 OpenSSL 以 X.509 证书方式正常解析的 PEM 内容。\n",
+            "example": "-----BEGIN#CERTIFICATE-----@MIIDWjCCAkKgAwIBAgIJAOclientCertDemoMA0GCSqGSIb3DQEBCwUAMDcxCzAJ@BgNVBAYTAkNOMQ4wDAYDVQQKDAVpS3VhaTEYMBYGA1UEAwwPaUt1YWkgQ2xpZW50@Q0EwHhcNMjYwMjA2MTAzMTEwWhcNMzYwMjA0MTAzMTEwWjA6MQswCQYDVQQGEwJD@TjEOMAwGA1UECgwFaUt1YWkxGzAZBgNVBAMMEm9wZW52cG4tY2xpZW50LWNlcnQw@ggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCclientCertDemoData@1111111111111111111111111111111111111111111111111111111111111111@2222222222222222222222222222222222222222222222222222222222222222@AgMBAAGjUDBOMB0GA1UdDgQWBBRclientCertDemo1111111111111111111111@MA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAAzzzzyyyyxxxxwwww@1111111111111111111111111111111111111111111111111111111111111111@2222222222222222222222222222222222222222222222222222222222222222@-----END#CERTIFICATE-----@"
+          },
+          "key": {
+            "type": "string",
+            "description": "客户端私钥，method=1 或 method=2 时必填，使用转义后的单行 PEM 字符串传递：\n- 原始换行符替换为 `@`\n- 原始空格替换为 `#`\n按上述规则还原后，应得到可被 OpenSSL 正常识别的 PEM 私钥内容。\n",
+            "example": "-----BEGIN#RSA#PRIVATE#KEY-----@MIIEowIBAAKCAQEAsclientPrivateKeyDemoData1111111111111111111111111@2222222222222222222222222222222222222222222222222222222222222222@3333333333333333333333333333333333333333333333333333333333333333@AoIBAFclientPrivateKeyDemoPayload444444444444444444444444444444444@5555555555555555555555555555555555555555555555555555555555555555@6666666666666666666666666666666666666666666666666666666666666666@-----END#RSA#PRIVATE#KEY-----@"
+          },
+          "accept_push_route": {
+            "type": "string",
+            "enum": [
+              "0",
+              "1"
+            ],
+            "description": "是否接受路由推送，0为拒绝，1为接受",
+            "example": "0"
+          },
+          "route": {
+            "type": "string",
+            "description": "自定义路由，多条逗号分隔，格式为IP/掩码",
+            "example": ""
+          },
+          "comp_lzo": {
+            "type": "string",
+            "enum": [
+              "0",
+              "1"
+            ],
+            "description": "LZO压缩，0为关闭，1为开启",
+            "example": "1"
+          },
+          "tun_mtu": {
+            "type": "integer",
+            "description": "隧道MTU",
+            "minimum": 1000,
+            "maximum": 1500,
+            "example": 1400
+          },
+          "check_link_mode": {
+            "type": "integer",
+            "description": "线路检测模式",
+            "enum": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "example": 1
+          },
+          "check_link_host": {
+            "type": "string",
+            "description": "线路检测地址，支持IPv4或域名",
+            "example": "www.baidu.com"
+          },
+          "timing_rst_switch": {
+            "type": "string",
+            "enum": [
+              "",
+              "0",
+              "1"
+            ],
+            "description": "定时重拨开关，空或0为关闭，1为开启",
+            "example": "0"
+          },
+          "timing_rst_week": {
+            "type": "string",
+            "description": "定时重拨星期，timing_rst_switch=1时必填，1-7代表周一到周日",
+            "example": ""
+          },
+          "timing_rst_time": {
+            "type": "string",
+            "description": "定时重拨时间，timing_rst_switch=1时必填，HH:MM格式",
+            "example": ""
+          },
+          "extra_config": {
+            "type": "string",
+            "description": "附加配置参数",
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "OpenVPN客户端",
+      "description": "OpenVPN客户端的管理和配置"
+    }
+  ]
+}

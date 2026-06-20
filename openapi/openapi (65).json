@@ -1,0 +1,1306 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "MAC访问控制API",
+    "version": "1.0.0",
+    "summary": "MAC地址访问控制完整管理",
+    "description": "提供MAC地址访问控制的完整管理功能，包括：\n- MAC黑白名单模式配置（黑名单/白名单模式切换）\n- 创建、更新、删除MAC黑白名单策略\n- 启用/禁用MAC策略\n- 支持时间规则控制\n- 终端名称管理\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/security/mac-mode": {
+      "get": {
+        "summary": "获取MAC黑白名单模式",
+        "description": "获取当前配置的MAC访问控制模式（黑名单或白名单模式）",
+        "operationId": "getMacAclMode",
+        "tags": [
+          "acl-mac"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取MAC访问控制模式",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MacAclModeResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "acl_mac": 1
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "设置MAC黑白名单模式",
+        "description": "配置MAC访问控制模式，可选择黑名单模式或白名单模式。\n- 黑名单模式：阻止指定的MAC地址访问\n- 白名单模式：仅允许指定的MAC地址访问\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateMacAclMode",
+        "tags": [
+          "acl-mac"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "MAC访问控制模式配置",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MacAclModeInput"
+              },
+              "example": {
+                "acl_mac": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "MAC访问控制模式更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "message": "Success"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/security/mac-rules": {
+      "get": {
+        "summary": "获取MAC黑白名单策略列表",
+        "description": "获取MAC地址黑白名单策略列表，支持分页和过滤查询",
+        "operationId": "getMacRules",
+        "tags": [
+          "acl-mac"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码（从1开始）",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "每页记录数",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 20
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：\n- \"==（等于）\"\n- \"!=（不等于）\"\n- \">（大于）\"\n- \">=（大于等于）\"\n- \"<（小于）\"\n- \"<=（小于等于）\"\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,filter=field2==value2\n\n支持的字段：enabled、mac、tagname、expires等\n使用示例：\n- 单条件：filter=enabled==yes\n- AND条件：filter=enabled==yes&filter=expires==0\n- OR条件：filter=mac==08:9b:4b:00:10:2e,filter=mac==08:9b:4b:00:10:1e\n",
+            "schema": {
+              "type": "string"
+            },
+            "example": "enabled==yes&mac==08:9b:4b:00:10:2e"
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "排序字段（id, create_time等）",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "id",
+                "create_time",
+                "mac"
+              ],
+              "default": "id"
+            }
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "description": "排序方式（asc:升序, desc:降序）",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取MAC策略列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MacRulesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "创建MAC黑白名单策略",
+        "description": "创建新的MAC地址黑白名单策略，支持时间规则控制\n",
+        "operationId": "createMacRule",
+        "tags": [
+          "acl-mac"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "MAC策略配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MacRuleInput"
+              },
+              "example": {
+                "mac": "08:9b:4b:00:10:2e",
+                "enabled": "yes",
+                "comment": "111",
+                "time": {
+                  "custom": [
+                    {
+                      "type": "weekly",
+                      "weekdays": "1234567",
+                      "start_time": "00:00",
+                      "end_time": "20:00",
+                      "comment": "test11"
+                    },
+                    {
+                      "type": "date",
+                      "start_time": "2026-05-01T08:00",
+                      "end_time": "2026-05-10T08:00",
+                      "comment": "test11"
+                    }
+                  ],
+                  "object": [
+                    {
+                      "type": 4,
+                      "gp_name": "11",
+                      "gid": "TIMEGP1"
+                    }
+                  ]
+                },
+                "tagname": "aaaa"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success",
+                      "rowid": 1
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/security/mac-rules/{id}": {
+      "get": {
+        "summary": "获取单个MAC策略",
+        "description": "根据ID获取指定的MAC策略详情",
+        "operationId": "getMacRule",
+        "tags": [
+          "acl-mac"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "MAC策略ID",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取MAC策略详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MacRuleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新MAC策略",
+        "description": "完整更新指定的MAC策略配置\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateMacRule",
+        "tags": [
+          "acl-mac"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "MAC策略ID",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "MAC策略更新数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MacRuleInput"
+              },
+              "example": {
+                "mac": "08:9b:4b:00:10:2e",
+                "enabled": "yes",
+                "comment": "111",
+                "expires": 0,
+                "time": {
+                  "custom": [
+                    {
+                      "type": "weekly",
+                      "weekdays": "1234567",
+                      "start_time": "00:00",
+                      "end_time": "20:00",
+                      "comment": "test11"
+                    },
+                    {
+                      "type": "date",
+                      "start_time": "2026-05-01T08:00",
+                      "end_time": "2026-05-10T08:00",
+                      "comment": "test11"
+                    }
+                  ],
+                  "object": [
+                    {
+                      "type": 4,
+                      "gp_name": "11",
+                      "gid": "TIMEGP1"
+                    }
+                  ]
+                },
+                "tagname": "aaaa"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "启用/停用MAC策略",
+        "description": "切换MAC策略的启用状态",
+        "operationId": "toggleMacRule",
+        "tags": [
+          "acl-mac"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "MAC策略ID",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "策略状态",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "enabled"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "string",
+                    "description": "策略状态",
+                    "enum": [
+                      "yes",
+                      "no"
+                    ],
+                    "example": "yes"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除MAC策略",
+        "description": "删除指定的MAC策略",
+        "operationId": "deleteMacRule",
+        "tags": [
+          "acl-mac"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "MAC策略ID",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MAC策略删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "message": "success"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "请求参数错误"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "未认证或凭证无效"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "无权限访问MAC策略"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "MAC策略不存在"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "MAC地址已存在或规则名称重复"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "服务器内部错误（查看服务器日志、修复异常）"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "MacAclModeInput": {
+        "type": "object",
+        "required": [
+          "acl_mac"
+        ],
+        "properties": {
+          "acl_mac": {
+            "type": "integer",
+            "description": "MAC访问控制模式",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "MacAclModeResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "acl_mac": {
+                "type": "integer",
+                "description": "MAC访问控制模式（0:黑名单模式, 1:白名单模式）",
+                "enum": [
+                  0,
+                  1
+                ],
+                "example": 1
+              }
+            },
+            "required": [
+              "acl_mac"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "MacRule": {
+        "type": "object",
+        "required": [
+          "id",
+          "mac",
+          "enabled",
+          "tagname"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "策略ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "mac": {
+            "type": "string",
+            "description": "MAC地址",
+            "pattern": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$",
+            "example": "08:9b:4b:00:10:2e"
+          },
+          "enabled": {
+            "type": "string",
+            "description": "策略状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "名称，支持中文、英文、数字、下划线和连字符，1-15个字符，不能以下划线或连字符开头",
+            "example": "aaaa"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "example": "111"
+          },
+          "time": {
+            "$ref": "#/components/schemas/TimeObject"
+          },
+          "expires": {
+            "type": "integer",
+            "description": "到期时间戳（0表示永不过期）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "termname": {
+            "type": "string",
+            "description": "终端名称",
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "MacRuleInput": {
+        "type": "object",
+        "required": [
+          "mac",
+          "enabled",
+          "tagname",
+          "expires"
+        ],
+        "properties": {
+          "mac": {
+            "type": "string",
+            "description": "MAC地址",
+            "pattern": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$",
+            "example": "08:9b:4b:00:10:2e"
+          },
+          "enabled": {
+            "type": "string",
+            "description": "策略状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "名称，支持中文、英文、数字、下划线和连字符，1-15个字符，不能以下划线或连字符开头",
+            "example": "aaaa"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "example": "111"
+          },
+          "time": {
+            "$ref": "#/components/schemas/TimeObject"
+          },
+          "expires": {
+            "type": "integer",
+            "description": "到期时间，Unix时间戳，0表示永不过期",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "termname": {
+            "type": "string",
+            "description": "终端名称",
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateMacRuleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应代码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "success"
+          },
+          "rowid": {
+            "type": "integer",
+            "description": "新创建的MAC策略ID",
+            "minimum": 1,
+            "example": 1
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "rowid"
+        ],
+        "additionalProperties": false
+      },
+      "MacRuleResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/MacRule"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "MacRulesResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "返回记录总数",
+                "minimum": 0,
+                "example": 2
+              },
+              "data": {
+                "type": "array",
+                "description": "MAC策略列表",
+                "items": {
+                  "$ref": "#/components/schemas/MacRule"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "TimeObject": {
+        "type": "object",
+        "properties": {
+          "custom": {
+            "type": "array",
+            "description": "自定义时间规则列表",
+            "items": {
+              "$ref": "#/components/schemas/TimeRule"
+            }
+          },
+          "object": {
+            "type": "array",
+            "description": "时间对象列表",
+            "items": {
+              "$ref": "#/components/schemas/TimeObjectGroup"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "TimeObjectGroup": {
+        "type": "object",
+        "required": [
+          "type",
+          "gp_name",
+          "gid"
+        ],
+        "properties": {
+          "type": {
+            "type": "integer",
+            "description": "对象类型",
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "example": 4
+          },
+          "gp_name": {
+            "type": "string",
+            "description": "对象名称",
+            "example": "11"
+          },
+          "gid": {
+            "type": "string",
+            "description": "对象ID",
+            "example": "TIMEGP1"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TimeRule": {
+        "type": "object",
+        "required": [
+          "type",
+          "start_time",
+          "end_time"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "时间规则类型",
+            "enum": [
+              "weekly",
+              "date"
+            ],
+            "example": "weekly"
+          },
+          "start_time": {
+            "type": "string",
+            "description": "开始时间",
+            "example": "00:00"
+          },
+          "end_time": {
+            "type": "string",
+            "description": "结束时间",
+            "example": "20:00"
+          },
+          "weekdays": {
+            "type": "string",
+            "description": "星期几（1-7代表周一到周日）",
+            "pattern": "^[1-7]+$",
+            "example": "1234567"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "example": "工作时间段"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/CreateMacRuleResponse"
+          },
+          {
+            "$ref": "#/components/schemas/CreateBusinessErrorResponse"
+          }
+        ],
+        "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "CreateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "acl-mac",
+      "x-displayName": "MAC访问控制",
+      "description": "MAC地址访问控制完整管理，包括黑白名单模式配置、策略创建、时间规则控制和终端名称管理"
+    }
+  ]
+}

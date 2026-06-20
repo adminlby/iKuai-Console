@@ -1,0 +1,596 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "PPTP服务器管理API",
+    "version": "1.0.0",
+    "summary": "PPTP服务器配置管理",
+    "description": "提供PPTP服务器的配置管理功能，包括：\n- PPTP服务基础配置\n- 服务器地址和端口配置\n- 地址池和DNS配置\n- MPPE加密协议配置\n- 网络传输优化设置\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/vpn/pptp/services": {
+      "get": {
+        "summary": "获取PPTP服务器配置",
+        "description": "获取当前PPTP服务器的配置信息。\n包括服务状态、网络配置、DNS设置、加密协议等。\n",
+        "operationId": "getPptpServerConfig",
+        "tags": [
+          "pptp-server"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取PPTP配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PptpServerConfigResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新PPTP服务器配置",
+        "description": "更新PPTP服务器的配置信息。\n支持更新网络配置、DNS设置、加密协议、传输参数等。\n\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updatePptpServerConfig",
+        "tags": [
+          "pptp-server"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "PPTP服务器配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PptpServerConfigInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "请求参数错误"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "未认证或凭证无效"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "无权限访问"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "资源不存在"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "资源冲突（如唯一性冲突）"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "服务器内部错误（查看服务器日志、修复异常）"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "PptpServerConfig": {
+        "type": "object",
+        "required": [
+          "id",
+          "enabled",
+          "dns1",
+          "dns2",
+          "addr_pool",
+          "open_mppe",
+          "server_ip",
+          "server_port",
+          "mtu",
+          "mru"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "配置ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "description": "服务开启状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "no"
+          },
+          "dns1": {
+            "type": "string",
+            "description": "DNS服务器1，必须为合法IP",
+            "example": "114.114.114.114"
+          },
+          "dns2": {
+            "type": "string",
+            "description": "DNS服务器2，必须为合法IP",
+            "example": "119.29.29.29"
+          },
+          "addr_pool": {
+            "type": "string",
+            "description": "客户端地址池",
+            "example": "10.0.0.2-10.0.0.254"
+          },
+          "open_mppe": {
+            "type": "integer",
+            "description": "MPPE加密协议，0-关闭，1-强制开启，2-自动协商",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "example": 2
+          },
+          "server_ip": {
+            "type": "string",
+            "description": "服务器地址，必须为合法IP",
+            "example": "10.0.0.1"
+          },
+          "server_port": {
+            "type": "integer",
+            "description": "服务器端口",
+            "minimum": 1,
+            "maximum": 65535,
+            "default": 1723,
+            "example": 1723
+          },
+          "mtu": {
+            "type": "integer",
+            "description": "MTU值",
+            "minimum": 1000,
+            "maximum": 1492,
+            "default": 1400,
+            "example": 1400
+          },
+          "mru": {
+            "type": "integer",
+            "description": "MRU值",
+            "minimum": 1000,
+            "maximum": 1492,
+            "default": 1400,
+            "example": 1400
+          }
+        },
+        "additionalProperties": false
+      },
+      "PptpServerConfigInput": {
+        "type": "object",
+        "required": [
+          "enabled",
+          "dns1",
+          "dns2",
+          "addr_pool",
+          "open_mppe",
+          "server_ip",
+          "server_port",
+          "mtu",
+          "mru"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "description": "服务开启状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "dns1": {
+            "type": "string",
+            "description": "DNS服务器1，必须为合法IP",
+            "default": "114.114.114.114",
+            "example": "114.114.114.114"
+          },
+          "dns2": {
+            "type": "string",
+            "description": "DNS服务器2，必须为合法IP",
+            "default": "119.29.29.29",
+            "example": "119.29.29.29"
+          },
+          "addr_pool": {
+            "type": "string",
+            "description": "客户端地址池",
+            "default": "10.0.0.2-10.0.0.254",
+            "example": "10.0.0.2-10.0.0.254"
+          },
+          "open_mppe": {
+            "type": "integer",
+            "description": "MPPE加密协议，0-关闭，1-强制开启，2-自动协商",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 2,
+            "example": 2
+          },
+          "server_ip": {
+            "type": "string",
+            "description": "服务器地址，必须为合法IP",
+            "default": "10.0.0.1",
+            "example": "10.0.0.1"
+          },
+          "server_port": {
+            "type": "integer",
+            "description": "服务器端口，不传时默认1723",
+            "minimum": 1,
+            "maximum": 65535,
+            "default": 1723,
+            "example": 1723
+          },
+          "mtu": {
+            "type": "integer",
+            "description": "MTU值",
+            "minimum": 1000,
+            "maximum": 1492,
+            "default": 1400,
+            "example": 1400
+          },
+          "mru": {
+            "type": "integer",
+            "description": "MRU值",
+            "minimum": 1000,
+            "maximum": 1492,
+            "default": 1400,
+            "example": 1400
+          }
+        },
+        "additionalProperties": false
+      },
+      "PptpServerConfigResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PptpServerConfig"
+                }
+              }
+            },
+            "required": [
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "pptp-server",
+      "x-displayName": "PPTP服务器管理",
+      "description": "PPTP服务器的配置管理，包括网络配置和MPPE加密设置"
+    }
+  ]
+}

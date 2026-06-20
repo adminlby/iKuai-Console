@@ -1,0 +1,1253 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "FTP服务管理API",
+    "version": "1.0.0",
+    "summary": "FTP服务的完整管理功能",
+    "description": "提供FTP服务的完整管理功能，包括：\n- FTP服务开关、端口、外网访问配置\n- FTP用户增删改查\n- 用户权限和限速控制\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/advanced-service/ftp-config": {
+      "get": {
+        "summary": "获取FTP服务配置",
+        "description": "获取当前FTP服务的配置信息，包括服务开关、端口和外网访问控制。",
+        "operationId": "getFtpConfig",
+        "tags": [
+          "ftp-config"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取FTP服务配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FtpConfigResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "open_ftp": 0,
+                    "ftp_port": 21,
+                    "ftp_access": 1
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新FTP服务配置",
+        "description": "全量更新FTP服务配置。所有字段均为必填，即使未修改也必须携带原值。\n\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateFtpConfig",
+        "tags": [
+          "ftp-config"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "FTP服务配置（全量更新，所有字段必填，未修改的字段须传原值）",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FtpConfigEditInput"
+              },
+              "example": {
+                "open_ftp": 1,
+                "ftp_port": 21,
+                "ftp_access": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/advanced-service/ftp-users": {
+      "get": {
+        "summary": "获取FTP用户列表",
+        "description": "获取FTP用户列表，支持分页、过滤和排序。",
+        "operationId": "listFtpUsers",
+        "tags": [
+          "ftp-users"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码（从1开始）",
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "每页记录数",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "搜索字段名，与pattern联合使用",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "username",
+                "enabled",
+                "permission",
+                "home_dir"
+              ]
+            }
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "description": "搜索关键词，与key联合使用",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "排序字段",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "id",
+                "username",
+                "enabled"
+              ],
+              "default": "id"
+            }
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "description": "排序方式",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取FTP用户列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FtpUserListResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "total": 1,
+                    "data": [
+                      {
+                        "id": 1,
+                        "enabled": "yes",
+                        "username": "testuser",
+                        "tagname": "testuser",
+                        "passwd": "123456",
+                        "permission": "rw",
+                        "home_dir": "/test-001",
+                        "upload": 0,
+                        "download": 0
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "新增FTP用户",
+        "description": "创建新的FTP用户。tagname由系统自动设置为username的值，无需传入。\n\n`home_dir` 应先通过 `GET /api/v4.0/system/files?path=/` 查询可用存储目录，\n再从返回的 `results.data[].f_name` 组合为目录路径，例如 `/test-001`。\n",
+        "operationId": "createFtpUser",
+        "tags": [
+          "ftp-users"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "FTP用户创建数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FtpUserCreateInput"
+              },
+              "example": {
+                "enabled": "yes",
+                "username": "testuser",
+                "passwd": "123456",
+                "permission": "rw",
+                "home_dir": "/test-001",
+                "upload": 0,
+                "download": 0
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "FTP用户创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "success",
+                  "rowid": 1
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/advanced-service/ftp-users/{id}": {
+      "put": {
+        "summary": "更新FTP用户",
+        "description": "全量更新FTP用户配置。所有字段均为必填，即使未修改也必须携带原值。tagname由系统自动设置为username的值。\n\n`home_dir` 应先通过 `GET /api/v4.0/system/files?path=/` 查询可用存储目录，\n再从返回的 `results.data[].f_name` 组合为目录路径，例如 `/test-001`。\n\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateFtpUser",
+        "tags": [
+          "ftp-users"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ftpUserIdParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "FTP用户更新数据（全量更新，所有字段必填，未修改的字段须传原值）",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FtpUserEditInput"
+              },
+              "example": {
+                "enabled": "yes",
+                "username": "testuser",
+                "passwd": "123456",
+                "permission": "rw",
+                "home_dir": "/test-001",
+                "upload": 0,
+                "download": 0,
+                "tagname": "testuser"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "启用/停用FTP用户",
+        "description": "快速启用或停用指定的FTP用户账户。",
+        "operationId": "toggleFtpUser",
+        "tags": [
+          "ftp-users"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ftpUserIdParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "enabled"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "string",
+                    "description": "用户状态",
+                    "enum": [
+                      "yes",
+                      "no"
+                    ],
+                    "example": "yes"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除FTP用户",
+        "description": "删除指定的FTP用户账户。",
+        "operationId": "deleteFtpUser",
+        "tags": [
+          "ftp-users"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ftpUserIdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "FTP用户删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "ftpUserIdParam": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "FTP用户ID",
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 1
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应状态码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "CreateResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应状态码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "success"
+          },
+          "rowid": {
+            "type": "integer",
+            "description": "新创建的记录ID",
+            "minimum": 1,
+            "example": 1
+          }
+        },
+        "required": [
+          "message",
+          "rowid"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "错误代码",
+            "example": 3001
+          },
+          "message": {
+            "type": "string",
+            "description": "错误信息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "详细错误信息",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "description": "错误字段"
+                },
+                "type": {
+                  "type": "string",
+                  "description": "错误类型"
+                },
+                "msg": {
+                  "type": "string",
+                  "description": "错误消息"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "FtpConfigResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "open_ftp": {
+                "type": "integer",
+                "description": "FTP服务开关（0关闭，1开启）",
+                "enum": [
+                  0,
+                  1
+                ],
+                "example": 0
+              },
+              "ftp_port": {
+                "type": "integer",
+                "description": "FTP服务端口",
+                "example": 21
+              },
+              "ftp_access": {
+                "type": "integer",
+                "description": "是否允许外网访问（0不允许，1允许）",
+                "enum": [
+                  0,
+                  1
+                ],
+                "example": 1
+              }
+            },
+            "required": [
+              "open_ftp",
+              "ftp_port",
+              "ftp_access"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "FtpConfigEditInput": {
+        "type": "object",
+        "description": "FTP服务配置全量编辑。所有字段均为必填，未修改的字段须传原值。\n\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "required": [
+          "open_ftp",
+          "ftp_port",
+          "ftp_access"
+        ],
+        "properties": {
+          "open_ftp": {
+            "type": "integer",
+            "description": "FTP服务开关（0关闭，1开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "ftp_port": {
+            "type": "integer",
+            "description": "FTP服务端口，范围1-65535，但排除600-799、1234-1240、12345、34567",
+            "minimum": 1,
+            "maximum": 65535,
+            "example": 21
+          },
+          "ftp_access": {
+            "type": "integer",
+            "description": "是否允许外网访问（0不允许，1允许）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "FtpUser": {
+        "type": "object",
+        "description": "FTP用户信息（GET返回）",
+        "required": [
+          "id",
+          "enabled",
+          "username",
+          "tagname",
+          "passwd",
+          "permission",
+          "home_dir"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "用户ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "description": "用户状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名（唯一）",
+            "maxLength": 15,
+            "example": "testuser"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "名称标签（系统自动设为username值）",
+            "example": "testuser"
+          },
+          "passwd": {
+            "type": "string",
+            "description": "密码（返回时为解密后的明文）",
+            "example": "123456"
+          },
+          "permission": {
+            "type": "string",
+            "description": "读写权限（rw读写，ro只读）",
+            "enum": [
+              "rw",
+              "ro"
+            ],
+            "example": "rw"
+          },
+          "home_dir": {
+            "type": "string",
+            "description": "用户目录。取值应来自 `GET /api/v4.0/system/files?path=/` 返回的存储目录路径",
+            "example": "/test-001"
+          },
+          "upload": {
+            "type": "integer",
+            "description": "上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "maximum": 1000000000,
+            "default": 0,
+            "example": 0
+          },
+          "download": {
+            "type": "integer",
+            "description": "下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "maximum": 1000000000,
+            "default": 0,
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "FtpUserCreateInput": {
+        "type": "object",
+        "description": "FTP用户新增输入。tagname由系统自动设置为username，无需传入。",
+        "required": [
+          "enabled",
+          "username",
+          "passwd",
+          "permission",
+          "home_dir"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "description": "用户状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名（唯一，不可重复）",
+            "minLength": 1,
+            "maxLength": 15,
+            "example": "testuser"
+          },
+          "passwd": {
+            "type": "string",
+            "description": "密码",
+            "minLength": 1,
+            "maxLength": 64,
+            "example": "123456"
+          },
+          "permission": {
+            "type": "string",
+            "description": "读写权限（rw读写，ro只读）",
+            "enum": [
+              "rw",
+              "ro"
+            ],
+            "example": "rw"
+          },
+          "home_dir": {
+            "type": "string",
+            "description": "用户目录。先调用 `GET /api/v4.0/system/files?path=/` 获取可用目录，再填写对应目录路径；不可为 `/`，不可含 `..`",
+            "example": "/test-001"
+          },
+          "upload": {
+            "type": "integer",
+            "description": "上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "maximum": 1000000000,
+            "default": 0,
+            "example": 0
+          },
+          "download": {
+            "type": "integer",
+            "description": "下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "maximum": 1000000000,
+            "default": 0,
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "FtpUserEditInput": {
+        "type": "object",
+        "description": "FTP用户全量编辑。所有字段均为必填，未修改的字段须传原值。tagname由系统自动设为username值，但仍须传入。\n\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "required": [
+          "enabled",
+          "username",
+          "passwd",
+          "permission",
+          "home_dir",
+          "tagname"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "description": "用户状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名（唯一，不可重复）",
+            "minLength": 1,
+            "maxLength": 15,
+            "example": "testuser"
+          },
+          "passwd": {
+            "type": "string",
+            "description": "密码",
+            "minLength": 1,
+            "maxLength": 64,
+            "example": "123456"
+          },
+          "permission": {
+            "type": "string",
+            "description": "读写权限（rw读写，ro只读）",
+            "enum": [
+              "rw",
+              "ro"
+            ],
+            "example": "rw"
+          },
+          "home_dir": {
+            "type": "string",
+            "description": "用户目录。先调用 `GET /api/v4.0/system/files?path=/` 获取可用目录，再填写对应目录路径；不可为 `/`，不可含 `..`",
+            "example": "/test-001"
+          },
+          "upload": {
+            "type": "integer",
+            "description": "上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "maximum": 1000000000,
+            "default": 0,
+            "example": 0
+          },
+          "download": {
+            "type": "integer",
+            "description": "下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "maximum": 1000000000,
+            "default": 0,
+            "example": 0
+          },
+          "tagname": {
+            "type": "string",
+            "description": "名称标签（系统自动设为username值，但须传入）",
+            "example": "testuser"
+          }
+        },
+        "additionalProperties": false
+      },
+      "FtpUserListResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "总记录数",
+                "minimum": 0,
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/FtpUser"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 3001,
+              "message": "请求参数不合法",
+              "details": [
+                {
+                  "field": "permission",
+                  "type": "invalid",
+                  "msg": "permission must be ro or rw"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 401,
+              "message": "未认证或凭证无效"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 403,
+              "message": "无权限访问"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 404,
+              "message": "资源不存在"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突（如用户名重复）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 3001,
+              "message": "请求参数不合法",
+              "details": [
+                {
+                  "field": "username",
+                  "type": "unique",
+                  "msg": "用户名已存在"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 500,
+              "message": "服务器内部错误"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT认证令牌"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "ftp-config",
+      "x-displayName": "FTP配置",
+      "description": "FTP服务基础配置管理（开关、端口、外网访问）"
+    },
+    {
+      "name": "ftp-users",
+      "x-displayName": "FTP用户管理",
+      "description": "FTP用户的增删改查操作"
+    }
+  ]
+}

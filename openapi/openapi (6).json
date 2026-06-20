@@ -1,0 +1,619 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "内核参数配置API",
+    "version": "1.0.0",
+    "summary": "内核网络参数的完整管理功能",
+    "description": "提供内核网络参数的完整管理功能，包括：\n- BBR拥塞控制算法配置\n- TCP连接各阶段超时参数配置\n- UDP数据包超时参数配置\n- ICMP数据包超时参数配置\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/system/kernel-params": {
+      "get": {
+        "summary": "获取内核参数配置",
+        "description": "获取当前内核网络参数配置，包括BBR、TCP/UDP/ICMP各超时时间。",
+        "operationId": "getKernelParams",
+        "tags": [
+          "kernel-params"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取内核参数配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KernelParamsResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "data": [
+                      {
+                        "id": 1,
+                        "bbr": 0,
+                        "syn_recv_timeout": 5,
+                        "syn_send_timeout": 5,
+                        "established_timeout": 1800,
+                        "fin_wait_timeout": 10,
+                        "last_ack_timeout": 10,
+                        "close_wait_timeout": 10,
+                        "time_wait_timeout": 10,
+                        "close_timeout": 5,
+                        "udp_timeout": 10,
+                        "udp_stream_timeout": 60,
+                        "icmp_timeout": 10
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新内核参数配置",
+        "description": "全量更新内核网络参数配置。所有字段均为必填，即使未修改也必须携带原值。",
+        "operationId": "updateKernelParams",
+        "tags": [
+          "kernel-params"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "全量更新，所有字段必填，未修改的字段须传原值",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KernelParamsEditInput"
+              },
+              "example": {
+                "bbr": 0,
+                "syn_recv_timeout": 5,
+                "syn_send_timeout": 5,
+                "established_timeout": 1800,
+                "fin_wait_timeout": 10,
+                "last_ack_timeout": 10,
+                "close_wait_timeout": 10,
+                "time_wait_timeout": 10,
+                "close_timeout": 5,
+                "udp_timeout": 10,
+                "udp_stream_timeout": 60,
+                "icmp_timeout": 10
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "KernelParams": {
+        "type": "object",
+        "required": [
+          "id",
+          "bbr",
+          "syn_recv_timeout",
+          "syn_send_timeout",
+          "established_timeout",
+          "fin_wait_timeout",
+          "last_ack_timeout",
+          "close_wait_timeout",
+          "time_wait_timeout",
+          "close_timeout",
+          "udp_timeout",
+          "udp_stream_timeout",
+          "icmp_timeout"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "配置ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "bbr": {
+            "type": "integer",
+            "description": "BBR拥塞控制算法（0关闭，1开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "syn_recv_timeout": {
+            "type": "integer",
+            "description": "SYN_RECV状态超时时间（秒）",
+            "minimum": 5,
+            "maximum": 60,
+            "default": 5,
+            "example": 5
+          },
+          "syn_send_timeout": {
+            "type": "integer",
+            "description": "SYN_SEND状态超时时间（秒）",
+            "minimum": 5,
+            "maximum": 60,
+            "default": 5,
+            "example": 5
+          },
+          "established_timeout": {
+            "type": "integer",
+            "description": "ESTABLISHED状态超时时间（秒）",
+            "minimum": 600,
+            "maximum": 86400,
+            "default": 1800,
+            "example": 1800
+          },
+          "fin_wait_timeout": {
+            "type": "integer",
+            "description": "FIN_WAIT状态超时时间（秒）",
+            "minimum": 5,
+            "maximum": 60,
+            "default": 10,
+            "example": 10
+          },
+          "last_ack_timeout": {
+            "type": "integer",
+            "description": "LAST_ACK状态超时时间（秒）",
+            "minimum": 5,
+            "maximum": 60,
+            "default": 10,
+            "example": 10
+          },
+          "close_wait_timeout": {
+            "type": "integer",
+            "description": "CLOSE_WAIT状态超时时间（秒）",
+            "minimum": 5,
+            "maximum": 60,
+            "default": 10,
+            "example": 10
+          },
+          "time_wait_timeout": {
+            "type": "integer",
+            "description": "TIME_WAIT状态超时时间（秒）",
+            "minimum": 5,
+            "maximum": 60,
+            "default": 10,
+            "example": 10
+          },
+          "close_timeout": {
+            "type": "integer",
+            "description": "CLOSE状态超时时间（秒）",
+            "minimum": 5,
+            "maximum": 60,
+            "default": 5,
+            "example": 5
+          },
+          "udp_timeout": {
+            "type": "integer",
+            "description": "UDP数据包超时时间（秒）",
+            "minimum": 5,
+            "maximum": 60,
+            "default": 10,
+            "example": 10
+          },
+          "udp_stream_timeout": {
+            "type": "integer",
+            "description": "UDP流超时时间（秒）",
+            "minimum": 30,
+            "maximum": 1800,
+            "default": 60,
+            "example": 60
+          },
+          "icmp_timeout": {
+            "type": "integer",
+            "description": "ICMP数据包超时时间（秒）",
+            "minimum": 5,
+            "maximum": 100,
+            "default": 10,
+            "example": 10
+          }
+        },
+        "additionalProperties": false
+      },
+      "KernelParamsEditInput": {
+        "type": "object",
+        "description": "内核参数全量编辑。所有字段均为必填，未修改的字段须传原值。",
+        "required": [
+          "bbr",
+          "syn_recv_timeout",
+          "syn_send_timeout",
+          "established_timeout",
+          "fin_wait_timeout",
+          "last_ack_timeout",
+          "close_wait_timeout",
+          "time_wait_timeout",
+          "close_timeout",
+          "udp_timeout",
+          "udp_stream_timeout",
+          "icmp_timeout"
+        ],
+        "properties": {
+          "bbr": {
+            "type": "integer",
+            "description": "BBR拥塞控制算法（0关闭，1开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "syn_recv_timeout": {
+            "type": "integer",
+            "description": "SYN_RECV状态超时时间（秒）",
+            "minimum": 5,
+            "maximum": 60,
+            "example": 5
+          },
+          "syn_send_timeout": {
+            "type": "integer",
+            "description": "SYN_SEND状态超时时间（秒）",
+            "minimum": 5,
+            "maximum": 60,
+            "example": 5
+          },
+          "established_timeout": {
+            "type": "integer",
+            "description": "ESTABLISHED状态超时时间（秒）",
+            "minimum": 600,
+            "maximum": 86400,
+            "example": 1800
+          },
+          "fin_wait_timeout": {
+            "type": "integer",
+            "description": "FIN_WAIT状态超时时间（秒）",
+            "minimum": 5,
+            "maximum": 60,
+            "example": 10
+          },
+          "last_ack_timeout": {
+            "type": "integer",
+            "description": "LAST_ACK状态超时时间（秒）",
+            "minimum": 5,
+            "maximum": 60,
+            "example": 10
+          },
+          "close_wait_timeout": {
+            "type": "integer",
+            "description": "CLOSE_WAIT状态超时时间（秒）",
+            "minimum": 5,
+            "maximum": 60,
+            "example": 10
+          },
+          "time_wait_timeout": {
+            "type": "integer",
+            "description": "TIME_WAIT状态超时时间（秒）",
+            "minimum": 5,
+            "maximum": 60,
+            "example": 10
+          },
+          "close_timeout": {
+            "type": "integer",
+            "description": "CLOSE状态超时时间（秒）",
+            "minimum": 5,
+            "maximum": 60,
+            "example": 5
+          },
+          "udp_timeout": {
+            "type": "integer",
+            "description": "UDP数据包超时时间（秒）",
+            "minimum": 5,
+            "maximum": 60,
+            "example": 10
+          },
+          "udp_stream_timeout": {
+            "type": "integer",
+            "description": "UDP流超时时间（秒）",
+            "minimum": 30,
+            "maximum": 1800,
+            "example": 60
+          },
+          "icmp_timeout": {
+            "type": "integer",
+            "description": "ICMP数据包超时时间（秒）",
+            "minimum": 5,
+            "maximum": 100,
+            "example": 10
+          }
+        },
+        "additionalProperties": false
+      },
+      "KernelParamsResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/KernelParams"
+                }
+              }
+            },
+            "required": [
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "kernel-params",
+      "x-displayName": "内核参数配置",
+      "description": "内核网络参数配置管理，包括TCP超时、UDP超时、ICMP超时和BBR拥塞控制"
+    }
+  ]
+}

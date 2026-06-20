@@ -1,0 +1,2147 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "WAN接口管理API",
+    "version": "1.0.0",
+    "summary": "WAN接口配置查询",
+    "description": "提供WAN接口的完整管理功能，包括：\n- WAN接口配置信息查询\n- WAN接口配置更新\n- WAN接口混合模式（基于物理网卡/VLAN）的配置信息查询\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/interfaces/wan-config": {
+      "get": {
+        "summary": "获取WAN接口配置",
+        "description": "查询所有WAN接口的配置信息，包括接口名称、接入模式、绑定网卡、\nPPPoE/DHCP/静态IP参数、线路检测、定时重启、LTE拨号及多拨助手等配置。\n",
+        "operationId": "getWanConfig",
+        "tags": [
+          "wan-interfaces"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取WAN接口配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WanConfigResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "data": [
+                      {
+                        "id": 1,
+                        "name": "wan1",
+                        "tagname": "wan1",
+                        "comment": "",
+                        "bandmode": 0,
+                        "internet": 3,
+                        "mac": "",
+                        "speed": 0,
+                        "duplex": 0,
+                        "upload": 0,
+                        "download": 0,
+                        "qos_upload": 1000,
+                        "qos_download": 1000,
+                        "vendorclass": "",
+                        "clientid": "",
+                        "hostname": "",
+                        "opt_type12": 0,
+                        "opt_type60": 0,
+                        "opt_type61": 0,
+                        "wifi_wisp": 1,
+                        "wifi_bssid": "",
+                        "wifi_ssid": "",
+                        "wifi_psk": "",
+                        "ip_mask": "",
+                        "gateway": "",
+                        "username": "",
+                        "password": "",
+                        "timing_rst_switch": 0,
+                        "timing_rst_week": "1234567",
+                        "timing_rst_time": "12:00",
+                        "cycle_rst_time": 0,
+                        "pppoe_service": "",
+                        "pppoe_ac": "",
+                        "mtu": 1480,
+                        "mru": 1480,
+                        "default_route": 0,
+                        "disc_auto_switch": 1,
+                        "link_time": "00:00-23:59",
+                        "check_link_mode": 3,
+                        "check_link_host": "www.baidu.com",
+                        "qos_switch": 1,
+                        "enable_ipv6": 0,
+                        "linkmode": 0,
+                        "policy": 1,
+                        "lte_service": "umts_gprs",
+                        "lte_mode": "auto",
+                        "lte_apn": "3gnet",
+                        "lte_dialnum": "*99#",
+                        "lte_pincode": "",
+                        "lte_antenna_switch": 0,
+                        "bandlist_5g": "1,3,5,8,28,41,77,78,79",
+                        "sim_switch": 0,
+                        "pppoe_ass_switch": 0,
+                        "ass_multi_total": 10,
+                        "ass_disc_rst_switch": 0,
+                        "ass_rst_check_week": "1234567",
+                        "ass_rst_check_time": "00:00-08:00",
+                        "ass_rst_check_interval": 10,
+                        "ass_rst_disc_num": 5,
+                        "ass_rst_disc_norestart": 0,
+                        "ass_check_errip_switch": 0,
+                        "ass_check_errip_list": "10,172,192.168",
+                        "pppoe_check_errip_switch": 0,
+                        "pppoe_check_errip_list": "10,172,192.168",
+                        "vlan_internet_info": "2,0,0",
+                        "pppoe_ip_addr": "",
+                        "pppoe_netmask": "",
+                        "pppoe_gateway": "",
+                        "pppoe_updatetime": 0,
+                        "pppoe_dns1": "",
+                        "pppoe_dns2": "",
+                        "pppoe_macremote": "",
+                        "pppoe_status": 0,
+                        "dhcp_ip_addr": "",
+                        "dhcp_netmask": "",
+                        "dhcp_gateway": "",
+                        "dhcp_updatetime": 0,
+                        "dhcp_dns1": "",
+                        "dhcp_dns2": "",
+                        "dhcp_lease": 0,
+                        "dhcp_status": 0,
+                        "modified_time": 1772161919,
+                        "bandif": "00:e2:69:00:89:e8",
+                        "bandeth": "eth3"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/interfaces/wan-config/{id}": {
+      "put": {
+        "summary": "更新WAN接口配置",
+        "description": "更新指定WAN接口的配置。本接口为全量修改，请求时需传入所有字段。\n无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n\n**参数按 internet 接入模式分组：**\n- 公共参数（所有模式必传）：internet, bandif, bandmode\n- internet=0/1/2 共用：default_route, disc_auto_switch, link_time, check_link_mode\n- internet=0（静态IP）专属：ip_mask, gateway\n- internet=1（DHCP）专属：vendorclass, clientid, hostname, opt_type12, opt_type60, opt_type61\n- internet=2（ADSL/PPPoE）专属：username, password, mtu, mru, timing_rst_*, pppoe_*\n- internet=3（混合模式）子接口PPPoE：pppoe_ass_switch, ass_multi_total, ass_rst_*\n",
+        "operationId": "updateWanConfig",
+        "tags": [
+          "wan-interfaces"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "WAN接口ID",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1,
+              "example": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WanConfigUpdateRequest"
+              },
+              "examples": {
+                "static_ip": {
+                  "summary": "静态IP模式",
+                  "value": {
+                    "internet": 0,
+                    "bandif": "00:e2:69:00:89:e8",
+                    "bandmode": 0,
+                    "mac": "",
+                    "speed": 0,
+                    "duplex": 0,
+                    "comment": "",
+                    "default_route": 1,
+                    "disc_auto_switch": 1,
+                    "link_time": "00:00-23:59",
+                    "check_link_mode": 3,
+                    "check_link_host": "www.baidu.com",
+                    "ip_mask": "192.168.1.100/255.255.255.0",
+                    "gateway": "192.168.1.1"
+                  }
+                },
+                "dhcp": {
+                  "summary": "DHCP模式",
+                  "value": {
+                    "internet": 1,
+                    "bandif": "00:e2:69:00:89:e8",
+                    "bandmode": 0,
+                    "mac": "",
+                    "speed": 0,
+                    "duplex": 0,
+                    "comment": "",
+                    "default_route": 1,
+                    "disc_auto_switch": 1,
+                    "link_time": "00:00-23:59",
+                    "check_link_mode": 1,
+                    "check_link_host": "www.baidu.com",
+                    "vendorclass": "",
+                    "clientid": "",
+                    "hostname": "",
+                    "opt_type12": 0,
+                    "opt_type60": 0,
+                    "opt_type61": 0
+                  }
+                },
+                "pppoe": {
+                  "summary": "ADSL/PPPoE模式",
+                  "value": {
+                    "internet": 2,
+                    "bandif": "00:e2:69:00:89:e8",
+                    "bandmode": 0,
+                    "mac": "",
+                    "speed": 0,
+                    "duplex": 0,
+                    "comment": "",
+                    "default_route": 1,
+                    "disc_auto_switch": 1,
+                    "link_time": "00:00-23:59",
+                    "check_link_mode": 3,
+                    "check_link_host": "www.baidu.com",
+                    "username": "myuser",
+                    "password": "mypassword",
+                    "mtu": 1480,
+                    "mru": 1480,
+                    "timing_rst_switch": 0,
+                    "timing_rst_week": "1234567",
+                    "timing_rst_time": "12:00",
+                    "cycle_rst_time": 0,
+                    "pppoe_service": "",
+                    "pppoe_ac": "",
+                    "pppoe_check_errip_switch": 0,
+                    "pppoe_check_errip_list": "10,172,192.168"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/interfaces/wan-vlan-config": {
+      "get": {
+        "summary": "获取WAN混合模式配置",
+        "description": "查询基于WAN接口的混合模式配置信息，包括基于物理网卡的混合模式\n和基于VLAN的混合模式。包含VLAN名称、接入模式、PPPoE/DHCP/静态IP\n参数、线路检测等配置。\n当WAN接口配置中 internet=3（基于物理网卡的混合模式）或\ninternet=4（基于VLAN的混合模式）时使用此接口查询详细配置。\n",
+        "operationId": "getWanVlanConfig",
+        "tags": [
+          "wan-interfaces"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取WAN混合模式配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WanVlanConfigResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "vlan_data": [
+                      {
+                        "id": 3,
+                        "interface": "wan1",
+                        "vlan_name": "vwan666",
+                        "vlan_id": "3",
+                        "vlan_internet": 0,
+                        "enabled": "yes",
+                        "comment": "",
+                        "mac": "00:71:6f:a6:0c:2d",
+                        "upload": 0,
+                        "download": 0,
+                        "qos_upload": 0,
+                        "qos_download": 0,
+                        "vendorclass": "",
+                        "clientid": "",
+                        "hostname": "",
+                        "opt_type12": 0,
+                        "opt_type60": 0,
+                        "opt_type61": 0,
+                        "ip_mask": "192.168.3.220/255.255.255.0",
+                        "gateway": "192.168.3.253",
+                        "dhcp_gateway": "",
+                        "dhcp_dns1": "",
+                        "dhcp_dns2": "",
+                        "username": "",
+                        "password": "",
+                        "timing_rst_switch": 0,
+                        "timing_rst_week": "1234567",
+                        "timing_rst_time": "12:00",
+                        "cycle_rst_time": 0,
+                        "pppoe_service": "",
+                        "pppoe_ac": "",
+                        "mtu": 1480,
+                        "mru": 1480,
+                        "default_route": 1,
+                        "disc_auto_switch": 0,
+                        "link_time": "00:00-23:59",
+                        "check_link_mode": 1,
+                        "check_link_host": "www.baidu.com",
+                        "qos_switch": 0,
+                        "pppoe_check_errip_switch": 0,
+                        "pppoe_check_errip_list": "10,172,192.168",
+                        "dhcp_lease": 0,
+                        "dhcp_updatetime": 0,
+                        "dhcp_netmask": "",
+                        "dhcp_ip_addr": "",
+                        "pppoe_macremote": "",
+                        "pppoe_dns1": "",
+                        "pppoe_dns2": "",
+                        "pppoe_updatetime": 0,
+                        "pppoe_gateway": "",
+                        "pppoe_netmask": "",
+                        "pppoe_ip_addr": ""
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息",
+            "example": "请求语法错误或参数不合法"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "WanConfigResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/WanConfigResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "WanConfigResults": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "WAN接口配置列表",
+            "items": {
+              "$ref": "#/components/schemas/WanInterface"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "WanInterface": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "tagname",
+          "comment",
+          "bandmode",
+          "internet",
+          "mac",
+          "speed",
+          "duplex",
+          "upload",
+          "download",
+          "qos_upload",
+          "qos_download",
+          "vendorclass",
+          "clientid",
+          "hostname",
+          "opt_type12",
+          "opt_type60",
+          "opt_type61",
+          "wifi_wisp",
+          "wifi_bssid",
+          "wifi_ssid",
+          "wifi_psk",
+          "ip_mask",
+          "gateway",
+          "username",
+          "password",
+          "timing_rst_switch",
+          "timing_rst_week",
+          "timing_rst_time",
+          "cycle_rst_time",
+          "pppoe_service",
+          "pppoe_ac",
+          "mtu",
+          "mru",
+          "default_route",
+          "disc_auto_switch",
+          "link_time",
+          "check_link_mode",
+          "check_link_host",
+          "qos_switch",
+          "enable_ipv6",
+          "linkmode",
+          "policy",
+          "lte_service",
+          "lte_mode",
+          "lte_apn",
+          "lte_dialnum",
+          "lte_pincode",
+          "lte_antenna_switch",
+          "bandlist_5g",
+          "sim_switch",
+          "pppoe_ass_switch",
+          "ass_multi_total",
+          "ass_disc_rst_switch",
+          "ass_rst_check_week",
+          "ass_rst_check_time",
+          "ass_rst_check_interval",
+          "ass_rst_disc_num",
+          "ass_rst_disc_norestart",
+          "ass_check_errip_switch",
+          "ass_check_errip_list",
+          "pppoe_check_errip_switch",
+          "pppoe_check_errip_list",
+          "vlan_internet_info",
+          "pppoe_ip_addr",
+          "pppoe_netmask",
+          "pppoe_gateway",
+          "pppoe_updatetime",
+          "pppoe_dns1",
+          "pppoe_dns2",
+          "pppoe_macremote",
+          "pppoe_status",
+          "dhcp_ip_addr",
+          "dhcp_netmask",
+          "dhcp_gateway",
+          "dhcp_updatetime",
+          "dhcp_dns1",
+          "dhcp_dns2",
+          "dhcp_lease",
+          "dhcp_status",
+          "modified_time",
+          "bandif",
+          "bandeth"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "接口ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "接口名称",
+            "maxLength": 50,
+            "example": "wan1"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "标识名称（支持中文/数字/字母/下划线/连字符，不能以符号开头，1-15字符）",
+            "maxLength": 50,
+            "example": "wan1"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": ""
+          },
+          "bandmode": {
+            "type": "integer",
+            "description": "绑定模式（0=网桥, 1=汇聚）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "internet": {
+            "type": "integer",
+            "description": "接入模式（0=静态IP, 1=DHCP, 2=ADSL/PPPoE, 3=基于物理网卡的混合模式, 4=基于VLAN的混合模式）",
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "example": 3
+          },
+          "mac": {
+            "type": "string",
+            "description": "网卡MAC地址（空字符串表示未设置）",
+            "maxLength": 17,
+            "example": ""
+          },
+          "speed": {
+            "type": "integer",
+            "description": "网卡速率（0=自动, 10/100/1000/10000 Mbps）",
+            "enum": [
+              0,
+              10,
+              100,
+              1000,
+              10000
+            ],
+            "example": 0
+          },
+          "duplex": {
+            "type": "integer",
+            "description": "工作模式（0=自动, 1=全双工, 2=半双工）",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "example": 0
+          },
+          "upload": {
+            "type": "integer",
+            "description": "上行带宽（Kbps，0表示不限制）",
+            "minimum": 0,
+            "example": 0
+          },
+          "download": {
+            "type": "integer",
+            "description": "下行带宽（Kbps，0表示不限制）",
+            "minimum": 0,
+            "example": 0
+          },
+          "qos_upload": {
+            "type": "integer",
+            "description": "QoS上行带宽（Kbps）",
+            "minimum": 0,
+            "example": 1000
+          },
+          "qos_download": {
+            "type": "integer",
+            "description": "QoS下行带宽（Kbps）",
+            "minimum": 0,
+            "example": 1000
+          },
+          "vendorclass": {
+            "type": "string",
+            "description": "DHCP厂商类别（internet=1时有效）",
+            "maxLength": 100,
+            "example": ""
+          },
+          "clientid": {
+            "type": "string",
+            "description": "DHCP客户端ID（internet=1时有效）",
+            "maxLength": 100,
+            "example": ""
+          },
+          "hostname": {
+            "type": "string",
+            "description": "DHCP主机名称（internet=1时有效）",
+            "maxLength": 100,
+            "example": ""
+          },
+          "opt_type12": {
+            "type": "integer",
+            "description": "hostname 的传值格式（internet=1时有效，0=字符串, 1=十六进制）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "opt_type60": {
+            "type": "integer",
+            "description": "vendorclass 的传值格式（internet=1时有效，0=字符串, 1=十六进制）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "opt_type61": {
+            "type": "integer",
+            "description": "clientid 的传值格式（internet=1时有效，0=字符串, 1=十六进制）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "wifi_wisp": {
+            "type": "integer",
+            "description": "是否支持WiFi WISP模式（0=不支持, 1=支持）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "wifi_bssid": {
+            "type": "string",
+            "description": "WiFi BSSID",
+            "maxLength": 17,
+            "example": ""
+          },
+          "wifi_ssid": {
+            "type": "string",
+            "description": "WiFi SSID",
+            "maxLength": 100,
+            "example": ""
+          },
+          "wifi_psk": {
+            "type": "string",
+            "description": "WiFi PSK密码",
+            "maxLength": 200,
+            "example": ""
+          },
+          "ip_mask": {
+            "type": "string",
+            "description": "网卡IP地址和子网掩码，格式：IP地址/子网掩码（静态IP模式有效）",
+            "example": ""
+          },
+          "gateway": {
+            "type": "string",
+            "description": "网关地址（静态IP模式有效）",
+            "example": ""
+          },
+          "username": {
+            "type": "string",
+            "description": "PPPoE拨号用户名",
+            "maxLength": 100,
+            "example": ""
+          },
+          "password": {
+            "type": "string",
+            "description": "PPPoE拨号密码",
+            "format": "password",
+            "maxLength": 100,
+            "example": ""
+          },
+          "timing_rst_switch": {
+            "type": "integer",
+            "description": "是否开启定时重启（0=关闭, 1=开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "timing_rst_week": {
+            "type": "string",
+            "description": "定时重启周期（1234567表示每天，每位对应周一至周日）",
+            "maxLength": 7,
+            "example": "1234567"
+          },
+          "timing_rst_time": {
+            "type": "string",
+            "description": "定时重启时间，格式：HH:MM",
+            "maxLength": 5,
+            "example": "12:00"
+          },
+          "cycle_rst_time": {
+            "type": "integer",
+            "description": "重启周期（分钟，0表示无限）",
+            "minimum": 0,
+            "example": 0
+          },
+          "pppoe_service": {
+            "type": "string",
+            "description": "PPPoE拨号服务名称",
+            "maxLength": 100,
+            "example": ""
+          },
+          "pppoe_ac": {
+            "type": "string",
+            "description": "PPPoE拨号AC名称",
+            "maxLength": 100,
+            "example": ""
+          },
+          "mtu": {
+            "type": "integer",
+            "description": "MTU值",
+            "minimum": 0,
+            "maximum": 9000,
+            "example": 1480
+          },
+          "mru": {
+            "type": "integer",
+            "description": "MRU值",
+            "minimum": 0,
+            "maximum": 9000,
+            "example": 1480
+          },
+          "default_route": {
+            "type": "integer",
+            "description": "是否为默认路由（0=否, 1=是）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "disc_auto_switch": {
+            "type": "integer",
+            "description": "掉线自动切换（0=关闭, 1=开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "link_time": {
+            "type": "string",
+            "description": "上线时间段，格式：HH:MM-HH:MM",
+            "maxLength": 11,
+            "example": "00:00-23:59"
+          },
+          "check_link_mode": {
+            "type": "integer",
+            "description": "线路检测模式（0=关闭, 1=HTTP+网关, 2=PING+网关, 3=HTTP+PING+网关, 4=HTTP, 5=PING, 6=HTTP+PING）",
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "example": 3
+          },
+          "check_link_host": {
+            "type": "string",
+            "description": "线路检测主机地址",
+            "maxLength": 200,
+            "example": "www.baidu.com"
+          },
+          "qos_switch": {
+            "type": "integer",
+            "description": "是否开启流控（0=关闭, 1=开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "enable_ipv6": {
+            "type": "integer",
+            "description": "IPv6接入模式（0=不启用, 1=以太网连接, 2=PPPoE连接）",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "example": 0
+          },
+          "linkmode": {
+            "type": "integer",
+            "description": "链路聚合模式（0=手工链路聚合, 4=LACP链路聚合）",
+            "enum": [
+              0,
+              4
+            ],
+            "example": 0
+          },
+          "policy": {
+            "type": "integer",
+            "description": "汇聚负载方式（0=layer2, 1=layer3+4, 2=layer2+3）",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "example": 1
+          },
+          "lte_service": {
+            "type": "string",
+            "description": "LTE拨号服务名称",
+            "maxLength": 100,
+            "example": "umts_gprs"
+          },
+          "lte_mode": {
+            "type": "string",
+            "description": "LTE拨号模式（auto=自动, manual=手动）",
+            "enum": [
+              "auto",
+              "manual"
+            ],
+            "example": "auto"
+          },
+          "lte_apn": {
+            "type": "string",
+            "description": "LTE拨号APN",
+            "maxLength": 100,
+            "example": "3gnet"
+          },
+          "lte_dialnum": {
+            "type": "string",
+            "description": "LTE拨号号码",
+            "maxLength": 50,
+            "example": "*99#"
+          },
+          "lte_pincode": {
+            "type": "string",
+            "description": "LTE拨号PIN码",
+            "maxLength": 20,
+            "example": ""
+          },
+          "lte_antenna_switch": {
+            "type": "integer",
+            "description": "LTE天线开关（0=关闭, 1=开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "bandlist_5g": {
+            "type": "string",
+            "description": "5G频段列表（逗号分隔）",
+            "example": "1,3,5,8,28,41,77,78,79"
+          },
+          "sim_switch": {
+            "type": "integer",
+            "description": "SIM卡切换开关（0=关闭, 1=开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "pppoe_ass_switch": {
+            "type": "integer",
+            "description": "PPPoE多拨助手开关（0=关闭, 1=开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "ass_multi_total": {
+            "type": "integer",
+            "description": "多拨总数",
+            "minimum": 0,
+            "example": 10
+          },
+          "ass_disc_rst_switch": {
+            "type": "integer",
+            "description": "掉线重拨开关（0=关闭, 1=开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "ass_rst_check_week": {
+            "type": "string",
+            "description": "重拨周期（1234567表示每天）",
+            "maxLength": 7,
+            "example": "1234567"
+          },
+          "ass_rst_check_time": {
+            "type": "string",
+            "description": "重拨时间段，格式：HH:MM-HH:MM",
+            "maxLength": 11,
+            "example": "00:00-08:00"
+          },
+          "ass_rst_check_interval": {
+            "type": "integer",
+            "description": "重拨间隔（分钟）",
+            "minimum": 0,
+            "example": 10
+          },
+          "ass_rst_disc_num": {
+            "type": "integer",
+            "description": "重拨次数",
+            "minimum": 0,
+            "example": 5
+          },
+          "ass_rst_disc_norestart": {
+            "type": "integer",
+            "description": "掉线禁止重拨（0=允许, 1=禁止）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "ass_check_errip_switch": {
+            "type": "integer",
+            "description": "异常IP检测开关（0=关闭, 1=开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "ass_check_errip_list": {
+            "type": "string",
+            "description": "异常IP检测列表（逗号分隔的IP前缀）",
+            "example": "10,172,192.168"
+          },
+          "pppoe_check_errip_switch": {
+            "type": "integer",
+            "description": "PPPoE异常IP检测开关（0=关闭, 1=开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "pppoe_check_errip_list": {
+            "type": "string",
+            "description": "PPPoE异常IP检测列表（逗号分隔的IP前缀）",
+            "example": "10,172,192.168"
+          },
+          "vlan_internet_info": {
+            "type": "string",
+            "description": "VLAN接入模式信息",
+            "example": "2,0,0"
+          },
+          "pppoe_ip_addr": {
+            "type": "string",
+            "description": "PPPoE获取的IP地址",
+            "example": ""
+          },
+          "pppoe_netmask": {
+            "type": "string",
+            "description": "PPPoE获取的子网掩码",
+            "example": ""
+          },
+          "pppoe_gateway": {
+            "type": "string",
+            "description": "PPPoE获取的网关",
+            "example": ""
+          },
+          "pppoe_updatetime": {
+            "type": "integer",
+            "format": "int64",
+            "description": "PPPoE更新时间戳",
+            "minimum": 0,
+            "example": 0
+          },
+          "pppoe_dns1": {
+            "type": "string",
+            "description": "PPPoE获取的首选DNS",
+            "example": ""
+          },
+          "pppoe_dns2": {
+            "type": "string",
+            "description": "PPPoE获取的备用DNS",
+            "example": ""
+          },
+          "pppoe_macremote": {
+            "type": "string",
+            "description": "PPPoE远端MAC地址",
+            "maxLength": 17,
+            "example": ""
+          },
+          "pppoe_status": {
+            "type": "integer",
+            "description": "PPPoE连接状态",
+            "minimum": 0,
+            "example": 0
+          },
+          "dhcp_ip_addr": {
+            "type": "string",
+            "description": "DHCP获取的IP地址",
+            "example": ""
+          },
+          "dhcp_netmask": {
+            "type": "string",
+            "description": "DHCP获取的子网掩码",
+            "example": ""
+          },
+          "dhcp_gateway": {
+            "type": "string",
+            "description": "DHCP获取的网关",
+            "example": ""
+          },
+          "dhcp_updatetime": {
+            "type": "integer",
+            "format": "int64",
+            "description": "DHCP更新时间戳",
+            "minimum": 0,
+            "example": 0
+          },
+          "dhcp_dns1": {
+            "type": "string",
+            "description": "DHCP获取的首选DNS",
+            "example": ""
+          },
+          "dhcp_dns2": {
+            "type": "string",
+            "description": "DHCP获取的备用DNS",
+            "example": ""
+          },
+          "dhcp_lease": {
+            "type": "integer",
+            "description": "DHCP租期（秒）",
+            "minimum": 0,
+            "example": 0
+          },
+          "dhcp_status": {
+            "type": "integer",
+            "description": "DHCP连接状态",
+            "minimum": 0,
+            "example": 0
+          },
+          "modified_time": {
+            "type": "integer",
+            "format": "int64",
+            "description": "修改时间戳（Unix时间戳）",
+            "example": 1772161919
+          },
+          "bandif": {
+            "type": "string",
+            "description": "绑定网卡MAC地址（逗号分隔，多网卡时有效）",
+            "example": "00:e2:69:00:89:e8"
+          },
+          "bandeth": {
+            "type": "string",
+            "description": "绑定网卡名称（逗号分隔，多网卡时有效）",
+            "example": "eth3"
+          }
+        },
+        "additionalProperties": false
+      },
+      "WanVlanConfigResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/WanVlanConfigResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "WanVlanConfigResults": {
+        "type": "object",
+        "properties": {
+          "vlan_data": {
+            "type": "array",
+            "description": "WAN混合模式VLAN配置列表",
+            "items": {
+              "$ref": "#/components/schemas/WanVlanInterface"
+            }
+          }
+        },
+        "required": [
+          "vlan_data"
+        ],
+        "additionalProperties": false
+      },
+      "WanVlanInterface": {
+        "type": "object",
+        "required": [
+          "id",
+          "interface",
+          "vlan_name",
+          "vlan_id",
+          "vlan_internet",
+          "enabled",
+          "comment",
+          "mac",
+          "upload",
+          "download",
+          "qos_upload",
+          "qos_download",
+          "vendorclass",
+          "clientid",
+          "hostname",
+          "opt_type12",
+          "opt_type60",
+          "opt_type61",
+          "ip_mask",
+          "gateway",
+          "dhcp_gateway",
+          "dhcp_dns1",
+          "dhcp_dns2",
+          "username",
+          "password",
+          "timing_rst_switch",
+          "timing_rst_week",
+          "timing_rst_time",
+          "cycle_rst_time",
+          "pppoe_service",
+          "pppoe_ac",
+          "mtu",
+          "mru",
+          "default_route",
+          "disc_auto_switch",
+          "link_time",
+          "check_link_mode",
+          "check_link_host",
+          "qos_switch",
+          "pppoe_check_errip_switch",
+          "pppoe_check_errip_list",
+          "dhcp_lease",
+          "dhcp_updatetime",
+          "dhcp_netmask",
+          "dhcp_ip_addr",
+          "pppoe_macremote",
+          "pppoe_dns1",
+          "pppoe_dns2",
+          "pppoe_updatetime",
+          "pppoe_gateway",
+          "pppoe_netmask",
+          "pppoe_ip_addr"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "记录ID",
+            "minimum": 1,
+            "example": 3
+          },
+          "interface": {
+            "type": "string",
+            "description": "依赖的物理WAN接口名称",
+            "maxLength": 50,
+            "example": "wan1"
+          },
+          "vlan_name": {
+            "type": "string",
+            "description": "WAN接口的VLAN名称",
+            "maxLength": 50,
+            "example": "vwan666"
+          },
+          "vlan_id": {
+            "type": "string",
+            "description": "VLAN ID（支持QinQ格式如1000/100.200，范围1~4090）",
+            "example": "3"
+          },
+          "vlan_internet": {
+            "type": "integer",
+            "description": "VLAN接入模式（0=静态IP, 1=DHCP, 2=ADSL/PPPoE）",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "example": 0
+          },
+          "enabled": {
+            "type": "string",
+            "description": "是否启用",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": ""
+          },
+          "mac": {
+            "type": "string",
+            "description": "VLAN MAC地址",
+            "pattern": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$",
+            "example": "00:71:6f:a6:0c:2d"
+          },
+          "upload": {
+            "type": "integer",
+            "description": "上行带宽（Kbps，0表示不限制）",
+            "minimum": 0,
+            "example": 0
+          },
+          "download": {
+            "type": "integer",
+            "description": "下行带宽（Kbps，0表示不限制）",
+            "minimum": 0,
+            "example": 0
+          },
+          "qos_upload": {
+            "type": "integer",
+            "description": "QoS上行带宽（Kbps）",
+            "minimum": 0,
+            "example": 0
+          },
+          "qos_download": {
+            "type": "integer",
+            "description": "QoS下行带宽（Kbps）",
+            "minimum": 0,
+            "example": 0
+          },
+          "vendorclass": {
+            "type": "string",
+            "description": "DHCP厂商类别",
+            "maxLength": 100,
+            "example": ""
+          },
+          "clientid": {
+            "type": "string",
+            "description": "DHCP客户端ID",
+            "maxLength": 100,
+            "example": ""
+          },
+          "hostname": {
+            "type": "string",
+            "description": "DHCP主机名称",
+            "maxLength": 100,
+            "example": ""
+          },
+          "opt_type12": {
+            "type": "integer",
+            "description": "hostname 的传值格式（0=字符串, 1=十六进制）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "opt_type60": {
+            "type": "integer",
+            "description": "vendorclass 的传值格式（0=字符串, 1=十六进制）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "opt_type61": {
+            "type": "integer",
+            "description": "clientid 的传值格式（0=字符串, 1=十六进制）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "ip_mask": {
+            "type": "string",
+            "description": "网卡IP地址和子网掩码，格式：IP地址/子网掩码（静态IP模式有效）",
+            "example": "192.168.3.220/255.255.255.0"
+          },
+          "gateway": {
+            "type": "string",
+            "description": "静态IP网关",
+            "example": "192.168.3.253"
+          },
+          "dhcp_gateway": {
+            "type": "string",
+            "description": "DHCP获取的网关",
+            "example": ""
+          },
+          "dhcp_dns1": {
+            "type": "string",
+            "description": "DHCP获取的首选DNS",
+            "example": ""
+          },
+          "dhcp_dns2": {
+            "type": "string",
+            "description": "DHCP获取的备用DNS",
+            "example": ""
+          },
+          "username": {
+            "type": "string",
+            "description": "PPPoE拨号用户名",
+            "maxLength": 100,
+            "example": ""
+          },
+          "password": {
+            "type": "string",
+            "description": "PPPoE拨号密码",
+            "format": "password",
+            "maxLength": 100,
+            "example": ""
+          },
+          "timing_rst_switch": {
+            "type": "integer",
+            "description": "是否开启定时重启（0=关闭, 1=开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "timing_rst_week": {
+            "type": "string",
+            "description": "定时重启周期（1234567表示每天）",
+            "maxLength": 7,
+            "example": "1234567"
+          },
+          "timing_rst_time": {
+            "type": "string",
+            "description": "定时重启时间，格式：HH:MM",
+            "maxLength": 5,
+            "example": "12:00"
+          },
+          "cycle_rst_time": {
+            "type": "integer",
+            "description": "重启周期（分钟，0表示无限）",
+            "minimum": 0,
+            "example": 0
+          },
+          "pppoe_service": {
+            "type": "string",
+            "description": "PPPoE拨号服务名称",
+            "maxLength": 100,
+            "example": ""
+          },
+          "pppoe_ac": {
+            "type": "string",
+            "description": "PPPoE拨号AC名称",
+            "maxLength": 100,
+            "example": ""
+          },
+          "mtu": {
+            "type": "integer",
+            "description": "MTU值",
+            "minimum": 0,
+            "maximum": 9000,
+            "example": 1480
+          },
+          "mru": {
+            "type": "integer",
+            "description": "MRU值",
+            "minimum": 0,
+            "maximum": 9000,
+            "example": 1480
+          },
+          "default_route": {
+            "type": "integer",
+            "description": "是否为默认路由（0=否, 1=是）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "disc_auto_switch": {
+            "type": "integer",
+            "description": "掉线自动切换（0=关闭, 1=开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "link_time": {
+            "type": "string",
+            "description": "上线时间段，格式：HH:MM-HH:MM",
+            "maxLength": 11,
+            "example": "00:00-23:59"
+          },
+          "check_link_mode": {
+            "type": "integer",
+            "description": "线路检测模式（0=关闭, 1=HTTP+网关, 2=PING+网关, 3=HTTP+PING+网关, 4=HTTP, 5=PING, 6=HTTP+PING）",
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "example": 1
+          },
+          "check_link_host": {
+            "type": "string",
+            "description": "线路检测主机地址",
+            "maxLength": 200,
+            "example": "www.baidu.com"
+          },
+          "qos_switch": {
+            "type": "integer",
+            "description": "是否开启流控（0=关闭, 1=开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "pppoe_check_errip_switch": {
+            "type": "integer",
+            "description": "PPPoE异常IP检测开关（0=关闭, 1=开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "pppoe_check_errip_list": {
+            "type": "string",
+            "description": "PPPoE异常IP检测列表（逗号分隔的IP前缀）",
+            "example": "10,172,192.168"
+          },
+          "dhcp_lease": {
+            "type": "integer",
+            "description": "DHCP租期（秒）",
+            "minimum": 0,
+            "example": 0
+          },
+          "dhcp_updatetime": {
+            "type": "integer",
+            "format": "int64",
+            "description": "DHCP更新时间戳",
+            "minimum": 0,
+            "example": 0
+          },
+          "dhcp_netmask": {
+            "type": "string",
+            "description": "DHCP获取的子网掩码",
+            "example": ""
+          },
+          "dhcp_ip_addr": {
+            "type": "string",
+            "description": "DHCP获取的IP地址",
+            "example": ""
+          },
+          "pppoe_macremote": {
+            "type": "string",
+            "description": "PPPoE远端MAC地址",
+            "maxLength": 17,
+            "example": ""
+          },
+          "pppoe_dns1": {
+            "type": "string",
+            "description": "PPPoE获取的首选DNS",
+            "example": ""
+          },
+          "pppoe_dns2": {
+            "type": "string",
+            "description": "PPPoE获取的备用DNS",
+            "example": ""
+          },
+          "pppoe_updatetime": {
+            "type": "integer",
+            "format": "int64",
+            "description": "PPPoE更新时间戳",
+            "minimum": 0,
+            "example": 0
+          },
+          "pppoe_gateway": {
+            "type": "string",
+            "description": "PPPoE获取的网关",
+            "example": ""
+          },
+          "pppoe_netmask": {
+            "type": "string",
+            "description": "PPPoE获取的子网掩码",
+            "example": ""
+          },
+          "pppoe_ip_addr": {
+            "type": "string",
+            "description": "PPPoE获取的IP地址",
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "操作结果信息",
+            "example": "success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "WanConfigCommonBase": {
+        "type": "object",
+        "required": [
+          "internet",
+          "bandif",
+          "bandmode"
+        ],
+        "properties": {
+          "internet": {
+            "type": "integer",
+            "description": "接入模式（0=静态IP, 1=DHCP, 2=ADSL/PPPoE, 3=基于物理网卡混合模式, 4=基于VLAN混合模式）",
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "example": 0
+          },
+          "bandif": {
+            "type": "string",
+            "description": "绑定网卡MAC地址，多个以逗号分隔",
+            "example": "00:e2:69:00:89:e8"
+          },
+          "bandmode": {
+            "type": "integer",
+            "description": "绑定模式（0=网桥, 1=汇聚）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "mac": {
+            "type": "string",
+            "description": "克隆MAC地址，空字符串表示不克隆",
+            "maxLength": 17,
+            "example": ""
+          },
+          "speed": {
+            "type": "integer",
+            "description": "网卡速率（0=自动, 10/100/1000/10000 Mbps）",
+            "enum": [
+              0,
+              10,
+              100,
+              1000,
+              10000
+            ],
+            "example": 0
+          },
+          "duplex": {
+            "type": "integer",
+            "description": "工作模式（0=自动, 1=全双工, 2=半双工）",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "example": 0
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64字符",
+            "maxLength": 64,
+            "example": ""
+          }
+        }
+      },
+      "WanConfigLinkBase": {
+        "type": "object",
+        "required": [
+          "default_route",
+          "disc_auto_switch",
+          "link_time",
+          "check_link_mode"
+        ],
+        "properties": {
+          "default_route": {
+            "type": "integer",
+            "description": "是否设置为默认路由（0=否, 1=是）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "disc_auto_switch": {
+            "type": "integer",
+            "description": "掉线自动切换（0=关闭, 1=开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "link_time": {
+            "type": "string",
+            "description": "上线时间段，格式：HH:MM-HH:MM",
+            "maxLength": 11,
+            "example": "00:00-23:59"
+          },
+          "check_link_mode": {
+            "type": "integer",
+            "description": "线路检测模式（0=关闭, 1=HTTP+网关, 2=PING+网关, 3=HTTP+PING+网关, 4=HTTP, 5=PING, 6=HTTP+PING）",
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "example": 3
+          },
+          "check_link_host": {
+            "type": "string",
+            "description": "线路检测主机地址",
+            "maxLength": 200,
+            "example": "www.baidu.com"
+          }
+        }
+      },
+      "WanConfigStaticIPRequest": {
+        "title": "静态IP模式 (internet=0)",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WanConfigCommonBase"
+          },
+          {
+            "$ref": "#/components/schemas/WanConfigLinkBase"
+          },
+          {
+            "type": "object",
+            "required": [
+              "ip_mask",
+              "gateway"
+            ],
+            "properties": {
+              "ip_mask": {
+                "type": "string",
+                "description": "静态IP地址和子网掩码，格式：IP/掩码，如 192.168.1.1/255.255.255.0",
+                "example": "192.168.1.100/255.255.255.0"
+              },
+              "gateway": {
+                "type": "string",
+                "description": "静态IP网关",
+                "example": "192.168.1.1"
+              }
+            }
+          }
+        ]
+      },
+      "WanConfigDHCPRequest": {
+        "title": "DHCP模式 (internet=1)",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WanConfigCommonBase"
+          },
+          {
+            "$ref": "#/components/schemas/WanConfigLinkBase"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "vendorclass": {
+                "type": "string",
+                "description": "DHCP厂商类别",
+                "maxLength": 100,
+                "example": ""
+              },
+              "clientid": {
+                "type": "string",
+                "description": "DHCP客户端ID",
+                "maxLength": 100,
+                "example": ""
+              },
+              "hostname": {
+                "type": "string",
+                "description": "DHCP主机名称",
+                "maxLength": 100,
+                "example": ""
+              },
+              "opt_type12": {
+                "type": "integer",
+                "description": "hostname 的传值格式（0=字符串, 1=十六进制）",
+                "enum": [
+                  0,
+                  1
+                ],
+                "example": 0
+              },
+              "opt_type60": {
+                "type": "integer",
+                "description": "vendorclass 的传值格式（0=字符串, 1=十六进制）",
+                "enum": [
+                  0,
+                  1
+                ],
+                "example": 0
+              },
+              "opt_type61": {
+                "type": "integer",
+                "description": "clientid 的传值格式（0=字符串, 1=十六进制）",
+                "enum": [
+                  0,
+                  1
+                ],
+                "example": 0
+              }
+            }
+          }
+        ]
+      },
+      "WanConfigPPPoERequest": {
+        "title": "ADSL/PPPoE模式 (internet=2)",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WanConfigCommonBase"
+          },
+          {
+            "$ref": "#/components/schemas/WanConfigLinkBase"
+          },
+          {
+            "type": "object",
+            "required": [
+              "username",
+              "password"
+            ],
+            "properties": {
+              "username": {
+                "type": "string",
+                "description": "PPPoE拨号用户名",
+                "maxLength": 100,
+                "example": "myuser"
+              },
+              "password": {
+                "type": "string",
+                "description": "PPPoE拨号密码",
+                "format": "password",
+                "maxLength": 100,
+                "example": "mypassword"
+              },
+              "mtu": {
+                "type": "integer",
+                "description": "MTU值（PPPoE建议范围512~1492）",
+                "minimum": 0,
+                "maximum": 9000,
+                "example": 1480
+              },
+              "mru": {
+                "type": "integer",
+                "description": "MRU值（PPPoE建议范围512~1492）",
+                "minimum": 0,
+                "maximum": 9000,
+                "example": 1480
+              },
+              "timing_rst_switch": {
+                "type": "integer",
+                "description": "定时重启开关（0=关闭, 1=开启）",
+                "enum": [
+                  0,
+                  1
+                ],
+                "example": 0
+              },
+              "timing_rst_week": {
+                "type": "string",
+                "description": "定时重启周期，每位对应周一至周日",
+                "maxLength": 7,
+                "example": "1234567"
+              },
+              "timing_rst_time": {
+                "type": "string",
+                "description": "定时重启时间，格式：HH:MM",
+                "maxLength": 5,
+                "example": "12:00"
+              },
+              "cycle_rst_time": {
+                "type": "integer",
+                "description": "周期重启间隔（分钟，0=不启用）",
+                "minimum": 0,
+                "example": 0
+              },
+              "pppoe_service": {
+                "type": "string",
+                "description": "PPPoE服务名称",
+                "maxLength": 100,
+                "example": ""
+              },
+              "pppoe_ac": {
+                "type": "string",
+                "description": "PPPoE AC名称",
+                "maxLength": 100,
+                "example": ""
+              },
+              "pppoe_check_errip_switch": {
+                "type": "integer",
+                "description": "PPPoE异常IP检测开关（0=关闭, 1=开启）",
+                "enum": [
+                  0,
+                  1
+                ],
+                "example": 0
+              },
+              "pppoe_check_errip_list": {
+                "type": "string",
+                "description": "PPPoE异常IP检测列表，逗号分隔IP前缀",
+                "example": "10,172,192.168"
+              }
+            }
+          }
+        ]
+      },
+      "WanConfigMixedPhysicalRequest": {
+        "title": "基于物理网卡混合模式 (internet=3)",
+        "description": "混合模式下WAN接口作为物理承载，实际接入参数在子VLAN接口中配置（通过 wan-vlan-config 管理）。\n当子接口 vlan_internet=2（PPPoE）时，可额外传入多拨助手参数。\n",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WanConfigCommonBase"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "pppoe_ass_switch": {
+                "type": "integer",
+                "description": "PPPoE多拨助手开关（0=关闭, 1=开启）",
+                "enum": [
+                  0,
+                  1
+                ],
+                "example": 0
+              },
+              "ass_multi_total": {
+                "type": "integer",
+                "description": "多拨总数",
+                "minimum": 0,
+                "example": 10
+              },
+              "ass_rst_check_interval": {
+                "type": "integer",
+                "description": "重拨检测间隔（分钟）",
+                "minimum": 0,
+                "example": 10
+              },
+              "ass_rst_disc_num": {
+                "type": "integer",
+                "description": "触发重拨的掉线次数阈值",
+                "minimum": 0,
+                "example": 5
+              },
+              "ass_rst_disc_norestart": {
+                "type": "integer",
+                "description": "掉线后是否禁止重拨（0=允许, 1=禁止）",
+                "enum": [
+                  0,
+                  1
+                ],
+                "example": 0
+              }
+            }
+          }
+        ]
+      },
+      "WanConfigMixedVLANRequest": {
+        "title": "基于VLAN混合模式 (internet=4)",
+        "description": "基于VLAN的混合模式，WAN接口作为物理承载，实际接入参数在子VLAN接口中配置（通过 wan-vlan-config 管理）。\n",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WanConfigCommonBase"
+          }
+        ]
+      },
+      "WanConfigUpdateRequest": {
+        "description": "WAN接口配置更新请求体，按 `internet` 接入模式选择对应的参数结构：\n- `internet=0`（静态IP）：必填 `ip_mask`、`gateway` 及链路参数\n- `internet=1`（DHCP）：必填链路参数，可选 DHCP 扩展参数\n- `internet=2`（ADSL/PPPoE）：必填 `username`、`password` 及链路参数\n- `internet=3`（基于物理网卡混合模式）：子接口在 wan-vlan-config 中配置，可选多拨助手参数\n- `internet=4`（基于VLAN混合模式）：子接口在 wan-vlan-config 中配置\n",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/WanConfigStaticIPRequest"
+          },
+          {
+            "$ref": "#/components/schemas/WanConfigDHCPRequest"
+          },
+          {
+            "$ref": "#/components/schemas/WanConfigPPPoERequest"
+          },
+          {
+            "$ref": "#/components/schemas/WanConfigMixedPhysicalRequest"
+          },
+          {
+            "$ref": "#/components/schemas/WanConfigMixedVLANRequest"
+          }
+        ]
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer {token}\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "wan-interfaces",
+      "x-displayName": "WAN接口",
+      "description": "WAN接口配置及混合模式配置查询"
+    }
+  ]
+}

@@ -1,0 +1,2219 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "DNS服务管理API",
+    "version": "1.0.0",
+    "summary": "DNS服务的完整管理功能",
+    "description": "提供DNS服务的完整管理功能，包括：\n- DNS缓存状态监控\n- DNS配置管理\n- DNS代理规则管理\n- 解析类型控制\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/network/dns/stats": {
+      "get": {
+        "summary": "获取DNS缓存状态",
+        "description": "获取DNS缓存的统计信息，包括请求数、命中数、未命中数等。\n支持按日期维度查看缓存性能。\n",
+        "operationId": "getDnsCacheStats",
+        "tags": [
+          "dns-cache"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取DNS缓存统计",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DnsCacheStatsListResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "total": 7,
+                    "data": [
+                      {
+                        "id": 1,
+                        "request": 1388762,
+                        "hit": 1010261,
+                        "miss": 378501,
+                        "date": "2025-11-12",
+                        "save_time": "2025-11-12 10:30:00"
+                      },
+                      {
+                        "id": 2,
+                        "request": 5000,
+                        "hit": 0,
+                        "miss": 0,
+                        "date": 0,
+                        "save_time": "2025-11-12 10:30:00"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/network/dns/config": {
+      "get": {
+        "summary": "获取DNS配置",
+        "description": "获取当前DNS服务的配置信息，包括代理服务启用状态、\n缓存TTL、DNS工作模式、主备DNS服务器等配置。\n",
+        "operationId": "getDnsConfig",
+        "tags": [
+          "dns-config"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取DNS配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DnsConfigResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新DNS配置",
+        "description": "更新DNS服务的配置信息，包括启用DNS代理服务、\n设置缓存TTL、配置DNS工作模式等。\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateDnsConfig",
+        "tags": [
+          "dns-config"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "DNS配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DnsConfigInput"
+              },
+              "example": {
+                "enabled": "yes",
+                "forbid_dns_4a": 0,
+                "cache_ttl": 300,
+                "cachemode": 0,
+                "proxy_force": 0,
+                "proxy_force_dns": "",
+                "query": "https://doh.pub/dns-query",
+                "dns1": "114.114.114.114",
+                "dns2": "119.29.29.29",
+                "defense": "",
+                "network": "",
+                "query_args_ip": "",
+                "query_head_ip": ""
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/network/dns/proxy/rules": {
+      "get": {
+        "summary": "获取DNS代理规则列表",
+        "description": "获取当前配置的DNS代理规则列表，支持分页和过滤功能。\n包含域名、解析IP地址、启用状态、备注等信息。\n",
+        "operationId": "listDnsProxyRules",
+        "tags": [
+          "dns-proxy"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取DNS代理规则列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DnsProxyRuleListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "添加DNS代理规则",
+        "description": "添加新的DNS代理规则，指定域名和对应的解析IP地址。\n支持IPv4和IPv6解析类型。\n",
+        "operationId": "createDnsProxyRule",
+        "tags": [
+          "dns-proxy"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "DNS代理规则配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DnsProxyRuleInput"
+              },
+              "example": {
+                "domain": "example.com",
+                "dns_addr": "192.168.1.100",
+                "enabled": "yes",
+                "comment": "示例域名解析规则",
+                "src_addr": "192.168.1.0/24",
+                "is_ipv6": 0,
+                "parse_type": "ipv4"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success",
+                      "rowid": 1
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DnsErrorResponse"
+                },
+                "example": {
+                  "message": "请求参数不合法"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "description": "资源冲突（域名已存在）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DnsErrorResponse"
+                },
+                "example": {
+                  "message": "域名解析规则已存在"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/network/dns/proxy/rules/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/dnsProxyRuleIdParam"
+        }
+      ],
+      "get": {
+        "summary": "获取指定DNS代理规则",
+        "description": "根据规则ID获取单个DNS代理规则的详细信息。\n",
+        "operationId": "getDnsProxyRule",
+        "tags": [
+          "dns-proxy"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取DNS代理规则详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DnsProxyRuleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新DNS代理规则",
+        "description": "完全更新现有的DNS代理规则配置。\n\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateDnsProxyRule",
+        "tags": [
+          "dns-proxy"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "完整的DNS代理规则配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DnsProxyRuleInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "启用/停用DNS代理规则",
+        "description": "部分更新现有的DNS代理规则配置。\n主要用于启用/停用规则状态。\n",
+        "operationId": "patchDnsProxyRule",
+        "tags": [
+          "dns-proxy"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "部分更新数据（如启用状态）",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "enabled"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "string",
+                    "enum": [
+                      "yes",
+                      "no"
+                    ],
+                    "description": "规则启用状态",
+                    "example": "yes"
+                  }
+                },
+                "example": {
+                  "enabled": "yes"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除DNS代理规则",
+        "description": "删除指定的DNS代理规则。\n删除后无法恢复，请谨慎操作。\n",
+        "operationId": "deleteDnsProxyRule",
+        "tags": [
+          "dns-proxy"
+        ],
+        "responses": {
+          "200": {
+            "description": "DNS代理规则删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/network/multi-dns/rules": {
+      "get": {
+        "summary": "获取多线DNS策略列表",
+        "description": "获取当前配置的多线DNS策略列表，支持分页功能。\n每个WAN口线路可以自定义上级DNS服务器地址。\n",
+        "operationId": "listMultiDnsRules",
+        "tags": [
+          "multi-dns"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取多线DNS策略列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MultiDnsRuleListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "添加多线DNS策略",
+        "description": "添加新的多线DNS策略，为WAN口线路配置自定义DNS服务器地址。\n每个WAN口可以配置不同的上级DNS服务器。\n",
+        "operationId": "createMultiDnsRule",
+        "tags": [
+          "multi-dns"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "多线DNS策略配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MultiDnsRuleInput"
+              },
+              "example": {
+                "interface": "wan1",
+                "tagname": "线路1",
+                "dns1": "8.8.8.8",
+                "dns2": "8.8.4.4",
+                "enabled": "yes",
+                "comment": "主线路DNS配置"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DnsErrorResponse"
+                },
+                "example": {
+                  "message": "请求参数不合法"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "description": "资源冲突（网卡或名称已存在）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DnsErrorResponse"
+                },
+                "example": {
+                  "message": "网卡接口或策略名称已存在"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/network/multi-dns/rules/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/multiDnsRuleIdParam"
+        }
+      ],
+      "get": {
+        "summary": "获取指定多线DNS策略",
+        "description": "根据策略ID获取单个多线DNS策略的详细信息。\n",
+        "operationId": "getMultiDnsRule",
+        "tags": [
+          "multi-dns"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取多线DNS策略详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MultiDnsRuleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新多线DNS策略",
+        "description": "完全更新现有的多线DNS策略配置。\n需要提供所有字段。\n",
+        "operationId": "updateMultiDnsRule",
+        "tags": [
+          "multi-dns"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "完整的多线DNS策略配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MultiDnsRuleInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "启用/停用多线DNS策略",
+        "description": "部分更新现有的多线DNS策略配置。\n主要用于启用/停用策略状态。\n",
+        "operationId": "patchMultiDnsRule",
+        "tags": [
+          "multi-dns"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "部分更新数据（如启用状态）",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "enabled"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "string",
+                    "enum": [
+                      "yes",
+                      "no"
+                    ],
+                    "description": "策略启用状态",
+                    "example": "yes"
+                  }
+                },
+                "example": {
+                  "enabled": "yes"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除多线DNS策略",
+        "description": "删除指定的多线DNS策略。\n删除后无法恢复，请谨慎操作。\n",
+        "operationId": "deleteMultiDnsRule",
+        "tags": [
+          "multi-dns"
+        ],
+        "responses": {
+          "200": {
+            "description": "多线DNS策略删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "dnsProxyRuleIdParam": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "DNS代理规则ID",
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 1,
+          "example": 1
+        }
+      },
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 20,
+          "example": 20
+        }
+      },
+      "multiDnsRuleIdParam": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "多线DNS策略ID",
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 1,
+          "example": 1
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源冲突（如唯一性冲突，需调整请求逻辑）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "CreateSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "success"
+          },
+          "code": {
+            "type": "integer",
+            "description": "状态码",
+            "example": 0
+          },
+          "rowid": {
+            "type": "integer",
+            "description": "新创建记录ID",
+            "example": 1
+          }
+        },
+        "required": [
+          "message",
+          "code",
+          "rowid"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "DnsCacheStatsResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DnsCacheStats"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "DnsCacheStatsListResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 7
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DnsCacheStats"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "DnsErrorResponse": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "DNS业务错误信息描述"
+          }
+        }
+      },
+      "DnsConfigResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DnsConfig"
+                }
+              }
+            },
+            "required": [
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "DnsProxyRuleResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DnsProxyRule"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "DnsProxyRuleListResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 25
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DnsProxyRule"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "MultiDnsRuleResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/MultiDnsRule"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "MultiDnsRuleListResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 25
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/MultiDnsRule"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "DnsCacheStats": {
+        "type": "object",
+        "required": [
+          "id",
+          "request",
+          "hit",
+          "miss",
+          "date",
+          "save_time"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "统计ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "request": {
+            "type": "integer",
+            "description": "总请求数",
+            "minimum": 0,
+            "example": 1388762
+          },
+          "hit": {
+            "type": "integer",
+            "description": "缓存命中数",
+            "minimum": 0,
+            "example": 1010261
+          },
+          "miss": {
+            "type": "integer",
+            "description": "缓存未命中数",
+            "minimum": 0,
+            "example": 378501
+          },
+          "date": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date",
+                "description": "统计日期（YYYY-MM-DD格式）",
+                "example": "2025-11-12"
+              },
+              {
+                "type": "integer",
+                "description": "累计统计标志（date为0时表示累计统计）",
+                "example": 0
+              }
+            ]
+          },
+          "save_time": {
+            "type": "string",
+            "description": "缓存保存时间",
+            "readOnly": true,
+            "example": "2025-11-12 10:30:00"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DnsConfig": {
+        "type": "object",
+        "required": [
+          "enabled",
+          "forbid_dns_4a",
+          "cache_ttl",
+          "cachemode",
+          "proxy_force",
+          "proxy_force_dns",
+          "query",
+          "dns1",
+          "dns2",
+          "network",
+          "defense",
+          "query_args_ip",
+          "query_head_ip"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "配置ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "启用DNS代理服务，yes为启用，no为停用",
+            "example": "yes"
+          },
+          "forbid_dns_4a": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "description": "忽略DNS 4A记录，0为允许，1为忽略",
+            "example": 0
+          },
+          "cache_ttl": {
+            "type": "integer",
+            "description": "缓存的最大TTL（秒），范围 60-3600",
+            "minimum": 60,
+            "maximum": 3600,
+            "default": 300,
+            "example": 300
+          },
+          "cachemode": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "description": "DNS工作模式：\n- 0: UDP代理\n- 1: 多线缓存\n- 2: 第三方代理\n- 3: DoH (DNS over HTTPS)\n",
+            "example": 0
+          },
+          "proxy_force": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "description": "强制客户端启用DNS代理（只针对dnsmasq），0为否，1为是",
+            "example": 0
+          },
+          "proxy_force_dns": {
+            "type": "string",
+            "description": "第三方代理的DNS服务器IP列表，多个以逗号分隔，当 cachemode=2 时必填",
+            "example": ""
+          },
+          "query": {
+            "type": "string",
+            "description": "解析URL地址（DoH模式使用）",
+            "format": "uri",
+            "default": "https://doh.pub/dns-query",
+            "example": "https://doh.pub/dns-query"
+          },
+          "dns1": {
+            "type": "string",
+            "description": "主DNS服务器地址",
+            "format": "ipv4",
+            "default": "114.114.114.114",
+            "example": "114.114.114.114"
+          },
+          "dns2": {
+            "type": "string",
+            "description": "备DNS服务器地址",
+            "format": "ipv4",
+            "default": "119.29.29.29",
+            "example": "119.29.29.29"
+          },
+          "network": {
+            "type": "string",
+            "description": "网络接口",
+            "readOnly": true,
+            "example": ""
+          },
+          "defense": {
+            "type": "string",
+            "description": "DNS防御",
+            "readOnly": true,
+            "example": ""
+          },
+          "query_args_ip": {
+            "type": "string",
+            "description": "查询参数IP",
+            "readOnly": true,
+            "example": ""
+          },
+          "query_head_ip": {
+            "type": "string",
+            "description": "查询头部IP",
+            "readOnly": true,
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "DnsConfigInput": {
+        "type": "object",
+        "required": [
+          "enabled",
+          "forbid_dns_4a",
+          "cache_ttl",
+          "cachemode",
+          "proxy_force",
+          "proxy_force_dns",
+          "dns1",
+          "dns2",
+          "query",
+          "defense",
+          "network",
+          "query_args_ip",
+          "query_head_ip"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "启用DNS代理服务，yes为启用，no为停用",
+            "example": "yes"
+          },
+          "forbid_dns_4a": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "description": "忽略DNS 4A记录，0为允许，1为忽略",
+            "example": 0
+          },
+          "cache_ttl": {
+            "type": "integer",
+            "description": "缓存的最大TTL（秒），范围 60-3600",
+            "minimum": 60,
+            "maximum": 3600,
+            "default": 300,
+            "example": 300
+          },
+          "cachemode": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "description": "DNS工作模式：\n- 0: UDP代理\n- 1: 多线缓存\n- 2: 第三方代理\n- 3: DoH (DNS over HTTPS)\n",
+            "example": 0
+          },
+          "proxy_force": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "description": "强制客户端启用DNS代理（只针对dnsmasq），0为否，1为是",
+            "example": 0
+          },
+          "proxy_force_dns": {
+            "type": "string",
+            "description": "第三方代理的DNS服务器IP列表，多个以逗号分隔，当 cachemode=2 时必填",
+            "example": ""
+          },
+          "query": {
+            "type": "string",
+            "description": "DoH解析URL地址，当 cachemode=3（DoH模式）时必填",
+            "format": "uri",
+            "default": "https://doh.pub/dns-query",
+            "example": "https://doh.pub/dns-query"
+          },
+          "dns1": {
+            "type": "string",
+            "description": "主DNS服务器地址",
+            "format": "ipv4",
+            "default": "114.114.114.114",
+            "example": "114.114.114.114"
+          },
+          "dns2": {
+            "type": "string",
+            "description": "备DNS服务器地址",
+            "format": "ipv4",
+            "default": "119.29.29.29",
+            "example": "119.29.29.29"
+          },
+          "defense": {
+            "type": "string",
+            "description": "DNS防御配置，详情回填后保存原值",
+            "example": ""
+          },
+          "network": {
+            "type": "string",
+            "description": "网络接口配置，详情回填后保存原值",
+            "example": ""
+          },
+          "query_args_ip": {
+            "type": "string",
+            "description": "查询参数IP，详情回填后保存原值",
+            "example": ""
+          },
+          "query_head_ip": {
+            "type": "string",
+            "description": "查询头部IP，详情回填后保存原值",
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "DnsProxyRule": {
+        "type": "object",
+        "required": [
+          "id",
+          "domain",
+          "dns_addr",
+          "enabled",
+          "comment",
+          "src_addr",
+          "is_ipv6",
+          "parse_type"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "规则ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "domain": {
+            "type": "string",
+            "description": "域名",
+            "pattern": "^[a-zA-Z0-9.-]+$",
+            "minLength": 1,
+            "maxLength": 255,
+            "example": "example.com"
+          },
+          "dns_addr": {
+            "type": "string",
+            "description": "解析的IP地址",
+            "format": "ipv4",
+            "example": "192.168.1.100"
+          },
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "开启状态，yes为启用，no为停用",
+            "example": "yes"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符",
+            "maxLength": 64,
+            "example": "示例域名解析规则"
+          },
+          "src_addr": {
+            "type": "string",
+            "description": "生效的IP段范围，多个以逗号隔开，支持固定IP、带掩码格式、范围格式",
+            "example": "192.168.1.0/24,192.168.1.1,192.168.1.10-192.168.1.20"
+          },
+          "is_ipv6": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "description": "是否为IPv6，0为IPv4，1为IPv6",
+            "example": 0
+          },
+          "parse_type": {
+            "type": "string",
+            "enum": [
+              "ipv4",
+              "ipv6",
+              "proxy",
+              "proxy6"
+            ],
+            "description": "解析类型：\n- ipv4: IPv4解析\n- ipv6: IPv6解析\n- proxy: 代理解析\n- proxy6: IPv6代理解析\n",
+            "example": "ipv4"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DnsProxyRuleInput": {
+        "type": "object",
+        "required": [
+          "domain",
+          "dns_addr",
+          "enabled",
+          "parse_type"
+        ],
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "域名，不能为空",
+            "minLength": 1,
+            "maxLength": 255,
+            "example": "example.com"
+          },
+          "dns_addr": {
+            "type": "string",
+            "description": "解析的IP地址，不能为空；parse_type=ipv4 时须为合法 IPv4，parse_type=ipv6 时须为合法 IPv6",
+            "example": "192.168.1.100"
+          },
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "开启状态，yes为启用，no为停用",
+            "example": "yes"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符",
+            "maxLength": 64,
+            "example": "示例域名解析规则"
+          },
+          "src_addr": {
+            "type": "string",
+            "description": "限制来源IP范围，多个以逗号隔开，支持固定IP、带掩码格式、范围格式（可不传，不填表示不限制来源）",
+            "example": "192.168.1.0/24,192.168.1.1,192.168.1.10-192.168.1.20"
+          },
+          "is_ipv6": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "description": "是否为IPv6，0为IPv4，1为IPv6",
+            "example": 0
+          },
+          "parse_type": {
+            "type": "string",
+            "enum": [
+              "ipv4",
+              "ipv6",
+              "proxy",
+              "proxy6"
+            ],
+            "description": "解析类型：\n- ipv4: IPv4解析\n- ipv6: IPv6解析\n- proxy: 代理解析\n- proxy6: IPv6代理解析\n",
+            "example": "ipv4"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MultiDnsRule": {
+        "type": "object",
+        "required": [
+          "id",
+          "interface",
+          "tagname",
+          "dns1",
+          "dns2",
+          "enabled",
+          "comment"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "策略ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "interface": {
+            "type": "string",
+            "description": "网卡接口名称",
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "minLength": 1,
+            "maxLength": 20,
+            "example": "wan1"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "标识名称（支持中文/数字/字母/下划线/连字符，不能以符号开头，1-15字符）",
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "minLength": 1,
+            "maxLength": 50,
+            "example": "线路1"
+          },
+          "dns1": {
+            "type": "string",
+            "description": "主DNS服务器地址",
+            "format": "ipv4",
+            "example": "8.8.8.8"
+          },
+          "dns2": {
+            "type": "string",
+            "description": "备DNS服务器地址",
+            "format": "ipv4",
+            "example": "8.8.4.4"
+          },
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "策略启用状态，yes为启用，no为停用",
+            "example": "yes"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符",
+            "maxLength": 64,
+            "example": "主线路DNS配置"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MultiDnsRuleInput": {
+        "type": "object",
+        "required": [
+          "interface",
+          "tagname",
+          "dns1",
+          "dns2",
+          "enabled",
+          "comment"
+        ],
+        "properties": {
+          "interface": {
+            "type": "string",
+            "description": "网卡接口名称",
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "minLength": 1,
+            "maxLength": 20,
+            "example": "wan1"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "标识名称（支持中文/数字/字母/下划线/连字符，不能以符号开头，1-15字符）",
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "minLength": 1,
+            "maxLength": 50,
+            "example": "线路1"
+          },
+          "dns1": {
+            "type": "string",
+            "description": "主DNS服务器地址",
+            "format": "ipv4",
+            "example": "8.8.8.8"
+          },
+          "dns2": {
+            "type": "string",
+            "description": "备DNS服务器地址",
+            "format": "ipv4",
+            "example": "8.8.4.4"
+          },
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "策略启用状态，yes为启用，no为停用",
+            "example": "yes"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符",
+            "maxLength": 64,
+            "example": "主线路DNS配置"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/CreateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/CreateBusinessErrorResponse"
+          }
+        ],
+        "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "CreateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "dns-cache",
+      "x-displayName": "DNS缓存",
+      "description": "DNS缓存状态监控和统计信息"
+    },
+    {
+      "name": "dns-config",
+      "x-displayName": "DNS配置",
+      "description": "DNS服务配置管理"
+    },
+    {
+      "name": "dns-proxy",
+      "x-displayName": "DNS代理规则",
+      "description": "DNS代理规则管理"
+    },
+    {
+      "name": "multi-dns",
+      "x-displayName": "多线DNS管理",
+      "description": "多线路DNS策略管理，为每个WAN口配置自定义DNS服务器"
+    }
+  ]
+}

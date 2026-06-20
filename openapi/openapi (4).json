@@ -1,0 +1,526 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "系统磁盘信息API",
+    "version": "1.0.0",
+    "summary": "查询系统磁盘、分区、文件系统与挂载信息",
+    "description": "提供系统磁盘信息查询能力，包括：\n- 磁盘基础信息\n- 分区列表\n- 文件系统信息\n- 挂载用途与容量使用情况\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/system/disks": {
+      "get": {
+        "summary": "获取系统磁盘信息",
+        "description": "获取当前系统的磁盘列表，以及每块磁盘下的分区、文件系统和挂载信息。\n",
+        "operationId": "getSystemDisks",
+        "tags": [
+          "system-disks"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取系统磁盘信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemDiskListResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "data": [
+                      {
+                        "type": "dos",
+                        "disk": "sda",
+                        "system": 0,
+                        "block_size": 512,
+                        "creating": 0,
+                        "partition": [
+                          {
+                            "name": "sda1",
+                            "type": 0,
+                            "filesys": {
+                              "fs_uuid": "b2f90854-8616-4c83-953f-caf8dfdf6866",
+                              "fs_type": "ext4"
+                            },
+                            "size": 249108103168,
+                            "mounted": {
+                              "mt_purpose": "0",
+                              "mt_total": "244062085120",
+                              "mt_name": "",
+                              "mt_used": "28672",
+                              "mt_uses": "0",
+                              "mt_avail": "231589875712"
+                            },
+                            "formating": 0
+                          },
+                          {
+                            "name": "sda2",
+                            "type": 0,
+                            "filesys": {
+                              "fs_uuid": "6b32b2eb-e04a-4020-aef6-6d4f3a2a03fa",
+                              "fs_type": "ext4"
+                            },
+                            "size": 249108103168,
+                            "mounted": {
+                              "mt_purpose": "4",
+                              "mt_total": "244062085120",
+                              "mt_name": "",
+                              "mt_used": "98304",
+                              "mt_uses": "0",
+                              "mt_avail": "231589806080"
+                            },
+                            "formating": 0
+                          },
+                          {
+                            "name": "sda3",
+                            "type": 0,
+                            "filesys": {
+                              "fs_uuid": "d31a6f82-ea6c-4c9c-a851-0e4a25d926fb",
+                              "fs_type": "ext4"
+                            },
+                            "size": 249108103168,
+                            "mounted": {
+                              "mt_purpose": "1",
+                              "mt_total": "244062085120",
+                              "mt_name": "test-001",
+                              "mt_used": "36864",
+                              "mt_uses": "0",
+                              "mt_avail": "231589867520"
+                            },
+                            "formating": 0
+                          },
+                          {
+                            "name": "sda4",
+                            "type": 0,
+                            "filesys": {
+                              "fs_uuid": "775cd0cb-f55e-40cc-ab2b-136f540bddab",
+                              "fs_type": "ext4"
+                            },
+                            "size": 252879527936,
+                            "mounted": {
+                              "mt_purpose": "1",
+                              "mt_total": "247772393472",
+                              "mt_name": "test-002",
+                              "mt_used": "28672",
+                              "mt_uses": "0",
+                              "mt_avail": "235111612416"
+                            },
+                            "formating": 0
+                          }
+                        ],
+                        "model": "WDC  WDS100T2B0A",
+                        "size": 1000204886016
+                      },
+                      {
+                        "type": "dos",
+                        "disk": "sdb",
+                        "system": 1,
+                        "block_size": 512,
+                        "creating": 0,
+                        "partition": [
+                          {
+                            "name": "sdb3",
+                            "type": 0,
+                            "filesys": {
+                              "fs_uuid": "4cfe26af-180a-4692-8a96-50f3e6e70cbd",
+                              "fs_type": "ext4"
+                            },
+                            "size": 52428800,
+                            "mounted": {
+                              "mt_purpose": "0",
+                              "mt_total": "45520896",
+                              "mt_name": "",
+                              "mt_used": "1635328",
+                              "mt_uses": "4",
+                              "mt_avail": "40215552"
+                            },
+                            "formating": 0
+                          },
+                          {
+                            "name": "sdb5",
+                            "type": 2,
+                            "filesys": {
+                              "fs_uuid": "ff13e131-8192-4c49-a027-5ef217c2e277",
+                              "fs_type": "ext4"
+                            },
+                            "size": 3899416576,
+                            "mounted": {
+                              "mt_purpose": "0",
+                              "mt_total": "3755843584",
+                              "mt_name": "",
+                              "mt_used": "123707392",
+                              "mt_uses": "3",
+                              "mt_avail": "3420389376"
+                            },
+                            "formating": 0
+                          }
+                        ],
+                        "model": "SanDisk SSD P4 4",
+                        "size": 4011614208
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数错误"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 401,
+              "message": "未认证或凭证无效"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 403,
+              "message": "无权限访问"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 500,
+              "message": "服务器内部错误"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "错误状态码",
+            "example": 400
+          },
+          "message": {
+            "type": "string",
+            "description": "错误信息",
+            "example": "请求参数错误"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SystemDiskFilesystem": {
+        "type": "object",
+        "required": [
+          "fs_uuid",
+          "fs_type"
+        ],
+        "properties": {
+          "fs_uuid": {
+            "type": "string",
+            "description": "文件系统 UUID",
+            "example": "b2f90854-8616-4c83-953f-caf8dfdf6866"
+          },
+          "fs_type": {
+            "type": "string",
+            "description": "文件系统类型",
+            "example": "ext4"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SystemDiskMountInfo": {
+        "type": "object",
+        "required": [
+          "mt_purpose",
+          "mt_total",
+          "mt_name",
+          "mt_used",
+          "mt_uses",
+          "mt_avail"
+        ],
+        "properties": {
+          "mt_purpose": {
+            "type": "string",
+            "description": "挂载分区用途，`0` 未使用，`1` 普通存储，`2` 有余繁星，`3` 视频缓存，`4` 行为记录",
+            "enum": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4"
+            ],
+            "example": "0"
+          },
+          "mt_total": {
+            "type": "string",
+            "description": "分区总容量，单位 B",
+            "example": "244062085120"
+          },
+          "mt_name": {
+            "type": "string",
+            "description": "挂载名称",
+            "example": ""
+          },
+          "mt_used": {
+            "type": "string",
+            "description": "已使用容量，单位 B",
+            "example": "28672"
+          },
+          "mt_uses": {
+            "type": "string",
+            "description": "使用率",
+            "example": "0"
+          },
+          "mt_avail": {
+            "type": "string",
+            "description": "可用容量，单位 B",
+            "example": "231589875712"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SystemDiskPartition": {
+        "type": "object",
+        "required": [
+          "name",
+          "type",
+          "filesys",
+          "size",
+          "mounted",
+          "formating"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "分区名称",
+            "example": "sda1"
+          },
+          "type": {
+            "type": "integer",
+            "description": "分区类型，`0` 主分区，`1` 扩展分区，`2` 逻辑分区",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "example": 0
+          },
+          "filesys": {
+            "$ref": "#/components/schemas/SystemDiskFilesystem"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64",
+            "description": "分区大小，单位 B",
+            "example": 249108103168
+          },
+          "mounted": {
+            "$ref": "#/components/schemas/SystemDiskMountInfo"
+          },
+          "formating": {
+            "type": "integer",
+            "description": "分区是否正在格式化，`0` 否，`1` 是",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "SystemDiskDevice": {
+        "type": "object",
+        "required": [
+          "type",
+          "disk",
+          "system",
+          "block_size",
+          "creating",
+          "partition",
+          "model",
+          "size"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "磁盘分区表类型",
+            "example": "dos"
+          },
+          "disk": {
+            "type": "string",
+            "description": "磁盘名，如 `sda`、`sdb`、`nda`、`mda`",
+            "example": "sda"
+          },
+          "system": {
+            "type": "integer",
+            "description": "是否为系统磁盘，`0` 否，`1` 是",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "block_size": {
+            "type": "integer",
+            "description": "块大小",
+            "example": 512
+          },
+          "creating": {
+            "type": "integer",
+            "description": "是否正在创建分区，`0` 否，`1` 是",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "partition": {
+            "type": "array",
+            "description": "分区列表",
+            "items": {
+              "$ref": "#/components/schemas/SystemDiskPartition"
+            }
+          },
+          "model": {
+            "type": "string",
+            "description": "硬盘型号",
+            "example": "WDC  WDS100T2B0A"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64",
+            "description": "磁盘总大小，单位 B",
+            "example": 1000204886016
+          }
+        },
+        "additionalProperties": false
+      },
+      "SystemDiskListResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应状态码，`0` 表示成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "响应消息",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "array",
+                "description": "磁盘列表",
+                "items": {
+                  "$ref": "#/components/schemas/SystemDiskDevice"
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用 JWT Bearer Token 进行认证。\n在请求头中添加：Authorization: Bearer {token}\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "system-disks",
+      "x-displayName": "系统磁盘信息",
+      "description": "查询系统磁盘、分区、文件系统与挂载使用情况"
+    }
+  ]
+}

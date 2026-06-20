@@ -1,0 +1,388 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ARP日志管理API",
+    "version": "1.0.0",
+    "summary": "ARP日志查询和管理",
+    "description": "提供ARP日志的查询功能，包括：\n- ARP日志查询\n- 支持过滤和分页功能\n- 检测ARP地址欺骗事件\n- 日志时间戳和详细信息展示\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/log/arp": {
+      "get": {
+        "summary": "获取ARP日志列表",
+        "description": "获取ARP日志记录列表。\n支持过滤和分页功能，可以查询ARP地址欺骗等安全事件。\n",
+        "operationId": "listArpLogs",
+        "tags": [
+          "log-arp"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "模糊匹配字段列表，支持 content",
+            "schema": {
+              "type": "string"
+            },
+            "example": "content"
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "description": "模糊匹配内容",
+            "schema": {
+              "type": "string"
+            },
+            "example": "地址欺骗"
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：\n- \"==（等于）\"\n- \"!=（不等于）\"\n- \">（大于）\"\n- \">=（大于等于）\"\n- \"<（小于）\"\n- \"<=（小于等于）\"\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,field2==value2\n\n使用示例：\n- 单条件：filter=id==1\n- AND条件：filter=id>100&filter=timestamp<1736475000\n- OR条件：filter=content==欺骗,content==攻击\n- 时间范围：filter=timestamp>1736472000&filter=timestamp<1736475000\n",
+            "schema": {
+              "type": "string"
+            },
+            "example": "id==1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取ARP日志列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArpLogListResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "total": 2,
+                    "data": [
+                      {
+                        "content": "检测到一个ARP地址欺骗在接口(eth0): 192.168.0.14 08:9b:4b:44:ec:b6->88:68:4b:e4:f8:ef",
+                        "id": 1,
+                        "timestamp": 1736472037
+                      },
+                      {
+                        "content": "检测到一个ARP地址欺骗在接口(_vlan31): 192.168.31.6 24:14:07:0f:5c:f3->f2:a5:cf:d3:fd:6c",
+                        "id": 2,
+                        "timestamp": 1736472041
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除ARP日志",
+        "description": "清空所有ARP日志记录。\n此操作不可恢复，请谨慎操作。\n",
+        "operationId": "clearArpLogs",
+        "tags": [
+          "log-arp"
+        ],
+        "responses": {
+          "200": {
+            "description": "ARP日志清空成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 20,
+          "example": 20
+        }
+      },
+      "orderParam": {
+        "name": "order",
+        "in": "query",
+        "description": "排序方向",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "asc",
+          "example": "asc"
+        }
+      },
+      "orderByParam": {
+        "name": "order_by",
+        "in": "query",
+        "description": "排序字段",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "id",
+            "timestamp"
+          ],
+          "default": "id",
+          "example": "timestamp"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ArpLog": {
+        "type": "object",
+        "required": [
+          "id",
+          "content",
+          "timestamp"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "日志记录ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "content": {
+            "type": "string",
+            "description": "ARP日志内容",
+            "maxLength": 500,
+            "example": "检测到一个ARP地址欺骗在接口(eth0): 192.168.0.14 08:9b:4b:44:ec:b6->88:68:4b:e4:f8:ef"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "时间戳（Unix时间戳）",
+            "example": 1736472037
+          }
+        },
+        "additionalProperties": false
+      },
+      "ArpLogListResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "返回记录总数",
+                "minimum": 0,
+                "example": 2
+              },
+              "data": {
+                "type": "array",
+                "description": "ARP日志记录列表",
+                "items": {
+                  "$ref": "#/components/schemas/ArpLog"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "log-arp",
+      "x-displayName": "ARP日志管理",
+      "description": "ARP安全日志的查询和管理，包括ARP地址欺骗检测日志"
+    }
+  ]
+}

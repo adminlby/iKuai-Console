@@ -1,0 +1,1318 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "URL黑白名单API",
+    "version": "1.0.0",
+    "summary": "URL黑白名单策略管理",
+    "description": "提供URL黑白名单策略的完整管理功能，包括：\n- 创建、更新、删除URL黑白名单策略\n- 启用/禁用URL黑白名单策略\n- 支持黑白名单模式切换\n- 域名过滤控制\n- 源IP地址过滤\n- 时间规则控制\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/security/url-black/rules": {
+      "get": {
+        "summary": "获取URL黑白名单策略列表",
+        "description": "获取URL黑白名单策略列表，支持分页和过滤查询",
+        "operationId": "getUrlBlackRules",
+        "tags": [
+          "url-blacklist"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码（从1开始）",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "每页记录数",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 20
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：\n- \"==（等于）\"\n- \"!=（不等于）\"\n- \">（大于）\"\n- \">=（大于等于）\"\n- \"<（小于）\"\n- \"<=（小于等于）\"\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,filter=field2==value2\n\n支持的字段：enabled、mode、tagname、domain等\n使用示例：\n- 单条件：filter=enabled==yes\n- AND条件：filter=enabled==yes&filter=mode==0\n- OR条件：filter=domain==baidu.com,filter=domain==google.com\n- 黑白名单模式：filter=mode==0 (黑名单) 或 filter=mode==1 (白名单)\n- 域名前缀匹配：filter=domain==*.example.com\n",
+            "schema": {
+              "type": "string"
+            },
+            "example": "enabled==yes&mode==0"
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "排序字段（id, domain等）",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "id",
+                "domain"
+              ],
+              "default": "id"
+            }
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "description": "排序方式（asc:升序, desc:降序）",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取URL黑白名单策略列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UrlBlackRulesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "创建URL黑白名单策略",
+        "description": "创建新的URL黑白名单策略，支持域名过滤和时间规则控制\n",
+        "operationId": "createUrlBlackRule",
+        "tags": [
+          "url-blacklist"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "URL黑白名单策略配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UrlBlackRuleInput"
+              },
+              "example": {
+                "enabled": "yes",
+                "comment": "",
+                "domain": {
+                  "custom": [
+                    "restapi.amap.com",
+                    "www.baidu.com"
+                  ]
+                },
+                "src_addr": {
+                  "custom": [
+                    "192.168.9.16"
+                  ],
+                  "object": [
+                    {
+                      "type": 0,
+                      "gp_name": "11",
+                      "gid": "GPIP1"
+                    }
+                  ]
+                },
+                "time": {
+                  "custom": [
+                    {
+                      "type": "weekly",
+                      "weekdays": "1234567",
+                      "start_time": "00:00",
+                      "end_time": "20:00",
+                      "comment": "test11"
+                    },
+                    {
+                      "type": "date",
+                      "start_time": "2026-05-01T08:00",
+                      "end_time": "2026-05-10T08:00",
+                      "comment": "test11"
+                    }
+                  ],
+                  "object": [
+                    {
+                      "type": 4,
+                      "gp_name": "11",
+                      "gid": "TIMEGP1"
+                    }
+                  ]
+                },
+                "mode": "0",
+                "tagname": "11"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success",
+                      "rowid": 1
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/security/url-black/rules/{id}": {
+      "get": {
+        "summary": "获取单个URL黑白名单策略",
+        "description": "根据ID获取指定的URL黑白名单策略详情",
+        "operationId": "getUrlBlackRule",
+        "tags": [
+          "url-blacklist"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "URL黑白名单策略ID",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取URL黑白名单策略详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UrlBlackRuleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新URL黑白名单策略",
+        "description": "完整更新指定的URL黑白名单策略配置\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateUrlBlackRule",
+        "tags": [
+          "url-blacklist"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "URL黑白名单策略ID",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "URL黑白名单策略更新数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UrlBlackRuleEditInput"
+              },
+              "example": {
+                "enabled": "yes",
+                "comment": "",
+                "domain": {
+                  "custom": [
+                    "restapi.amap.com",
+                    "www.baidu.com"
+                  ]
+                },
+                "src_addr": {
+                  "custom": [
+                    "192.168.9.16"
+                  ],
+                  "object": [
+                    {
+                      "type": 0,
+                      "gp_name": "11",
+                      "gid": "GPIP1"
+                    }
+                  ]
+                },
+                "time": {
+                  "custom": [
+                    {
+                      "type": "weekly",
+                      "weekdays": "1234567",
+                      "start_time": "00:00",
+                      "end_time": "20:00",
+                      "comment": "test11"
+                    },
+                    {
+                      "type": "date",
+                      "start_time": "2026-05-01T08:00",
+                      "end_time": "2026-05-10T08:00",
+                      "comment": "test11"
+                    }
+                  ],
+                  "object": [
+                    {
+                      "type": 4,
+                      "gp_name": "11",
+                      "gid": "TIMEGP1"
+                    }
+                  ]
+                },
+                "mode": "0",
+                "tagname": "11"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "启用/停用URL黑白名单策略",
+        "description": "切换URL黑白名单策略的启用状态",
+        "operationId": "toggleUrlBlackRule",
+        "tags": [
+          "url-blacklist"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "URL黑白名单策略ID",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "策略状态",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "enabled"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "string",
+                    "description": "策略状态",
+                    "enum": [
+                      "yes",
+                      "no"
+                    ],
+                    "example": "yes"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除URL黑白名单策略",
+        "description": "删除指定的URL黑白名单策略",
+        "operationId": "deleteUrlBlackRule",
+        "tags": [
+          "url-blacklist"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "URL黑白名单策略ID",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "URL黑白名单策略删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "message": "success"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "请求参数错误"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "未认证或凭证无效"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "无权限访问URL黑白名单策略"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "URL黑白名单策略不存在"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "规则名称重复"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "服务器内部错误（查看服务器日志、修复异常）"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "UrlBlackRule": {
+        "type": "object",
+        "required": [
+          "id",
+          "enabled",
+          "tagname",
+          "mode",
+          "domain"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "策略ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "description": "规则状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "名称，支持中文、英文、数字、下划线和连字符，1-15个字符，不能以下划线或连字符开头",
+            "example": "11"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "example": ""
+          },
+          "mode": {
+            "type": "integer",
+            "description": "模式",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "domain": {
+            "$ref": "#/components/schemas/DomainObject"
+          },
+          "src_addr": {
+            "$ref": "#/components/schemas/AddressObject"
+          },
+          "time": {
+            "$ref": "#/components/schemas/TimeObject"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UrlBlackRuleInput": {
+        "type": "object",
+        "required": [
+          "enabled",
+          "tagname",
+          "mode",
+          "domain"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "description": "规则状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "名称，支持中文、英文、数字、下划线和连字符，1-15个字符，不能以下划线或连字符开头",
+            "example": "11"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "example": ""
+          },
+          "mode": {
+            "type": "string",
+            "description": "模式",
+            "enum": [
+              "0",
+              "1"
+            ],
+            "example": "0"
+          },
+          "domain": {
+            "$ref": "#/components/schemas/DomainObject"
+          },
+          "src_addr": {
+            "$ref": "#/components/schemas/AddressObject"
+          },
+          "time": {
+            "$ref": "#/components/schemas/TimeObject"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UrlBlackRuleEditInput": {
+        "type": "object",
+        "description": "PUT 全量修改，所有字段均为必填，未修改的字段须传原值",
+        "required": [
+          "enabled",
+          "comment",
+          "domain",
+          "src_addr",
+          "mode",
+          "tagname"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "description": "规则状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "example": ""
+          },
+          "tagname": {
+            "type": "string",
+            "description": "名称，支持中文、英文、数字、下划线和连字符，1-15个字符，不能以下划线或连字符开头",
+            "example": "11"
+          },
+          "mode": {
+            "type": "string",
+            "description": "模式（0=黑名单, 1=白名单）",
+            "enum": [
+              "0",
+              "1"
+            ],
+            "example": "0"
+          },
+          "domain": {
+            "$ref": "#/components/schemas/DomainObject"
+          },
+          "src_addr": {
+            "$ref": "#/components/schemas/AddressObject"
+          },
+          "time": {
+            "$ref": "#/components/schemas/TimeObject"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateUrlBlackRuleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "成功状态码，创建接口中为0",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "success"
+          },
+          "rowid": {
+            "type": "integer",
+            "description": "新创建的URL黑白名单策略ID",
+            "minimum": 1,
+            "example": 1
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "rowid"
+        ],
+        "additionalProperties": false
+      },
+      "UrlBlackRuleResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/UrlBlackRule"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "UrlBlackRulesResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "返回记录总数",
+                "minimum": 0,
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "description": "URL黑白名单策略列表",
+                "items": {
+                  "$ref": "#/components/schemas/UrlBlackRule"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "DomainObject": {
+        "type": "object",
+        "properties": {
+          "custom": {
+            "type": "array",
+            "description": "自定义域名列表",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "restapi.amap.com",
+              "www.baidu.com"
+            ]
+          },
+          "object": {
+            "type": "array",
+            "description": "域名对象列表",
+            "items": {
+              "$ref": "#/components/schemas/NetworkObject"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "AddressObject": {
+        "type": "object",
+        "properties": {
+          "custom": {
+            "type": "array",
+            "description": "自定义地址列表",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "192.168.9.16"
+            ]
+          },
+          "object": {
+            "type": "array",
+            "description": "地址对象列表",
+            "items": {
+              "$ref": "#/components/schemas/NetworkObject"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "TimeObject": {
+        "type": "object",
+        "properties": {
+          "custom": {
+            "type": "array",
+            "description": "自定义时间规则列表",
+            "items": {
+              "$ref": "#/components/schemas/TimeRule"
+            }
+          },
+          "object": {
+            "type": "array",
+            "description": "时间对象列表",
+            "items": {
+              "$ref": "#/components/schemas/TimeObjectGroup"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "NetworkObject": {
+        "type": "object",
+        "required": [
+          "type",
+          "gp_name",
+          "gid"
+        ],
+        "properties": {
+          "type": {
+            "type": "integer",
+            "description": "对象类型",
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "example": 0
+          },
+          "gp_name": {
+            "type": "string",
+            "description": "对象名称",
+            "example": "11"
+          },
+          "gid": {
+            "type": "string",
+            "description": "对象ID",
+            "example": "GPIP1"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TimeObjectGroup": {
+        "type": "object",
+        "required": [
+          "type",
+          "gp_name",
+          "gid"
+        ],
+        "properties": {
+          "type": {
+            "type": "integer",
+            "description": "对象类型",
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "example": 4
+          },
+          "gp_name": {
+            "type": "string",
+            "description": "对象名称",
+            "example": "11"
+          },
+          "gid": {
+            "type": "string",
+            "description": "对象ID",
+            "example": "TIMEGP1"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TimeRule": {
+        "type": "object",
+        "required": [
+          "type",
+          "start_time",
+          "end_time"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "时间规则类型",
+            "enum": [
+              "weekly",
+              "date"
+            ],
+            "example": "weekly"
+          },
+          "start_time": {
+            "type": "string",
+            "description": "开始时间",
+            "example": "00:00"
+          },
+          "end_time": {
+            "type": "string",
+            "description": "结束时间",
+            "example": "20:00"
+          },
+          "weekdays": {
+            "type": "string",
+            "description": "星期几（1-7代表周一到周日）",
+            "pattern": "^[1-7]+$",
+            "example": "1234567"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "example": "test11"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/CreateUrlBlackRuleResponse"
+          },
+          {
+            "$ref": "#/components/schemas/CreateBusinessErrorResponse"
+          }
+        ],
+        "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "CreateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "url-blacklist",
+      "x-displayName": "URL黑白名单",
+      "description": "URL黑白名单策略管理，包括域名过滤、黑白名单模式和时间规则控制"
+    }
+  ]
+}

@@ -1,0 +1,418 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "告警信息API",
+    "version": "1.0.0",
+    "summary": "告警信息查询",
+    "description": "提供告警信息的只读查询功能，包括：\n- 告警信息列表查询\n- 支持分页、排序、过滤和模糊搜索\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/log/warnings": {
+      "get": {
+        "summary": "获取告警信息列表",
+        "description": "获取设备告警信息列表。\n支持按告警类型、告警事件、告警等级、已读状态、时间戳等字段过滤。\n",
+        "operationId": "listWarnings",
+        "tags": [
+          "log-warnings"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "$ref": "#/components/parameters/filterParam"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "模糊搜索字段名，与 pattern 联合使用，支持 event、title、detail、customize",
+            "schema": {
+              "type": "string"
+            },
+            "example": "title,detail"
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "description": "模糊搜索关键词，与 key 联合使用",
+            "schema": {
+              "type": "string"
+            },
+            "example": "CPU"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取告警信息列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WarningListResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "total": 2,
+                    "data": [
+                      {
+                        "id": 1,
+                        "timestamp": 1778763600,
+                        "event": "CPU",
+                        "title": "CPU使用率过高",
+                        "type": 1,
+                        "level": 2,
+                        "detail": "CPU使用率持续超过阈值",
+                        "customize": "",
+                        "status": 0
+                      },
+                      {
+                        "id": 2,
+                        "timestamp": 1778756400,
+                        "event": "AP_CHUTIL",
+                        "title": "AP信道利用率过高",
+                        "type": 2,
+                        "level": 1,
+                        "detail": "AP信道利用率超过阈值",
+                        "customize": "00:11:22:33:44:55",
+                        "status": 1
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 50,
+          "example": 50
+        }
+      },
+      "orderParam": {
+        "name": "order",
+        "in": "query",
+        "description": "排序方向，asc为升序，desc为降序",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "desc",
+          "example": "desc"
+        }
+      },
+      "orderByParam": {
+        "name": "order_by",
+        "in": "query",
+        "description": "排序字段，支持 id、timestamp、type、event、level、status、title",
+        "schema": {
+          "type": "string",
+          "default": "timestamp",
+          "example": "timestamp"
+        }
+      },
+      "filterParam": {
+        "name": "filter",
+        "in": "query",
+        "description": "过滤条件，支持精确匹配、范围匹配和多条件组合。\n\n支持的操作符：\n- \"==（等于）\"\n- \"!=（不等于）\"\n- \">（大于）\"\n- \">=（大于等于）\"\n- \"<（小于）\"\n- \"<=（小于等于）\"\n- \"：（包含）\"\n- \"!：（不包含）\"\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,field2==value2\n\n使用示例：\n- 告警类型过滤：filter=type==1\n- 告警事件过滤：filter=event==CPU\n- 告警等级过滤：filter=level==2\n- 未读告警过滤：filter=status==0\n- 时间范围过滤：filter=timestamp>=1778760000&filter=timestamp<1778846400\n",
+        "schema": {
+          "type": "string"
+        },
+        "example": "status==0"
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 400,
+              "message": "请求语法错误或参数不合法（检查请求参数、过滤条件或排序字段）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 401,
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 403,
+              "message": "无权限访问告警信息"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 500,
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "WarningListResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示成功",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "响应消息",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/WarningListResult"
+          }
+        },
+        "additionalProperties": false
+      },
+      "WarningListResult": {
+        "type": "object",
+        "required": [
+          "total",
+          "data"
+        ],
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "符合过滤条件的告警总数",
+            "minimum": 0,
+            "example": 2
+          },
+          "data": {
+            "type": "array",
+            "description": "告警信息列表",
+            "items": {
+              "$ref": "#/components/schemas/WarningInfo"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "WarningInfo": {
+        "type": "object",
+        "required": [
+          "id",
+          "timestamp",
+          "event",
+          "title",
+          "type",
+          "level",
+          "detail",
+          "customize",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "告警ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "告警产生时间戳",
+            "example": 1778763600
+          },
+          "event": {
+            "type": "string",
+            "description": "告警事件标识",
+            "maxLength": 100,
+            "example": "CPU"
+          },
+          "title": {
+            "type": "string",
+            "description": "告警标题",
+            "maxLength": 255,
+            "example": "CPU使用率过高"
+          },
+          "type": {
+            "type": "integer",
+            "description": "告警类型，1-路由，2-AP，3-交换机，4-周边设备，5-其他",
+            "enum": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "example": 1
+          },
+          "level": {
+            "type": "integer",
+            "description": "告警等级",
+            "enum": [
+              1,
+              2,
+              3
+            ],
+            "example": 2
+          },
+          "detail": {
+            "type": "string",
+            "description": "告警详情",
+            "maxLength": 2000,
+            "example": "CPU使用率持续超过阈值"
+          },
+          "customize": {
+            "type": "string",
+            "description": "自定义内容，CPU温度告警时为温度字段名，AP告警时为AP MAC地址，其他场景为空字符串",
+            "maxLength": 255,
+            "example": ""
+          },
+          "status": {
+            "type": "integer",
+            "description": "阅读状态，0-未读，1-已读",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "错误码",
+            "example": 400
+          },
+          "message": {
+            "type": "string",
+            "description": "错误信息",
+            "example": "请求参数错误"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer <token>\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "log-warnings",
+      "x-displayName": "告警信息",
+      "description": "告警信息列表查询"
+    }
+  ]
+}

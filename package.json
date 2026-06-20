@@ -1,0 +1,13 @@
+{
+  "name": "ikuai-console",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "description": "UniFi-styled console for the iKuai v4.0 REST API (monorepo: frontend + backend)",
+  "scripts": {
+    "frontend": "npm --prefix frontend run dev",
+    "backend": "npm --prefix backend run start",
+    "build": "npm --prefix frontend run build",
+    "install:all": "npm --prefix frontend install && npm --prefix backend install"
+  }
+}

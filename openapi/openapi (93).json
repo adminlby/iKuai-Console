@@ -1,0 +1,479 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "终端上下线日志API",
+    "version": "1.0.0",
+    "summary": "终端上下线日志查询",
+    "description": "提供终端上下线日志的查询功能，包括：\n- 终端上线、下线记录查询\n- 支持分页、排序和过滤功能\n- 支持按时间范围查询\n- 支持按终端信息进行模糊匹配\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/log/terminal-presence": {
+      "get": {
+        "summary": "获取终端上下线日志列表",
+        "description": "获取终端上下线日志记录列表。\n支持分页、排序、过滤、时间范围查询和模糊匹配。\n",
+        "operationId": "listTerminalPresenceLogs",
+        "tags": [
+          "log-terminal-presence"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：\n- \"==（等于）\"\n- \"!=（不等于）\"\n- \">（大于）\"\n- \">=（大于等于）\"\n- \"<（小于）\"\n- \"<=（小于等于）\"\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,field2==value2\n\n使用示例：\n- 单条件：filter=ip_addr==192.168.1.100\n- AND条件：filter=ip_addr==192.168.1.100&filter=mac==08:9b:4b:00:10:6e\n- OR条件：filter=systype==Windows,systype==Android\n- 时间范围：filter=timestamp>1761842000&filter=timestamp<1761843000\n",
+            "schema": {
+              "type": "string"
+            },
+            "example": "ip_addr==192.168.1.100"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "模糊匹配字段列表，支持 mac, ip_addr, systype, devtype, client_model, comment, username, termname",
+            "schema": {
+              "type": "string"
+            },
+            "example": "ip_addr,mac,username"
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "description": "模糊匹配内容",
+            "schema": {
+              "type": "string"
+            },
+            "example": "192.168.1"
+          },
+          {
+            "name": "starttime",
+            "in": "query",
+            "description": "查询开始时间，Unix 时间戳，非必填，用于限定查询时间范围",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1761842000
+          },
+          {
+            "name": "stoptime",
+            "in": "query",
+            "description": "查询结束时间，Unix 时间戳，非必填，用于限定查询时间范围",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1761843000
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取终端上下线日志列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TerminalPresenceLogListResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "total": 1,
+                    "data": [
+                      {
+                        "comment": "",
+                        "id": 47,
+                        "timestamp": 1778232965,
+                        "logout_time": 1778233560,
+                        "online_time": 595,
+                        "ip_addr": "192.168.99.102",
+                        "username": "",
+                        "mac": "68:da:73:a1:d9:01",
+                        "total_up": 743721,
+                        "total_down": 1953505,
+                        "ipv4_gnames": "",
+                        "date_time": "2026-05-08 17:36:05",
+                        "termname": "",
+                        "mac_gnames": "",
+                        "ipv6_gnames": "",
+                        "icon": "1_102",
+                        "auth": 0,
+                        "systype": "MacOS",
+                        "today_total": 0,
+                        "devtype": "Apple",
+                        "vlan_id": 0,
+                        "client_model": "",
+                        "client_typeid": 102000104
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 50,
+          "example": 50
+        }
+      },
+      "orderParam": {
+        "name": "order",
+        "in": "query",
+        "description": "排序方向，asc为升序（默认），desc为降序",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "asc",
+          "example": "desc"
+        }
+      },
+      "orderByParam": {
+        "name": "order_by",
+        "in": "query",
+        "description": "排序字段，支持id、timestamp、logout_time、date_time、online_time、ip_addr、mac等字段",
+        "schema": {
+          "type": "string",
+          "default": "id",
+          "example": "timestamp"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 400,
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 401,
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 403,
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 500,
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码",
+            "example": 400
+          },
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "TerminalPresenceLogListResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码，0表示成功",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "响应信息",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "description": "终端上下线日志列表",
+                "items": {
+                  "$ref": "#/components/schemas/TerminalPresenceLog"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "TerminalPresenceLog": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "日志记录ID",
+            "example": 47
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "上线时间，Unix 时间戳",
+            "example": 1778232965
+          },
+          "logout_time": {
+            "type": "integer",
+            "format": "int64",
+            "description": "下线时间，Unix 时间戳，未下线时可能为0",
+            "example": 1778233560
+          },
+          "date_time": {
+            "type": "string",
+            "description": "日志时间文本",
+            "example": "2026-05-08 17:36:05"
+          },
+          "online_time": {
+            "type": "integer",
+            "format": "int64",
+            "description": "在线时长，单位秒",
+            "example": 595
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "终端IP地址",
+            "format": "ipv4",
+            "example": "192.168.99.102"
+          },
+          "mac": {
+            "type": "string",
+            "description": "终端MAC地址",
+            "pattern": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$",
+            "example": "68:da:73:a1:d9:01"
+          },
+          "total_up": {
+            "type": "integer",
+            "format": "int64",
+            "description": "上行流量，单位字节",
+            "example": 743721
+          },
+          "total_down": {
+            "type": "integer",
+            "format": "int64",
+            "description": "下行流量，单位字节",
+            "example": 1953505
+          },
+          "auth": {
+            "type": "integer",
+            "description": "认证方式或认证状态",
+            "example": 0
+          },
+          "systype": {
+            "type": "string",
+            "description": "终端系统类型",
+            "example": "MacOS"
+          },
+          "devtype": {
+            "type": "string",
+            "description": "终端设备类型",
+            "example": "Apple"
+          },
+          "client_model": {
+            "type": "string",
+            "description": "终端型号",
+            "example": ""
+          },
+          "client_typeid": {
+            "type": "integer",
+            "description": "终端类型ID",
+            "example": 102000104
+          },
+          "comment": {
+            "type": "string",
+            "description": "终端备注",
+            "example": ""
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名",
+            "example": ""
+          },
+          "termname": {
+            "type": "string",
+            "description": "终端名称",
+            "example": ""
+          },
+          "icon": {
+            "type": "string",
+            "description": "终端图标",
+            "example": "1_102"
+          },
+          "ipv4_gnames": {
+            "type": "string",
+            "description": "终端所属IPv4地址组名称",
+            "example": ""
+          },
+          "mac_gnames": {
+            "type": "string",
+            "description": "终端所属MAC地址组名称",
+            "example": ""
+          },
+          "ipv6_gnames": {
+            "type": "string",
+            "description": "终端所属IPv6地址组名称",
+            "example": ""
+          },
+          "today_total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "当日累计流量，单位字节",
+            "example": 0
+          },
+          "vlan_id": {
+            "type": "integer",
+            "description": "VLAN ID",
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "log-terminal-presence",
+      "x-displayName": "终端上下线日志",
+      "description": "终端上线、下线日志的查询，支持过滤、分页、时间范围和模糊匹配"
+    }
+  ]
+}

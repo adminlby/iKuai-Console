@@ -1,0 +1,357 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "云管交换机监控API",
+    "version": "1.0.0",
+    "summary": "云管交换机设备监控查询",
+    "description": "提供云管交换机的设备列表查询功能。\n\n**支持的设备类型：**\n- IK_J7052: 爱快J7052系列\n- 3ndlevel: 三级交换机\n- 2ndlevel: 二级交换机\n\n**注意：** 此模块仅提供查询功能。\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/monitoring/switch": {
+      "get": {
+        "summary": "查询云管交换机设备列表",
+        "description": "查询云管交换机设备列表，支持分页和过滤。\n",
+        "operationId": "getSwitchDevices",
+        "tags": [
+          "cloud-switch"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：\n- \"==（等于）\"\n- \"!=（不等于）\"\n- \">（大于）\"\n- \">=（大于等于）\"\n- \"<（小于）\"\n- \"<=（小于等于）\"\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,field2==value2\n\n使用示例：\n- 在线状态过滤：filter=status==1\n- 设备类型过滤：filter=type==IK_J7052\n- IP地址过滤：filter=ip_addr==192.168.1.100\n",
+            "schema": {
+              "type": "string"
+            },
+            "example": "status==1"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "模糊匹配字段列表，支持 name, tagname, ip_addr, mac, device, oemname",
+            "schema": {
+              "type": "string"
+            },
+            "example": "name,ip_addr,mac"
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "description": "模糊匹配内容",
+            "schema": {
+              "type": "string"
+            },
+            "example": "交换机"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回设备列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwitchResponse"
+                },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "results": {
+                        "data": [
+                          {
+                            "id": 1,
+                            "name": "核心交换机",
+                            "tagname": "核心交换机",
+                            "oemname": "IK-J7052",
+                            "mac": "aa:bb:cc:dd:ee:ff",
+                            "ip_addr": "192.168.1.100",
+                            "netmask": "255.255.255.0",
+                            "version": "v1.0.0",
+                            "device": "IK-J7052",
+                            "connect_time": 1678886400,
+                            "type": "IK_J7052",
+                            "snmp_version": "v2c",
+                            "status": 1
+                          }
+                        ],
+                        "total": 5
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 50,
+          "example": 50
+        }
+      },
+      "orderParam": {
+        "name": "order",
+        "in": "query",
+        "description": "排序方向，asc为升序（默认），desc为降序",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "asc",
+          "example": "asc"
+        }
+      },
+      "orderByParam": {
+        "name": "order_by",
+        "in": "query",
+        "description": "排序字段，支持id、name、ip_addr、status、connect_time等字段",
+        "schema": {
+          "type": "string",
+          "default": "id",
+          "example": "id"
+        }
+      }
+    },
+    "schemas": {
+      "SwitchDevice": {
+        "type": "object",
+        "description": "云管交换机设备信息",
+        "required": [
+          "id",
+          "name",
+          "ip_addr",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "设备ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "设备名称"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "标识名称（支持中文/数字/字母/下划线/连字符，不能以符号开头，1-15字符）"
+          },
+          "oemname": {
+            "type": "string",
+            "description": "设备OEM名称"
+          },
+          "mac": {
+            "type": "string",
+            "description": "MAC地址",
+            "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "IP地址",
+            "format": "ipv4"
+          },
+          "netmask": {
+            "type": "string",
+            "description": "子网掩码",
+            "format": "ipv4"
+          },
+          "version": {
+            "type": "string",
+            "description": "固件版本"
+          },
+          "device": {
+            "type": "string",
+            "description": "设备型号"
+          },
+          "connect_time": {
+            "type": "integer",
+            "description": "设备上线时间戳",
+            "format": "int64"
+          },
+          "type": {
+            "type": "string",
+            "description": "设备类型（对应oidset标识）",
+            "enum": [
+              "IK_J7052",
+              "3ndlevel",
+              "2ndlevel"
+            ]
+          },
+          "snmp_version": {
+            "type": "string",
+            "description": "SNMP版本",
+            "enum": [
+              "v2c",
+              "v3"
+            ]
+          },
+          "community": {
+            "type": "string",
+            "description": "SNMP v2c 团体名"
+          },
+          "username": {
+            "type": "string",
+            "description": "SNMP v3 用户名"
+          },
+          "security": {
+            "type": "string",
+            "description": "SNMP v3 安全级别"
+          },
+          "auth_proto": {
+            "type": "string",
+            "description": "SNMP v3 认证协议"
+          },
+          "auth_pass": {
+            "type": "string",
+            "description": "SNMP v3 认证密码"
+          },
+          "priv_proto": {
+            "type": "string",
+            "description": "SNMP v3 加密协议"
+          },
+          "priv_pass": {
+            "type": "string",
+            "description": "SNMP v3 加密密码"
+          },
+          "status": {
+            "type": "integer",
+            "description": "设备在线状态（0: 离线, 1: SNMP在线, 2: Ping在线）",
+            "enum": [
+              0,
+              1,
+              2
+            ]
+          }
+        }
+      },
+      "SwitchResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "description": "设备列表",
+                "items": {
+                  "$ref": "#/components/schemas/SwitchDevice"
+                }
+              },
+              "total": {
+                "type": "integer",
+                "description": "总记录数"
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求参数错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 400
+                },
+                "message": {
+                  "type": "string",
+                  "example": "参数错误"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 401
+                },
+                "message": {
+                  "type": "string",
+                  "example": "未认证或凭证无效"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "cloud-switch",
+      "x-displayName": "云管交换机",
+      "description": "云管交换机设备监控查询"
+    }
+  ]
+}

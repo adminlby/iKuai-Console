@@ -1,0 +1,395 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "周边设备监控API",
+    "version": "1.0.0",
+    "summary": "周边设备监控查询",
+    "description": "提供周边设备的监控查询功能，包括：\n- 设备列表查询\n- 设备在线状态监控（ICMP/端口扫描）\n- 自动端口转发状态查询\n\n**支持的设备类型：**\n- 路由器、交换机、防火墙、服务器\n- 摄像头、打印机、智能设备、无线AP\n- 其他网络设备\n\n**注意：** 此模块仅提供查询功能。\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/monitoring/downstream": {
+      "get": {
+        "summary": "查询周边设备列表",
+        "description": "查询周边设备列表，支持分页、过滤和设备类型筛选。\n\n**设备类型筛选（device参数）：**\n- router: 路由器\n- switches: 交换机\n- firewall: 防火墙\n- server: 服务器\n- camera: 摄像头\n- printer: 打印机\n- SmartDevices: 智能设备\n- ap: 无线AP\n- other: 其他\n",
+        "operationId": "getPeripheralDevices",
+        "tags": [
+          "monitor-peripheral"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：\n- \"==（等于）\"\n- \"!=（不等于）\"\n- \">（大于）\"\n- \">=（大于等于）\"\n- \"<（小于）\"\n- \"<=（小于等于）\"\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,field2==value2\n\n使用示例：\n- 设备类型过滤：filter=device==camera\n- 在线状态过滤：filter=status==1\n- IP地址过滤：filter=ip_addr==192.168.1.100\n",
+            "schema": {
+              "type": "string"
+            },
+            "example": "device==camera"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "模糊匹配字段列表，支持 name, tagname, ip_addr, mac, device, access",
+            "schema": {
+              "type": "string"
+            },
+            "example": "name,ip_addr"
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "description": "模糊匹配内容",
+            "schema": {
+              "type": "string"
+            },
+            "example": "192.168"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回设备列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeripheralDeviceResponse"
+                },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "results": {
+                        "total": 15,
+                        "data": [
+                          {
+                            "id": 1,
+                            "enabled": "yes",
+                            "name": "核心交换机",
+                            "tagname": "核心交换机",
+                            "type": 0,
+                            "ip_addr": "192.168.1.1",
+                            "mac": "",
+                            "port": "80",
+                            "protocol": "tcp",
+                            "autonat": 0,
+                            "eport": "",
+                            "access": "http",
+                            "method": "icmp",
+                            "device": "switches",
+                            "shell_port": 22,
+                            "last_time": 0,
+                            "status": 1
+                          },
+                          {
+                            "id": 2,
+                            "enabled": "yes",
+                            "name": "监控摄像头01",
+                            "tagname": "监控摄像头01",
+                            "type": 0,
+                            "ip_addr": "192.168.1.100",
+                            "mac": "",
+                            "port": "554",
+                            "protocol": "tcp",
+                            "autonat": 1,
+                            "eport": "8554",
+                            "access": "",
+                            "method": "portscan",
+                            "device": "camera",
+                            "shell_port": 0,
+                            "last_time": 1678867200,
+                            "status": 0
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 50,
+          "example": 50
+        }
+      },
+      "orderParam": {
+        "name": "order",
+        "in": "query",
+        "description": "排序方向，asc为升序（默认），desc为降序",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "asc",
+          "example": "asc"
+        }
+      },
+      "orderByParam": {
+        "name": "order_by",
+        "in": "query",
+        "description": "排序字段，支持id、name、ip_addr、status、last_time等字段",
+        "schema": {
+          "type": "string",
+          "default": "id",
+          "example": "id"
+        }
+      }
+    },
+    "schemas": {
+      "PeripheralDevice": {
+        "type": "object",
+        "description": "周边设备信息",
+        "required": [
+          "id",
+          "enabled",
+          "name",
+          "type",
+          "device",
+          "method"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "设备ID"
+          },
+          "enabled": {
+            "type": "string",
+            "description": "启用状态",
+            "enum": [
+              "yes",
+              "no"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "description": "设备名称"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "标识名称（支持中文/数字/字母/下划线/连字符，不能以符号开头，1-15字符）"
+          },
+          "type": {
+            "type": "integer",
+            "description": "地址类型（0: IP地址, 1: MAC地址）",
+            "enum": [
+              0,
+              1
+            ]
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "设备IP地址",
+            "format": "ipv4"
+          },
+          "mac": {
+            "type": "string",
+            "description": "设备MAC地址",
+            "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"
+          },
+          "port": {
+            "type": "string",
+            "description": "设备管理端口"
+          },
+          "protocol": {
+            "type": "string",
+            "description": "协议类型",
+            "enum": [
+              "tcp",
+              "udp"
+            ]
+          },
+          "autonat": {
+            "type": "integer",
+            "description": "自动端口转发（0: 关闭, 1: 开启）",
+            "enum": [
+              0,
+              1
+            ]
+          },
+          "eport": {
+            "type": "string",
+            "description": "外部端口"
+          },
+          "access": {
+            "type": "string",
+            "description": "访问方式",
+            "enum": [
+              "",
+              "http",
+              "https"
+            ]
+          },
+          "method": {
+            "type": "string",
+            "description": "在线检测方法",
+            "enum": [
+              "icmp",
+              "portscan"
+            ]
+          },
+          "device": {
+            "type": "string",
+            "description": "设备类型",
+            "enum": [
+              "router",
+              "switches",
+              "firewall",
+              "server",
+              "camera",
+              "printer",
+              "SmartDevices",
+              "ap",
+              "other"
+            ]
+          },
+          "shell_port": {
+            "type": "integer",
+            "description": "Shell管理端口"
+          },
+          "last_time": {
+            "type": "integer",
+            "description": "最近离线时间戳",
+            "format": "int64"
+          },
+          "status": {
+            "type": "integer",
+            "description": "设备在线状态（0: 离线, 1: 在线）",
+            "enum": [
+              0,
+              1
+            ]
+          }
+        }
+      },
+      "PeripheralDeviceResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "description": "设备列表",
+                "items": {
+                  "$ref": "#/components/schemas/PeripheralDevice"
+                }
+              },
+              "total": {
+                "type": "integer",
+                "description": "总记录数"
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求参数错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 400
+                },
+                "message": {
+                  "type": "string",
+                  "example": "参数错误"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 401
+                },
+                "message": {
+                  "type": "string",
+                  "example": "未认证或凭证无效"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "monitor-peripheral",
+      "x-displayName": "周边设备监控",
+      "description": "周边设备监控查询"
+    }
+  ]
+}

@@ -1,0 +1,4483 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AC服务管理API",
+    "version": "4.0.0",
+    "description": "AC服务状态管理和AP配置相关接口\n\n主要功能：\n- AC服务的启动、停止和状态查询\n- AP设备配置的获取和管理\n- 支持多种频段的AP配置（2.4G/5G/5G Radio2）\n- 完整的SSID安全、VLAN、限速等配置\n"
+  },
+  "paths": {
+    "/api/v4.0/network/ac/services:start": {
+      "post": {
+        "tags": [
+          "ac-service"
+        ],
+        "summary": "开启AC服务",
+        "description": "启动AC控制器服务",
+        "operationId": "startACService",
+        "responses": {
+          "200": {
+            "description": "成功开启AC服务",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "message": "Success"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/network/ac/services:stop": {
+      "post": {
+        "tags": [
+          "ac-service"
+        ],
+        "summary": "关闭AC服务",
+        "description": "停止AC控制器服务",
+        "operationId": "stopACService",
+        "responses": {
+          "200": {
+            "description": "成功关闭AC服务",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "message": "Success"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/network/ac/services": {
+      "get": {
+        "tags": [
+          "ac-service"
+        ],
+        "summary": "获取AC服务状态",
+        "description": "查询AC服务的当前运行状态",
+        "operationId": "getACServiceStatus",
+        "responses": {
+          "200": {
+            "description": "成功获取AC服务状态",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcServiceStatusResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "ac_status": 1
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/network/ac/ap-config": {
+      "get": {
+        "tags": [
+          "ap-config"
+        ],
+        "summary": "获取所有AP配置列表",
+        "description": "获取所有AP设备的配置信息和状态",
+        "operationId": "listAPConfigs",
+        "responses": {
+          "200": {
+            "description": "成功获取AP配置列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APConfigListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/network/ac/ap-config/{id}": {
+      "get": {
+        "tags": [
+          "ap-config"
+        ],
+        "summary": "获取指定AP配置",
+        "description": "根据ID获取指定AP设备的详细配置信息",
+        "operationId": "getAPConfig",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "AP配置ID",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取AP配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APConfigSingleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "ap-config"
+        ],
+        "summary": "更新AP配置",
+        "description": "更新指定AP设备的配置参数\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateAPConfig",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "AP配置ID",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "AP配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/APConfigUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求参数错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求参数错误"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "AcServiceStatusResponse": {
+        "type": "object",
+        "description": "AC服务状态响应",
+        "required": [
+          "message",
+          "results"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "required": [
+              "ac_status"
+            ],
+            "properties": {
+              "ac_status": {
+                "type": "integer",
+                "description": "AC服务状态（0:关闭, 1:开启）",
+                "enum": [
+                  0,
+                  1
+                ],
+                "example": 1
+              }
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "description": "成功响应",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "响应消息",
+            "example": "Success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "description": "错误响应",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息描述",
+            "example": "错误信息"
+          }
+        },
+        "additionalProperties": false
+      },
+      "APConfigListResponse": {
+        "type": "object",
+        "description": "AP配置列表响应",
+        "required": [
+          "message",
+          "results"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "响应消息",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "required": [
+              "total",
+              "data"
+            ],
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "description": "AP配置列表",
+                "items": {
+                  "$ref": "#/components/schemas/APConfig"
+                }
+              }
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "APConfigSingleResponse": {
+        "type": "object",
+        "description": "单个AP配置响应",
+        "required": [
+          "message",
+          "results"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "响应消息",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "required": [
+              "total",
+              "data"
+            ],
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "符合条件的记录数（找到则为1，未找到则为0）",
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "description": "AP配置数据",
+                "items": {
+                  "$ref": "#/components/schemas/APConfig"
+                }
+              }
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "APConfig": {
+        "type": "object",
+        "description": "AP配置和状态信息",
+        "required": [
+          "id",
+          "tagname"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "AP配置ID (主键)",
+            "example": 1
+          },
+          "tagname": {
+            "type": "string",
+            "description": "标识名称（支持中文/数字/字母/下划线/连字符，不能以符号开头，1-15字符）",
+            "example": "IK-H13_427hy999"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "example": ""
+          },
+          "gid": {
+            "type": "integer",
+            "description": "所属AP分组ID，0表示默认分组（未分组）",
+            "minimum": 0,
+            "example": 0
+          },
+          "mlo_radio0": {
+            "type": "integer",
+            "description": "MLO radio0 2.4G频段开关（开启MLO的射频相同SSID的序号配置保持一致时，该SSID的MLO功能才能生效）",
+            "example": 0
+          },
+          "mlo_radio1": {
+            "type": "integer",
+            "description": "MLO radio1 5G R1频段开关",
+            "example": 0
+          },
+          "mlo_radio2": {
+            "type": "integer",
+            "description": "MLO radio2 5G R2频段开关",
+            "example": 0
+          },
+          "flicker": {
+            "type": "string",
+            "description": "定位闪烁灯（off:关闭, on:开启）",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "lights": {
+            "type": "integer",
+            "description": "状态灯开关（0:关闭, 1:开启）",
+            "example": 1
+          },
+          "ssid1": {
+            "type": "string",
+            "description": "2.4G SSID1",
+            "example": "iKuai172_2G"
+          },
+          "ssid2": {
+            "type": "string",
+            "description": "2.4G SSID2",
+            "example": ""
+          },
+          "hide_ssid1": {
+            "type": "integer",
+            "description": "隐藏2.4G SSID1开关 (0:不隐藏, 1:隐藏)",
+            "example": 0
+          },
+          "hide_ssid2": {
+            "type": "integer",
+            "description": "隐藏2.4G SSID2开关",
+            "example": 0
+          },
+          "isolate1": {
+            "type": "integer",
+            "description": "2.4G SSID1的访客模式开关 (0:关闭, 1:开启)",
+            "example": 0
+          },
+          "isolate2": {
+            "type": "integer",
+            "description": "2.4G SSID2的访客模式开关",
+            "example": 0
+          },
+          "qos_atf": {
+            "type": "integer",
+            "description": "2.4G的ATF公平调度算法 (0:关闭, 1:开启)",
+            "example": 0
+          },
+          "load_strategy": {
+            "type": "integer",
+            "description": "2.4G负载策略 (0:关闭, 1:拒绝接入, 2:隐藏SSID)",
+            "example": 0
+          },
+          "autohide_maxsta": {
+            "type": "integer",
+            "description": "2.4G负载策略阀值1",
+            "example": 1
+          },
+          "autohide_resume": {
+            "type": "integer",
+            "description": "2.4G负载策略阀值2",
+            "example": 0
+          },
+          "max_pc": {
+            "type": "integer",
+            "description": "2.4G最大带机量",
+            "example": 0
+          },
+          "channel": {
+            "type": "integer",
+            "description": "2.4G信道 (0表示自动)",
+            "example": 0
+          },
+          "min_signal": {
+            "type": "integer",
+            "description": "2.4G最低连接信号",
+            "example": 0
+          },
+          "enc1": {
+            "type": "string",
+            "description": "2.4G SSID1加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key1": {
+            "type": "string",
+            "description": "2.4G SSID1密码 (SSID密码长度须在8-64个字符之间)",
+            "example": "12345678"
+          },
+          "enc2": {
+            "type": "string",
+            "description": "2.4G SSID2加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key2": {
+            "type": "string",
+            "description": "2.4G SSID2密码",
+            "example": ""
+          },
+          "ssid1_vlan": {
+            "type": "string",
+            "description": "2.4G SSID1 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid1_vlan_id": {
+            "type": "integer",
+            "description": "2.4G SSID1 VLAN ID (范围1-4090)",
+            "example": 1
+          },
+          "ssid2_vlan": {
+            "type": "string",
+            "description": "2.4G SSID2 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid2_vlan_id": {
+            "type": "integer",
+            "description": "2.4G SSID2 VLAN ID",
+            "example": 1
+          },
+          "ssid1_ratelimit": {
+            "type": "integer",
+            "description": "2.4G SSID1限速开关 (0:关闭, 1:开启)",
+            "example": 0
+          },
+          "ssid1_upload": {
+            "type": "integer",
+            "description": "2.4G SSID1上行限速",
+            "example": 0
+          },
+          "ssid1_download": {
+            "type": "integer",
+            "description": "2.4G SSID1下行限速",
+            "example": 0
+          },
+          "ssid2_ratelimit": {
+            "type": "integer",
+            "description": "2.4G SSID2限速开关",
+            "example": 0
+          },
+          "ssid2_upload": {
+            "type": "integer",
+            "description": "2.4G SSID2上行限速",
+            "example": 0
+          },
+          "ssid2_download": {
+            "type": "integer",
+            "description": "2.4G SSID2下行限速",
+            "example": 0
+          },
+          "auth_server1": {
+            "type": "string",
+            "description": "2.4G SSID1 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port1": {
+            "type": "integer",
+            "description": "2.4G SSID1 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret1": {
+            "type": "string",
+            "description": "2.4G SSID1 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth1": {
+            "type": "integer",
+            "description": "2.4G SSID1备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server1": {
+            "type": "string",
+            "description": "2.4G SSID1备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port1": {
+            "type": "integer",
+            "description": "2.4G SSID1备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret1": {
+            "type": "string",
+            "description": "2.4G SSID1备份RADIUS密钥",
+            "example": ""
+          },
+          "auth_server2": {
+            "type": "string",
+            "description": "2.4G SSID2 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port2": {
+            "type": "integer",
+            "description": "2.4G SSID2 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret2": {
+            "type": "string",
+            "description": "2.4G SSID2 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth2": {
+            "type": "integer",
+            "description": "2.4G SSID2备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server2": {
+            "type": "string",
+            "description": "2.4G SSID2备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port2": {
+            "type": "integer",
+            "description": "2.4G SSID2备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret2": {
+            "type": "string",
+            "description": "2.4G SSID2备份RADIUS密钥",
+            "example": ""
+          },
+          "signal_str": {
+            "type": "integer",
+            "description": "2.4G信号强度",
+            "example": 0
+          },
+          "studio_ssid": {
+            "type": "string",
+            "description": "2.4G工作室SSID",
+            "example": ""
+          },
+          "ssid3": {
+            "type": "string",
+            "description": "5G SSID1",
+            "example": "iKuai172_5G"
+          },
+          "ssid4": {
+            "type": "string",
+            "description": "5G SSID2",
+            "example": ""
+          },
+          "hide_ssid3": {
+            "type": "integer",
+            "description": "5G隐藏SSID1开关",
+            "example": 0
+          },
+          "hide_ssid4": {
+            "type": "integer",
+            "description": "5G隐藏SSID2开关",
+            "example": 0
+          },
+          "isolate3": {
+            "type": "integer",
+            "description": "5G SSID1访客模式开关",
+            "example": 0
+          },
+          "isolate4": {
+            "type": "integer",
+            "description": "5G SSID2访客模式开关",
+            "example": 0
+          },
+          "qos_atf_5g": {
+            "type": "integer",
+            "description": "5G ATF公平调度算法",
+            "example": 0
+          },
+          "load_strategy_5g": {
+            "type": "integer",
+            "description": "5G负载策略 (0:关闭, 1:拒绝接入, 2:隐藏SSID)",
+            "example": 0
+          },
+          "autohide_maxsta_5g": {
+            "type": "integer",
+            "description": "5G负载策略阀值1",
+            "example": 1
+          },
+          "autohide_resume_5g": {
+            "type": "integer",
+            "description": "5G负载策略阀值2",
+            "example": 0
+          },
+          "max_pc_5g": {
+            "type": "integer",
+            "description": "5G最大带机量",
+            "example": 0
+          },
+          "channel_5g": {
+            "type": "integer",
+            "description": "5G信道",
+            "example": 0
+          },
+          "min_signal_5g": {
+            "type": "integer",
+            "description": "5G最低连接信号",
+            "example": 0
+          },
+          "enc3": {
+            "type": "string",
+            "description": "5G SSID1加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "wpa2"
+          },
+          "key3": {
+            "type": "string",
+            "description": "5G SSID1密码",
+            "example": "12345678"
+          },
+          "enc4": {
+            "type": "string",
+            "description": "5G SSID2加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key4": {
+            "type": "string",
+            "description": "5G SSID2密码",
+            "example": ""
+          },
+          "ssid3_vlan": {
+            "type": "string",
+            "description": "5G SSID1 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid3_vlan_id": {
+            "type": "integer",
+            "description": "5G SSID1 VLAN ID",
+            "example": 1
+          },
+          "ssid4_vlan": {
+            "type": "string",
+            "description": "5G SSID2 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid4_vlan_id": {
+            "type": "integer",
+            "description": "5G SSID2 VLAN ID",
+            "example": 1
+          },
+          "ssid3_ratelimit": {
+            "type": "integer",
+            "description": "5G SSID1限速开关",
+            "example": 0
+          },
+          "ssid3_upload": {
+            "type": "integer",
+            "description": "5G SSID1上行限速",
+            "example": 0
+          },
+          "ssid3_download": {
+            "type": "integer",
+            "description": "5G SSID1下行限速",
+            "example": 0
+          },
+          "ssid4_ratelimit": {
+            "type": "integer",
+            "description": "5G SSID2限速开关",
+            "example": 0
+          },
+          "ssid4_upload": {
+            "type": "integer",
+            "description": "5G SSID2上行限速",
+            "example": 0
+          },
+          "ssid4_download": {
+            "type": "integer",
+            "description": "5G SSID2下行限速",
+            "example": 0
+          },
+          "auth_server3": {
+            "type": "string",
+            "description": "5G SSID1 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port3": {
+            "type": "integer",
+            "description": "5G SSID1 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret3": {
+            "type": "string",
+            "description": "5G SSID1 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth3": {
+            "type": "integer",
+            "description": "5G SSID1备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server3": {
+            "type": "string",
+            "description": "5G SSID1备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port3": {
+            "type": "integer",
+            "description": "5G SSID1备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret3": {
+            "type": "string",
+            "description": "5G SSID1备份RADIUS密钥",
+            "example": ""
+          },
+          "auth_server4": {
+            "type": "string",
+            "description": "5G SSID2 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port4": {
+            "type": "integer",
+            "description": "5G SSID2 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret4": {
+            "type": "string",
+            "description": "5G SSID2 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth4": {
+            "type": "integer",
+            "description": "5G SSID2备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server4": {
+            "type": "string",
+            "description": "5G SSID2备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port4": {
+            "type": "integer",
+            "description": "5G SSID2备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret4": {
+            "type": "string",
+            "description": "5G SSID2备份RADIUS密钥",
+            "example": ""
+          },
+          "signal_str_5g": {
+            "type": "integer",
+            "description": "5G信号强度",
+            "example": 0
+          },
+          "studio_ssid_5g": {
+            "type": "string",
+            "description": "5G工作室SSID",
+            "example": ""
+          },
+          "task_switch1": {
+            "type": "integer",
+            "description": "开启时间计划任务1",
+            "example": 0
+          },
+          "task_strategy1": {
+            "type": "string",
+            "description": "任务策略1 (one:一次, month:每月, week:每周)",
+            "enum": [
+              "one",
+              "month",
+              "week"
+            ],
+            "example": "one"
+          },
+          "task_date1": {
+            "type": "string",
+            "description": "任务日期1",
+            "example": "2018-01-01"
+          },
+          "task_time1": {
+            "type": "string",
+            "description": "任务时间1",
+            "example": "00:00-23:59"
+          },
+          "task_switch2": {
+            "type": "integer",
+            "description": "开启时间计划任务2",
+            "example": 0
+          },
+          "task_strategy2": {
+            "type": "string",
+            "description": "任务策略2",
+            "enum": [
+              "one",
+              "month",
+              "week"
+            ],
+            "example": "one"
+          },
+          "task_date2": {
+            "type": "string",
+            "description": "任务日期2",
+            "example": "2018-01-01"
+          },
+          "task_time2": {
+            "type": "string",
+            "description": "任务时间2",
+            "example": "00:00-23:59"
+          },
+          "task_switch3": {
+            "type": "integer",
+            "description": "开启时间计划任务3",
+            "example": 0
+          },
+          "task_strategy3": {
+            "type": "string",
+            "description": "任务策略3",
+            "enum": [
+              "one",
+              "month",
+              "week"
+            ],
+            "example": "one"
+          },
+          "task_date3": {
+            "type": "string",
+            "description": "任务日期3",
+            "example": "2018-01-01"
+          },
+          "task_time3": {
+            "type": "string",
+            "description": "任务时间3",
+            "example": "00:00-23:59"
+          },
+          "reboot_strategy": {
+            "type": "string",
+            "description": "重启策略 (one:一次, month:每月, week:每周)",
+            "enum": [
+              "one",
+              "month",
+              "week"
+            ],
+            "example": "one"
+          },
+          "reboot_date": {
+            "type": "string",
+            "description": "重启日期",
+            "example": "2018-01-01"
+          },
+          "channel_width_2g": {
+            "type": "integer",
+            "description": "2.4G频宽",
+            "enum": [
+              20,
+              40
+            ],
+            "example": 20
+          },
+          "channel_width_5g": {
+            "type": "integer",
+            "description": "5G频宽",
+            "enum": [
+              20,
+              40,
+              80
+            ],
+            "example": 40
+          },
+          "port1_vlan": {
+            "type": "string",
+            "description": "端口1 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "port1_vlan_id": {
+            "type": "integer",
+            "description": "端口1 VLAN ID (1-4090)",
+            "example": 1
+          },
+          "port2_vlan": {
+            "type": "string",
+            "description": "端口2 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "port2_vlan_id": {
+            "type": "integer",
+            "description": "端口2 VLAN ID",
+            "example": 1
+          },
+          "port3_vlan": {
+            "type": "string",
+            "description": "端口3 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "port3_vlan_id": {
+            "type": "integer",
+            "description": "端口3 VLAN ID",
+            "example": 1
+          },
+          "port4_vlan": {
+            "type": "string",
+            "description": "端口4 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "port4_vlan_id": {
+            "type": "integer",
+            "description": "端口4 VLAN ID",
+            "example": 1
+          },
+          "ap_roaming": {
+            "type": "integer",
+            "description": "AP快速漫游灵敏度设置 (0-5，分别对应关闭、极低、低、中、高、极高)",
+            "minimum": 0,
+            "maximum": 5,
+            "example": 1
+          },
+          "perfer_5g": {
+            "type": "integer",
+            "description": "5G优先 (0:关闭, 1:开启)",
+            "example": 1
+          },
+          "studio_mode": {
+            "type": "integer",
+            "description": "工作室模式开关",
+            "example": 0
+          },
+          "gateway_check": {
+            "type": "integer",
+            "description": "网关检测开关",
+            "example": 0
+          },
+          "country": {
+            "type": "string",
+            "description": "地区/国家码",
+            "enum": [
+              "CN",
+              "US",
+              "TW"
+            ],
+            "example": "CN"
+          },
+          "ssid_union": {
+            "type": "integer",
+            "description": "多频合一 (合并后只保存2.4G的参数配置即可)",
+            "example": 0
+          },
+          "ssid5": {
+            "type": "string",
+            "description": "2.4G SSID3名称 (31个字符限制)",
+            "example": ""
+          },
+          "ssid6": {
+            "type": "string",
+            "description": "2.4G SSID4名称 (31个字符限制)",
+            "example": ""
+          },
+          "hide_ssid5": {
+            "type": "integer",
+            "description": "2.4G隐藏SSID3开关",
+            "example": 0
+          },
+          "hide_ssid6": {
+            "type": "integer",
+            "description": "2.4G隐藏SSID4开关",
+            "example": 0
+          },
+          "isolate5": {
+            "type": "integer",
+            "description": "2.4G SSID3访客模式开关",
+            "example": 0
+          },
+          "isolate6": {
+            "type": "integer",
+            "description": "2.4G SSID4访客模式开关",
+            "example": 0
+          },
+          "enc5": {
+            "type": "string",
+            "description": "2.4G SSID3加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key5": {
+            "type": "string",
+            "description": "2.4G SSID3密码",
+            "example": ""
+          },
+          "enc6": {
+            "type": "string",
+            "description": "2.4G SSID4加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key6": {
+            "type": "string",
+            "description": "2.4G SSID4密码",
+            "example": ""
+          },
+          "ssid5_vlan": {
+            "type": "string",
+            "description": "2.4G SSID3 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid5_vlan_id": {
+            "type": "integer",
+            "description": "2.4G SSID3 VLAN ID",
+            "example": 0
+          },
+          "ssid6_vlan": {
+            "type": "string",
+            "description": "2.4G SSID4 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid6_vlan_id": {
+            "type": "integer",
+            "description": "2.4G SSID4 VLAN ID",
+            "example": 0
+          },
+          "ssid5_ratelimit": {
+            "type": "integer",
+            "description": "2.4G SSID3限速开关",
+            "example": 0
+          },
+          "ssid5_upload": {
+            "type": "integer",
+            "description": "2.4G SSID3上行限速",
+            "example": 0
+          },
+          "ssid5_download": {
+            "type": "integer",
+            "description": "2.4G SSID3下行限速",
+            "example": 0
+          },
+          "ssid6_ratelimit": {
+            "type": "integer",
+            "description": "2.4G SSID4限速开关",
+            "example": 0
+          },
+          "ssid6_upload": {
+            "type": "integer",
+            "description": "2.4G SSID4上行限速",
+            "example": 0
+          },
+          "ssid6_download": {
+            "type": "integer",
+            "description": "2.4G SSID4下行限速",
+            "example": 0
+          },
+          "auth_server5": {
+            "type": "string",
+            "description": "2.4G SSID3 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port5": {
+            "type": "integer",
+            "description": "2.4G SSID3 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret5": {
+            "type": "string",
+            "description": "2.4G SSID3 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth5": {
+            "type": "integer",
+            "description": "2.4G SSID3备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server5": {
+            "type": "string",
+            "description": "2.4G SSID3备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port5": {
+            "type": "integer",
+            "description": "2.4G SSID3备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret5": {
+            "type": "string",
+            "description": "2.4G SSID3备份RADIUS密钥",
+            "example": ""
+          },
+          "auth_server6": {
+            "type": "string",
+            "description": "2.4G SSID4 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port6": {
+            "type": "integer",
+            "description": "2.4G SSID4 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret6": {
+            "type": "string",
+            "description": "2.4G SSID4 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth6": {
+            "type": "integer",
+            "description": "2.4G SSID4备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server6": {
+            "type": "string",
+            "description": "2.4G SSID4备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port6": {
+            "type": "integer",
+            "description": "2.4G SSID4备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret6": {
+            "type": "string",
+            "description": "2.4G SSID4备份RADIUS密钥",
+            "example": ""
+          },
+          "ssid7": {
+            "type": "string",
+            "description": "5G SSID3名称 (31个字符限制)",
+            "example": ""
+          },
+          "ssid8": {
+            "type": "string",
+            "description": "5G SSID4名称 (31个字符限制)",
+            "example": ""
+          },
+          "hide_ssid7": {
+            "type": "integer",
+            "description": "5G隐藏SSID3开关",
+            "example": 0
+          },
+          "hide_ssid8": {
+            "type": "integer",
+            "description": "5G隐藏SSID4开关",
+            "example": 0
+          },
+          "isolate7": {
+            "type": "integer",
+            "description": "5G SSID3访客模式开关",
+            "example": 0
+          },
+          "isolate8": {
+            "type": "integer",
+            "description": "5G SSID4访客模式开关",
+            "example": 0
+          },
+          "enc7": {
+            "type": "string",
+            "description": "5G SSID3加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key7": {
+            "type": "string",
+            "description": "5G SSID3密码",
+            "example": ""
+          },
+          "enc8": {
+            "type": "string",
+            "description": "5G SSID4加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key8": {
+            "type": "string",
+            "description": "5G SSID4密码",
+            "example": ""
+          },
+          "ssid7_vlan": {
+            "type": "string",
+            "description": "5G SSID3 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid7_vlan_id": {
+            "type": "integer",
+            "description": "5G SSID3 VLAN ID",
+            "example": 0
+          },
+          "ssid8_vlan": {
+            "type": "string",
+            "description": "5G SSID4 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid8_vlan_id": {
+            "type": "integer",
+            "description": "5G SSID4 VLAN ID",
+            "example": 0
+          },
+          "ssid7_ratelimit": {
+            "type": "integer",
+            "description": "5G SSID3限速开关",
+            "example": 0
+          },
+          "ssid7_upload": {
+            "type": "integer",
+            "description": "5G SSID3上行限速",
+            "example": 0
+          },
+          "ssid7_download": {
+            "type": "integer",
+            "description": "5G SSID3下行限速",
+            "example": 0
+          },
+          "ssid8_ratelimit": {
+            "type": "integer",
+            "description": "5G SSID4限速开关",
+            "example": 0
+          },
+          "ssid8_upload": {
+            "type": "integer",
+            "description": "5G SSID4上行限速",
+            "example": 0
+          },
+          "ssid8_download": {
+            "type": "integer",
+            "description": "5G SSID4下行限速",
+            "example": 0
+          },
+          "auth_server7": {
+            "type": "string",
+            "description": "5G SSID3 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port7": {
+            "type": "integer",
+            "description": "5G SSID3 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret7": {
+            "type": "string",
+            "description": "5G SSID3 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth7": {
+            "type": "integer",
+            "description": "5G SSID3备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server7": {
+            "type": "string",
+            "description": "5G SSID3备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port7": {
+            "type": "integer",
+            "description": "5G SSID3备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret7": {
+            "type": "string",
+            "description": "5G SSID3备份RADIUS密钥",
+            "example": ""
+          },
+          "auth_server8": {
+            "type": "string",
+            "description": "5G SSID4 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port8": {
+            "type": "integer",
+            "description": "5G SSID4 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret8": {
+            "type": "string",
+            "description": "5G SSID4 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth8": {
+            "type": "integer",
+            "description": "5G SSID4备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server8": {
+            "type": "string",
+            "description": "5G SSID4备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port8": {
+            "type": "integer",
+            "description": "5G SSID4备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret8": {
+            "type": "string",
+            "description": "5G SSID4备份RADIUS密钥",
+            "example": ""
+          },
+          "ssid9": {
+            "type": "string",
+            "description": "5G Radio2 SSID1名称 (31个字符限制)",
+            "example": ""
+          },
+          "ssid10": {
+            "type": "string",
+            "description": "5G Radio2 SSID2名称 (31个字符限制)",
+            "example": ""
+          },
+          "ssid11": {
+            "type": "string",
+            "description": "5G Radio2 SSID3名称 (31个字符限制)",
+            "example": ""
+          },
+          "ssid12": {
+            "type": "string",
+            "description": "5G Radio2 SSID4名称 (31个字符限制)",
+            "example": ""
+          },
+          "hide_ssid9": {
+            "type": "integer",
+            "description": "5G Radio2 SSID1隐藏开关",
+            "example": 0
+          },
+          "hide_ssid10": {
+            "type": "integer",
+            "description": "5G Radio2 SSID2隐藏开关",
+            "example": 0
+          },
+          "hide_ssid11": {
+            "type": "integer",
+            "description": "5G Radio2 SSID3隐藏开关",
+            "example": 0
+          },
+          "hide_ssid12": {
+            "type": "integer",
+            "description": "5G Radio2 SSID4隐藏开关",
+            "example": 0
+          },
+          "isolate9": {
+            "type": "integer",
+            "description": "5G Radio2 SSID1访客模式",
+            "example": 0
+          },
+          "isolate10": {
+            "type": "integer",
+            "description": "5G Radio2 SSID2访客模式",
+            "example": 0
+          },
+          "isolate11": {
+            "type": "integer",
+            "description": "5G Radio2 SSID3访客模式",
+            "example": 0
+          },
+          "isolate12": {
+            "type": "integer",
+            "description": "5G Radio2 SSID4访客模式",
+            "example": 0
+          },
+          "enc9": {
+            "type": "string",
+            "description": "5G Radio2 SSID1加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key9": {
+            "type": "string",
+            "description": "5G Radio2 SSID1密码",
+            "example": ""
+          },
+          "enc10": {
+            "type": "string",
+            "description": "5G Radio2 SSID2加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key10": {
+            "type": "string",
+            "description": "5G Radio2 SSID2密码",
+            "example": ""
+          },
+          "enc11": {
+            "type": "string",
+            "description": "5G Radio2 SSID3加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key11": {
+            "type": "string",
+            "description": "5G Radio2 SSID3密码",
+            "example": ""
+          },
+          "enc12": {
+            "type": "string",
+            "description": "5G Radio2 SSID4加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key12": {
+            "type": "string",
+            "description": "5G Radio2 SSID4密码",
+            "example": ""
+          },
+          "ssid9_vlan": {
+            "type": "string",
+            "description": "5G Radio2 SSID1 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid9_vlan_id": {
+            "type": "integer",
+            "description": "5G Radio2 SSID1 VLAN ID",
+            "example": 1
+          },
+          "ssid10_vlan": {
+            "type": "string",
+            "description": "5G Radio2 SSID2 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid10_vlan_id": {
+            "type": "integer",
+            "description": "5G Radio2 SSID2 VLAN ID",
+            "example": 1
+          },
+          "ssid11_vlan": {
+            "type": "string",
+            "description": "5G Radio2 SSID3 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid11_vlan_id": {
+            "type": "integer",
+            "description": "5G Radio2 SSID3 VLAN ID",
+            "example": 1
+          },
+          "ssid12_vlan": {
+            "type": "string",
+            "description": "5G Radio2 SSID4 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid12_vlan_id": {
+            "type": "integer",
+            "description": "5G Radio2 SSID4 VLAN ID",
+            "example": 1
+          },
+          "ssid9_ratelimit": {
+            "type": "integer",
+            "description": "5G Radio2 SSID1限速开关",
+            "example": 0
+          },
+          "ssid9_upload": {
+            "type": "integer",
+            "description": "5G Radio2 SSID1上行限速",
+            "example": 0
+          },
+          "ssid9_download": {
+            "type": "integer",
+            "description": "5G Radio2 SSID1下行限速",
+            "example": 0
+          },
+          "ssid10_ratelimit": {
+            "type": "integer",
+            "description": "5G Radio2 SSID2限速开关",
+            "example": 0
+          },
+          "ssid10_upload": {
+            "type": "integer",
+            "description": "5G Radio2 SSID2上行限速",
+            "example": 0
+          },
+          "ssid10_download": {
+            "type": "integer",
+            "description": "5G Radio2 SSID2下行限速",
+            "example": 0
+          },
+          "ssid11_ratelimit": {
+            "type": "integer",
+            "description": "5G Radio2 SSID3限速开关",
+            "example": 0
+          },
+          "ssid11_upload": {
+            "type": "integer",
+            "description": "5G Radio2 SSID3上行限速",
+            "example": 0
+          },
+          "ssid11_download": {
+            "type": "integer",
+            "description": "5G Radio2 SSID3下行限速",
+            "example": 0
+          },
+          "ssid12_ratelimit": {
+            "type": "integer",
+            "description": "5G Radio2 SSID4限速开关",
+            "example": 0
+          },
+          "ssid12_upload": {
+            "type": "integer",
+            "description": "5G Radio2 SSID4上行限速",
+            "example": 0
+          },
+          "ssid12_download": {
+            "type": "integer",
+            "description": "5G Radio2 SSID4下行限速",
+            "example": 0
+          },
+          "auth_server9": {
+            "type": "string",
+            "description": "5G Radio2 SSID1 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port9": {
+            "type": "integer",
+            "description": "5G Radio2 SSID1 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret9": {
+            "type": "string",
+            "description": "5G Radio2 SSID1 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth9": {
+            "type": "integer",
+            "description": "5G Radio2 SSID1备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server9": {
+            "type": "string",
+            "description": "5G Radio2 SSID1备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port9": {
+            "type": "integer",
+            "description": "5G Radio2 SSID1备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret9": {
+            "type": "string",
+            "description": "5G Radio2 SSID1备份RADIUS密钥",
+            "example": ""
+          },
+          "auth_server10": {
+            "type": "string",
+            "description": "5G Radio2 SSID2 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port10": {
+            "type": "integer",
+            "description": "5G Radio2 SSID2 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret10": {
+            "type": "string",
+            "description": "5G Radio2 SSID2 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth10": {
+            "type": "integer",
+            "description": "5G Radio2 SSID2备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server10": {
+            "type": "string",
+            "description": "5G Radio2 SSID2备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port10": {
+            "type": "integer",
+            "description": "5G Radio2 SSID2备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret10": {
+            "type": "string",
+            "description": "5G Radio2 SSID2备份RADIUS密钥",
+            "example": ""
+          },
+          "auth_server11": {
+            "type": "string",
+            "description": "5G Radio2 SSID3 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port11": {
+            "type": "integer",
+            "description": "5G Radio2 SSID3 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret11": {
+            "type": "string",
+            "description": "5G Radio2 SSID3 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth11": {
+            "type": "integer",
+            "description": "5G Radio2 SSID3备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server11": {
+            "type": "string",
+            "description": "5G Radio2 SSID3备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port11": {
+            "type": "integer",
+            "description": "5G Radio2 SSID3备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret11": {
+            "type": "string",
+            "description": "5G Radio2 SSID3备份RADIUS密钥",
+            "example": ""
+          },
+          "auth_server12": {
+            "type": "string",
+            "description": "5G Radio2 SSID4 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port12": {
+            "type": "integer",
+            "description": "5G Radio2 SSID4 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret12": {
+            "type": "string",
+            "description": "5G Radio2 SSID4 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth12": {
+            "type": "integer",
+            "description": "5G Radio2 SSID4备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server12": {
+            "type": "string",
+            "description": "5G Radio2 SSID4备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port12": {
+            "type": "integer",
+            "description": "5G Radio2 SSID4备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret12": {
+            "type": "string",
+            "description": "5G Radio2 SSID4备份RADIUS密钥",
+            "example": ""
+          },
+          "load_strategy_d5g": {
+            "type": "integer",
+            "description": "5G Radio2负载策略 (0:关闭, 1:拒绝接入, 2:隐藏SSID)",
+            "example": 0
+          },
+          "autohide_maxsta_d5g": {
+            "type": "integer",
+            "description": "5G Radio2负载策略阀值1",
+            "example": 1
+          },
+          "autohide_resume_d5g": {
+            "type": "integer",
+            "description": "5G Radio2负载策略阀值2",
+            "example": 0
+          },
+          "qos_atf_d5g": {
+            "type": "integer",
+            "description": "5G Radio2 ATF公平调度算法",
+            "example": 0
+          },
+          "channel_d5g": {
+            "type": "integer",
+            "description": "5G Radio2信道",
+            "example": 0
+          },
+          "min_signal_d5g": {
+            "type": "integer",
+            "description": "5G Radio2最低连接信号",
+            "example": 0
+          },
+          "signal_str_d5g": {
+            "type": "integer",
+            "description": "5G Radio2信号强度",
+            "example": 0
+          },
+          "studio_ssid_d5g": {
+            "type": "string",
+            "description": "5G Radio2工作室SSID列表",
+            "example": ""
+          },
+          "channel_width_d5g": {
+            "type": "integer",
+            "description": "5G Radio2频宽",
+            "enum": [
+              20,
+              40,
+              80,
+              160
+            ],
+            "example": 40
+          },
+          "advanced": {
+            "type": "integer",
+            "description": "2.4G高级设置开关",
+            "example": 0
+          },
+          "beacon_interval": {
+            "type": "integer",
+            "description": "2.4G高级设置-beacon帧间隔 (范围100-1000)",
+            "minimum": 100,
+            "maximum": 1000,
+            "example": 200
+          },
+          "beacon_txpower": {
+            "type": "integer",
+            "description": "2.4G高级设置-beacon发射功率 (范围0-100)",
+            "minimum": 0,
+            "maximum": 100,
+            "example": 0
+          },
+          "rts": {
+            "type": "integer",
+            "description": "2.4G高级设置-RTS门限 (0表示关闭, 范围0-2346)",
+            "minimum": 0,
+            "maximum": 2346,
+            "example": 0
+          },
+          "hwmode": {
+            "type": "string",
+            "description": "2.4G高级设置-射频工作模式",
+            "enum": [
+              "11b/g/n/ax/be",
+              "11b/g/n/ax",
+              "11b/g/n",
+              "11n",
+              "11b/g"
+            ],
+            "example": ""
+          },
+          "dis_legacy": {
+            "type": "string",
+            "description": "2.4G高级设置-低速率接入限制",
+            "example": "0"
+          },
+          "mgmt_rate": {
+            "type": "integer",
+            "description": "2.4G高级设置-管理帧速率 (1000:1Mbps, 2000:2Mbps, 5500:5.5Mbps, 6000:6Mbps, 11000:11Mbps)",
+            "enum": [
+              1000,
+              2000,
+              5500,
+              6000,
+              11000
+            ],
+            "example": 1000
+          },
+          "advanced_5g": {
+            "type": "integer",
+            "description": "5G Radio1高级设置开关",
+            "example": 0
+          },
+          "beacon_interval_5g": {
+            "type": "integer",
+            "description": "5G Radio1高级设置-beacon帧间隔",
+            "minimum": 100,
+            "maximum": 1000,
+            "example": 200
+          },
+          "beacon_txpower_5g": {
+            "type": "integer",
+            "description": "5G Radio1高级设置-beacon发射功率",
+            "minimum": 0,
+            "maximum": 100,
+            "example": 0
+          },
+          "rts_5g": {
+            "type": "integer",
+            "description": "5G Radio1高级设置-RTS门限",
+            "minimum": 0,
+            "maximum": 2346,
+            "example": 0
+          },
+          "hwmode_5g": {
+            "type": "string",
+            "description": "5G Radio1高级设置-射频工作模式",
+            "enum": [
+              "11a/n/ac/ax/be",
+              "11a/n/ac/ax",
+              "11a/n/ac",
+              "11n",
+              "11a/n"
+            ],
+            "example": ""
+          },
+          "advanced_d5g": {
+            "type": "integer",
+            "description": "5G Radio2高级设置开关",
+            "example": 0
+          },
+          "beacon_interval_d5g": {
+            "type": "integer",
+            "description": "5G Radio2高级设置-beacon帧间隔",
+            "minimum": 100,
+            "maximum": 1000,
+            "example": 200
+          },
+          "beacon_txpower_d5g": {
+            "type": "integer",
+            "description": "5G Radio2高级设置-beacon发射功率",
+            "minimum": 0,
+            "maximum": 100,
+            "example": 0
+          },
+          "rts_d5g": {
+            "type": "integer",
+            "description": "5G Radio2高级设置-RTS门限",
+            "minimum": 0,
+            "maximum": 2346,
+            "example": 0
+          },
+          "hwmode_d5g": {
+            "type": "string",
+            "description": "5G Radio2高级设置-射频工作模式",
+            "enum": [
+              "11a/n/ac/ax/be",
+              "11a/n/ac/ax",
+              "11a/n/ac",
+              "11n",
+              "11a/n"
+            ],
+            "example": ""
+          },
+          "band_list": {
+            "type": "string",
+            "description": "频宽支持列表 (为0代表AP没有提供支持列表)",
+            "example": "0"
+          },
+          "channel_list": {
+            "type": "string",
+            "description": "信道支持列表 (为0代表AP没有提供支持列表)",
+            "example": "0"
+          },
+          "studio_num": {
+            "type": "integer",
+            "description": "工作室模式支持的SSID数",
+            "example": 0
+          },
+          "all_chan": {
+            "type": "string",
+            "description": "AP全部支持的信道，冒号间隔 (2.4G信道:5G R1信道:5G R2信道，如 1-13:36-64,100-165:149-165)",
+            "example": ""
+          },
+          "support_5g": {
+            "type": "integer",
+            "description": "支持5G (0:不支持, 1:双频, 2:两个5G)",
+            "example": 1
+          },
+          "support_wpa3": {
+            "type": "integer",
+            "description": "支持WPA3",
+            "example": 0
+          },
+          "support_8021x": {
+            "type": "integer",
+            "description": "支持802.1X",
+            "example": 1
+          },
+          "support_wifi6": {
+            "type": "integer",
+            "description": "支持WiFi6",
+            "example": 0
+          },
+          "support_netoptimize": {
+            "type": "integer",
+            "description": "支持无线网优",
+            "example": 1
+          },
+          "support_studio": {
+            "type": "integer",
+            "description": "支持工作室模式",
+            "example": 0
+          },
+          "support_strategy_access_deny": {
+            "type": "integer",
+            "description": "支持射频拒绝接入",
+            "example": 1
+          },
+          "support_strategy_autohide": {
+            "type": "integer",
+            "description": "支持射频自动隐藏",
+            "example": 1
+          },
+          "status": {
+            "type": "integer",
+            "description": "新的状态标识 (-1:未开启时间, 0:未连接, 1:已连接)",
+            "example": 1
+          },
+          "connected": {
+            "type": "integer",
+            "description": "连接状态 (0:断开, 1:连接)",
+            "example": 1
+          },
+          "new_version": {
+            "type": "string",
+            "description": "新版本号 (格式 1.2.0 或者空字符串)",
+            "example": ""
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "IP地址",
+            "example": "192.168.33.2"
+          },
+          "on_channel": {
+            "type": "string",
+            "description": "当前信道",
+            "example": "11"
+          },
+          "upload": {
+            "type": "string",
+            "description": "实时流量上行",
+            "example": "0"
+          },
+          "download": {
+            "type": "string",
+            "description": "实时流量下行",
+            "example": "62195"
+          },
+          "total_up": {
+            "type": "integer",
+            "description": "总上行流量",
+            "example": 2157886486
+          },
+          "total_down": {
+            "type": "integer",
+            "description": "总下行流量",
+            "example": 64546750016
+          },
+          "online": {
+            "type": "integer",
+            "description": "在线终端数量 (2.4G)",
+            "example": 0
+          },
+          "bssid1": {
+            "type": "string",
+            "description": "2.4G BSSID1",
+            "example": "08:9b:4b:1a:42:7d"
+          },
+          "bssid2": {
+            "type": "string",
+            "description": "2.4G BSSID2",
+            "example": "0e:9b:4b:1a:42:7d"
+          },
+          "uptime": {
+            "type": "integer",
+            "description": "运行时间",
+            "example": 4057411
+          },
+          "online_5g": {
+            "type": "integer",
+            "description": "在线终端数量 (5G Radio1)",
+            "example": 0
+          },
+          "on_channel_5g": {
+            "type": "string",
+            "description": "5G Radio1当前信道",
+            "example": "44"
+          },
+          "bssid1_5g": {
+            "type": "string",
+            "description": "5G Radio1 BSSID1",
+            "example": "08:9b:4b:1a:42:7e"
+          },
+          "bssid2_5g": {
+            "type": "string",
+            "description": "5G Radio1 BSSID2",
+            "example": "0e:9b:4b:1a:42:7e"
+          },
+          "link_speed": {
+            "type": "integer",
+            "description": "连接速率 (0:未知, 10/100/1000/10000 Mbps)",
+            "enum": [
+              0,
+              10,
+              100,
+              1000,
+              10000
+            ],
+            "example": 0
+          },
+          "mac": {
+            "type": "string",
+            "description": "AP MAC地址",
+            "example": "08:9b:4b:1a:42:7c"
+          },
+          "pa_support": {
+            "type": "integer",
+            "description": "支持PA功放",
+            "example": 0
+          },
+          "firmware": {
+            "type": "string",
+            "description": "固件名称",
+            "example": "IK-WAQCA9531_H13V2_5G"
+          },
+          "version": {
+            "type": "string",
+            "description": "AP版本号",
+            "example": "1.7.5"
+          },
+          "ap_model": {
+            "type": "string",
+            "description": "AP型号",
+            "example": "IK-H13"
+          }
+        }
+      },
+      "APConfigUpdate": {
+        "type": "object",
+        "description": "AP配置更新参数",
+        "required": [
+          "id",
+          "tagname",
+          "comment",
+          "gid",
+          "mlo_radio0",
+          "mlo_radio1",
+          "mlo_radio2",
+          "flicker",
+          "lights",
+          "ssid1",
+          "ssid2",
+          "hide_ssid1",
+          "hide_ssid2",
+          "isolate1",
+          "isolate2",
+          "qos_atf",
+          "load_strategy",
+          "autohide_maxsta",
+          "autohide_resume",
+          "max_pc",
+          "channel",
+          "min_signal",
+          "enc1",
+          "key1",
+          "enc2",
+          "key2",
+          "ssid1_vlan",
+          "ssid1_vlan_id",
+          "ssid2_vlan",
+          "ssid2_vlan_id",
+          "ssid1_ratelimit",
+          "ssid1_upload",
+          "ssid1_download",
+          "ssid2_ratelimit",
+          "ssid2_upload",
+          "ssid2_download",
+          "auth_server1",
+          "auth_port1",
+          "acct_secret1",
+          "slave_auth1",
+          "slave_auth_server1",
+          "slave_auth_port1",
+          "slave_acct_secret1",
+          "auth_server2",
+          "auth_port2",
+          "acct_secret2",
+          "slave_auth2",
+          "slave_auth_server2",
+          "slave_auth_port2",
+          "slave_acct_secret2",
+          "signal_str",
+          "studio_ssid",
+          "ssid3",
+          "ssid4",
+          "hide_ssid3",
+          "hide_ssid4",
+          "isolate3",
+          "isolate4",
+          "qos_atf_5g",
+          "load_strategy_5g",
+          "autohide_maxsta_5g",
+          "autohide_resume_5g",
+          "max_pc_5g",
+          "channel_5g",
+          "min_signal_5g",
+          "enc3",
+          "key3",
+          "enc4",
+          "key4",
+          "ssid3_vlan",
+          "ssid3_vlan_id",
+          "ssid4_vlan",
+          "ssid4_vlan_id",
+          "ssid3_ratelimit",
+          "ssid3_upload",
+          "ssid3_download",
+          "ssid4_ratelimit",
+          "ssid4_upload",
+          "ssid4_download",
+          "auth_server3",
+          "auth_port3",
+          "acct_secret3",
+          "slave_auth3",
+          "slave_auth_server3",
+          "slave_auth_port3",
+          "slave_acct_secret3",
+          "auth_server4",
+          "auth_port4",
+          "acct_secret4",
+          "slave_auth4",
+          "slave_auth_server4",
+          "slave_auth_port4",
+          "slave_acct_secret4",
+          "signal_str_5g",
+          "studio_ssid_5g",
+          "task_switch1",
+          "task_strategy1",
+          "task_date1",
+          "task_time1",
+          "task_switch2",
+          "task_strategy2",
+          "task_date2",
+          "task_time2",
+          "task_switch3",
+          "task_strategy3",
+          "task_date3",
+          "task_time3",
+          "reboot_strategy",
+          "reboot_date",
+          "channel_width_2g",
+          "channel_width_5g",
+          "port1_vlan",
+          "port1_vlan_id",
+          "port2_vlan",
+          "port2_vlan_id",
+          "port3_vlan",
+          "port3_vlan_id",
+          "port4_vlan",
+          "port4_vlan_id",
+          "ap_roaming",
+          "perfer_5g",
+          "studio_mode",
+          "gateway_check",
+          "country",
+          "ssid_union",
+          "ssid5",
+          "ssid6",
+          "hide_ssid5",
+          "hide_ssid6",
+          "isolate5",
+          "isolate6",
+          "enc5",
+          "key5",
+          "enc6",
+          "key6",
+          "ssid5_vlan",
+          "ssid5_vlan_id",
+          "ssid6_vlan",
+          "ssid6_vlan_id",
+          "ssid5_ratelimit",
+          "ssid5_upload",
+          "ssid5_download",
+          "ssid6_ratelimit",
+          "ssid6_upload",
+          "ssid6_download",
+          "auth_server5",
+          "auth_port5",
+          "acct_secret5",
+          "slave_auth5",
+          "slave_auth_server5",
+          "slave_auth_port5",
+          "slave_acct_secret5",
+          "auth_server6",
+          "auth_port6",
+          "acct_secret6",
+          "slave_auth6",
+          "slave_auth_server6",
+          "slave_auth_port6",
+          "slave_acct_secret6",
+          "ssid7",
+          "ssid8",
+          "hide_ssid7",
+          "hide_ssid8",
+          "isolate7",
+          "isolate8",
+          "enc7",
+          "key7",
+          "enc8",
+          "key8",
+          "ssid7_vlan",
+          "ssid7_vlan_id",
+          "ssid8_vlan",
+          "ssid8_vlan_id",
+          "ssid7_ratelimit",
+          "ssid7_upload",
+          "ssid7_download",
+          "ssid8_ratelimit",
+          "ssid8_upload",
+          "ssid8_download",
+          "auth_server7",
+          "auth_port7",
+          "acct_secret7",
+          "slave_auth7",
+          "slave_auth_server7",
+          "slave_auth_port7",
+          "slave_acct_secret7",
+          "auth_server8",
+          "auth_port8",
+          "acct_secret8",
+          "slave_auth8",
+          "slave_auth_server8",
+          "slave_auth_port8",
+          "slave_acct_secret8",
+          "ssid9",
+          "ssid10",
+          "ssid11",
+          "ssid12",
+          "hide_ssid9",
+          "hide_ssid10",
+          "hide_ssid11",
+          "hide_ssid12",
+          "isolate9",
+          "isolate10",
+          "isolate11",
+          "isolate12",
+          "enc9",
+          "key9",
+          "enc10",
+          "key10",
+          "enc11",
+          "key11",
+          "enc12",
+          "key12",
+          "ssid9_vlan",
+          "ssid9_vlan_id",
+          "ssid10_vlan",
+          "ssid10_vlan_id",
+          "ssid11_vlan",
+          "ssid11_vlan_id",
+          "ssid12_vlan",
+          "ssid12_vlan_id",
+          "ssid9_ratelimit",
+          "ssid9_upload",
+          "ssid9_download",
+          "ssid10_ratelimit",
+          "ssid10_upload",
+          "ssid10_download",
+          "ssid11_ratelimit",
+          "ssid11_upload",
+          "ssid11_download",
+          "ssid12_ratelimit",
+          "ssid12_upload",
+          "ssid12_download",
+          "auth_server9",
+          "auth_port9",
+          "acct_secret9",
+          "slave_auth9",
+          "slave_auth_server9",
+          "slave_auth_port9",
+          "slave_acct_secret9",
+          "auth_server10",
+          "auth_port10",
+          "acct_secret10",
+          "slave_auth10",
+          "slave_auth_server10",
+          "slave_auth_port10",
+          "slave_acct_secret10",
+          "auth_server11",
+          "auth_port11",
+          "acct_secret11",
+          "slave_auth11",
+          "slave_auth_server11",
+          "slave_auth_port11",
+          "slave_acct_secret11",
+          "auth_server12",
+          "auth_port12",
+          "acct_secret12",
+          "slave_auth12",
+          "slave_auth_server12",
+          "slave_auth_port12",
+          "slave_acct_secret12",
+          "load_strategy_d5g",
+          "autohide_maxsta_d5g",
+          "autohide_resume_d5g",
+          "qos_atf_d5g",
+          "channel_d5g",
+          "min_signal_d5g",
+          "signal_str_d5g",
+          "studio_ssid_d5g",
+          "channel_width_d5g",
+          "advanced",
+          "beacon_interval",
+          "beacon_txpower",
+          "rts",
+          "hwmode",
+          "dis_legacy",
+          "mgmt_rate",
+          "advanced_5g",
+          "beacon_interval_5g",
+          "beacon_txpower_5g",
+          "rts_5g",
+          "hwmode_5g",
+          "advanced_d5g",
+          "beacon_interval_d5g",
+          "beacon_txpower_d5g",
+          "rts_d5g",
+          "hwmode_d5g"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "AP配置ID (主键)",
+            "example": 1
+          },
+          "gid": {
+            "type": "string",
+            "description": "AP所属分组ID，0表示未加入分组",
+            "example": "0"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "标识名称（支持中文/数字/字母/下划线/连字符，不能以符号开头，1-15字符）",
+            "example": "IK-H13_427hy999"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "example": ""
+          },
+          "mlo_radio0": {
+            "type": "integer",
+            "description": "MLO radio0 2.4G频段开关",
+            "example": 0
+          },
+          "mlo_radio1": {
+            "type": "integer",
+            "description": "MLO radio1 5G R1频段开关",
+            "example": 0
+          },
+          "mlo_radio2": {
+            "type": "integer",
+            "description": "MLO radio2 5G R2频段开关",
+            "example": 0
+          },
+          "flicker": {
+            "type": "string",
+            "description": "定位闪烁灯",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "lights": {
+            "type": "integer",
+            "description": "状态灯开关",
+            "example": 1
+          },
+          "ssid1": {
+            "type": "string",
+            "description": "2.4G SSID1",
+            "example": "iKuai172_2G"
+          },
+          "ssid2": {
+            "type": "string",
+            "description": "2.4G SSID2",
+            "example": ""
+          },
+          "hide_ssid1": {
+            "type": "integer",
+            "description": "隐藏2.4G SSID1开关",
+            "example": 0
+          },
+          "hide_ssid2": {
+            "type": "integer",
+            "description": "隐藏2.4G SSID2开关",
+            "example": 0
+          },
+          "isolate1": {
+            "type": "integer",
+            "description": "2.4G SSID1的访客模式开关",
+            "example": 0
+          },
+          "isolate2": {
+            "type": "integer",
+            "description": "2.4G SSID2的访客模式开关",
+            "example": 0
+          },
+          "qos_atf": {
+            "type": "integer",
+            "description": "2.4G的ATF公平调度算法",
+            "example": 0
+          },
+          "load_strategy": {
+            "type": "integer",
+            "description": "2.4G负载策略",
+            "example": 0
+          },
+          "autohide_maxsta": {
+            "type": "integer",
+            "description": "2.4G负载策略阀值1",
+            "example": 1
+          },
+          "autohide_resume": {
+            "type": "integer",
+            "description": "2.4G负载策略阀值2",
+            "example": 0
+          },
+          "max_pc": {
+            "type": "integer",
+            "description": "2.4G最大带机量",
+            "example": 0
+          },
+          "channel": {
+            "type": "integer",
+            "description": "2.4G信道",
+            "example": 0
+          },
+          "min_signal": {
+            "type": "integer",
+            "description": "2.4G最低连接信号",
+            "example": 0
+          },
+          "enc1": {
+            "type": "string",
+            "description": "2.4G SSID1加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key1": {
+            "type": "string",
+            "description": "2.4G SSID1密码",
+            "example": "12345678"
+          },
+          "enc2": {
+            "type": "string",
+            "description": "2.4G SSID2加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key2": {
+            "type": "string",
+            "description": "2.4G SSID2密码",
+            "example": ""
+          },
+          "ssid1_vlan": {
+            "type": "string",
+            "description": "2.4G SSID1 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid1_vlan_id": {
+            "type": "integer",
+            "description": "2.4G SSID1 VLAN ID",
+            "example": 1
+          },
+          "ssid2_vlan": {
+            "type": "string",
+            "description": "2.4G SSID2 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid2_vlan_id": {
+            "type": "integer",
+            "description": "2.4G SSID2 VLAN ID",
+            "example": 1
+          },
+          "ssid1_ratelimit": {
+            "type": "integer",
+            "description": "2.4G SSID1限速开关",
+            "example": 0
+          },
+          "ssid1_upload": {
+            "type": "integer",
+            "description": "2.4G SSID1上行限速",
+            "example": 0
+          },
+          "ssid1_download": {
+            "type": "integer",
+            "description": "2.4G SSID1下行限速",
+            "example": 0
+          },
+          "ssid2_ratelimit": {
+            "type": "integer",
+            "description": "2.4G SSID2限速开关",
+            "example": 0
+          },
+          "ssid2_upload": {
+            "type": "integer",
+            "description": "2.4G SSID2上行限速",
+            "example": 0
+          },
+          "ssid2_download": {
+            "type": "integer",
+            "description": "2.4G SSID2下行限速",
+            "example": 0
+          },
+          "auth_server1": {
+            "type": "string",
+            "description": "2.4G SSID1 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port1": {
+            "type": "integer",
+            "description": "2.4G SSID1 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret1": {
+            "type": "string",
+            "description": "2.4G SSID1 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth1": {
+            "type": "integer",
+            "description": "2.4G SSID1备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server1": {
+            "type": "string",
+            "description": "2.4G SSID1备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port1": {
+            "type": "integer",
+            "description": "2.4G SSID1备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret1": {
+            "type": "string",
+            "description": "2.4G SSID1备份RADIUS密钥",
+            "example": ""
+          },
+          "auth_server2": {
+            "type": "string",
+            "description": "2.4G SSID2 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port2": {
+            "type": "integer",
+            "description": "2.4G SSID2 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret2": {
+            "type": "string",
+            "description": "2.4G SSID2 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth2": {
+            "type": "integer",
+            "description": "2.4G SSID2备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server2": {
+            "type": "string",
+            "description": "2.4G SSID2备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port2": {
+            "type": "integer",
+            "description": "2.4G SSID2备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret2": {
+            "type": "string",
+            "description": "2.4G SSID2备份RADIUS密钥",
+            "example": ""
+          },
+          "signal_str": {
+            "type": "integer",
+            "description": "2.4G信号强度",
+            "example": 0
+          },
+          "studio_ssid": {
+            "type": "string",
+            "description": "2.4G工作室SSID",
+            "example": ""
+          },
+          "ssid3": {
+            "type": "string",
+            "description": "5G SSID1",
+            "example": "iKuai172_5G"
+          },
+          "ssid4": {
+            "type": "string",
+            "description": "5G SSID2",
+            "example": ""
+          },
+          "hide_ssid3": {
+            "type": "integer",
+            "description": "5G隐藏SSID1开关",
+            "example": 0
+          },
+          "hide_ssid4": {
+            "type": "integer",
+            "description": "5G隐藏SSID2开关",
+            "example": 0
+          },
+          "isolate3": {
+            "type": "integer",
+            "description": "5G SSID1访客模式开关",
+            "example": 0
+          },
+          "isolate4": {
+            "type": "integer",
+            "description": "5G SSID2访客模式开关",
+            "example": 0
+          },
+          "qos_atf_5g": {
+            "type": "integer",
+            "description": "5G ATF公平调度算法",
+            "example": 0
+          },
+          "load_strategy_5g": {
+            "type": "integer",
+            "description": "5G负载策略",
+            "example": 0
+          },
+          "autohide_maxsta_5g": {
+            "type": "integer",
+            "description": "5G负载策略阀值1",
+            "example": 1
+          },
+          "autohide_resume_5g": {
+            "type": "integer",
+            "description": "5G负载策略阀值2",
+            "example": 0
+          },
+          "max_pc_5g": {
+            "type": "integer",
+            "description": "5G最大带机量",
+            "example": 0
+          },
+          "channel_5g": {
+            "type": "integer",
+            "description": "5G信道",
+            "example": 0
+          },
+          "min_signal_5g": {
+            "type": "integer",
+            "description": "5G最低连接信号",
+            "example": 0
+          },
+          "enc3": {
+            "type": "string",
+            "description": "5G SSID1加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "wpa2"
+          },
+          "key3": {
+            "type": "string",
+            "description": "5G SSID1密码",
+            "example": "12345678"
+          },
+          "enc4": {
+            "type": "string",
+            "description": "5G SSID2加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key4": {
+            "type": "string",
+            "description": "5G SSID2密码",
+            "example": ""
+          },
+          "ssid3_vlan": {
+            "type": "string",
+            "description": "5G SSID1 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid3_vlan_id": {
+            "type": "integer",
+            "description": "5G SSID1 VLAN ID",
+            "example": 1
+          },
+          "ssid4_vlan": {
+            "type": "string",
+            "description": "5G SSID2 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid4_vlan_id": {
+            "type": "integer",
+            "description": "5G SSID2 VLAN ID",
+            "example": 1
+          },
+          "ssid3_ratelimit": {
+            "type": "integer",
+            "description": "5G SSID1限速开关",
+            "example": 0
+          },
+          "ssid3_upload": {
+            "type": "integer",
+            "description": "5G SSID1上行限速",
+            "example": 0
+          },
+          "ssid3_download": {
+            "type": "integer",
+            "description": "5G SSID1下行限速",
+            "example": 0
+          },
+          "ssid4_ratelimit": {
+            "type": "integer",
+            "description": "5G SSID2限速开关",
+            "example": 0
+          },
+          "ssid4_upload": {
+            "type": "integer",
+            "description": "5G SSID2上行限速",
+            "example": 0
+          },
+          "ssid4_download": {
+            "type": "integer",
+            "description": "5G SSID2下行限速",
+            "example": 0
+          },
+          "auth_server3": {
+            "type": "string",
+            "description": "5G SSID1 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port3": {
+            "type": "integer",
+            "description": "5G SSID1 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret3": {
+            "type": "string",
+            "description": "5G SSID1 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth3": {
+            "type": "integer",
+            "description": "5G SSID1备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server3": {
+            "type": "string",
+            "description": "5G SSID1备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port3": {
+            "type": "integer",
+            "description": "5G SSID1备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret3": {
+            "type": "string",
+            "description": "5G SSID1备份RADIUS密钥",
+            "example": ""
+          },
+          "auth_server4": {
+            "type": "string",
+            "description": "5G SSID2 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port4": {
+            "type": "integer",
+            "description": "5G SSID2 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret4": {
+            "type": "string",
+            "description": "5G SSID2 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth4": {
+            "type": "integer",
+            "description": "5G SSID2备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server4": {
+            "type": "string",
+            "description": "5G SSID2备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port4": {
+            "type": "integer",
+            "description": "5G SSID2备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret4": {
+            "type": "string",
+            "description": "5G SSID2备份RADIUS密钥",
+            "example": ""
+          },
+          "signal_str_5g": {
+            "type": "integer",
+            "description": "5G信号强度",
+            "example": 0
+          },
+          "studio_ssid_5g": {
+            "type": "string",
+            "description": "5G工作室SSID",
+            "example": ""
+          },
+          "task_switch1": {
+            "type": "integer",
+            "description": "开启时间计划任务1",
+            "example": 0
+          },
+          "task_strategy1": {
+            "type": "string",
+            "description": "任务策略1",
+            "enum": [
+              "one",
+              "month",
+              "week"
+            ],
+            "example": "one"
+          },
+          "task_date1": {
+            "type": "string",
+            "description": "任务日期1",
+            "example": "2018-01-01"
+          },
+          "task_time1": {
+            "type": "string",
+            "description": "任务时间1",
+            "example": "00:00-23:59"
+          },
+          "task_switch2": {
+            "type": "integer",
+            "description": "开启时间计划任务2",
+            "example": 0
+          },
+          "task_strategy2": {
+            "type": "string",
+            "description": "任务策略2",
+            "enum": [
+              "one",
+              "month",
+              "week"
+            ],
+            "example": "one"
+          },
+          "task_date2": {
+            "type": "string",
+            "description": "任务日期2",
+            "example": "2018-01-01"
+          },
+          "task_time2": {
+            "type": "string",
+            "description": "任务时间2",
+            "example": "00:00-23:59"
+          },
+          "task_switch3": {
+            "type": "integer",
+            "description": "开启时间计划任务3",
+            "example": 0
+          },
+          "task_strategy3": {
+            "type": "string",
+            "description": "任务策略3",
+            "enum": [
+              "one",
+              "month",
+              "week"
+            ],
+            "example": "one"
+          },
+          "task_date3": {
+            "type": "string",
+            "description": "任务日期3",
+            "example": "2018-01-01"
+          },
+          "task_time3": {
+            "type": "string",
+            "description": "任务时间3",
+            "example": "00:00-23:59"
+          },
+          "reboot_strategy": {
+            "type": "string",
+            "description": "重启策略",
+            "enum": [
+              "one",
+              "month",
+              "week"
+            ],
+            "example": "one"
+          },
+          "reboot_date": {
+            "type": "string",
+            "description": "重启日期",
+            "example": "2018-01-01"
+          },
+          "channel_width_2g": {
+            "type": "integer",
+            "description": "2.4G频宽",
+            "enum": [
+              20,
+              40
+            ],
+            "example": 20
+          },
+          "channel_width_5g": {
+            "type": "integer",
+            "description": "5G频宽",
+            "enum": [
+              20,
+              40,
+              80
+            ],
+            "example": 40
+          },
+          "port1_vlan": {
+            "type": "string",
+            "description": "端口1 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "port1_vlan_id": {
+            "type": "integer",
+            "description": "端口1 VLAN ID",
+            "example": 1
+          },
+          "port2_vlan": {
+            "type": "string",
+            "description": "端口2 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "port2_vlan_id": {
+            "type": "integer",
+            "description": "端口2 VLAN ID",
+            "example": 1
+          },
+          "port3_vlan": {
+            "type": "string",
+            "description": "端口3 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "port3_vlan_id": {
+            "type": "integer",
+            "description": "端口3 VLAN ID",
+            "example": 1
+          },
+          "port4_vlan": {
+            "type": "string",
+            "description": "端口4 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "port4_vlan_id": {
+            "type": "integer",
+            "description": "端口4 VLAN ID",
+            "example": 1
+          },
+          "ap_roaming": {
+            "type": "integer",
+            "description": "AP快速漫游灵敏度设置",
+            "minimum": 0,
+            "maximum": 5,
+            "example": 1
+          },
+          "perfer_5g": {
+            "type": "integer",
+            "description": "5G优先",
+            "example": 1
+          },
+          "studio_mode": {
+            "type": "integer",
+            "description": "工作室模式开关",
+            "example": 0
+          },
+          "gateway_check": {
+            "type": "integer",
+            "description": "网关检测开关",
+            "example": 0
+          },
+          "country": {
+            "type": "string",
+            "description": "地区/国家码",
+            "enum": [
+              "CN",
+              "US",
+              "TW"
+            ],
+            "example": "CN"
+          },
+          "ssid_union": {
+            "type": "integer",
+            "description": "多频合一",
+            "example": 0
+          },
+          "ssid5": {
+            "type": "string",
+            "description": "2.4G SSID3名称",
+            "example": ""
+          },
+          "ssid6": {
+            "type": "string",
+            "description": "2.4G SSID4名称",
+            "example": ""
+          },
+          "hide_ssid5": {
+            "type": "integer",
+            "description": "2.4G隐藏SSID3开关",
+            "example": 0
+          },
+          "hide_ssid6": {
+            "type": "integer",
+            "description": "2.4G隐藏SSID4开关",
+            "example": 0
+          },
+          "isolate5": {
+            "type": "integer",
+            "description": "2.4G SSID3访客模式开关",
+            "example": 0
+          },
+          "isolate6": {
+            "type": "integer",
+            "description": "2.4G SSID4访客模式开关",
+            "example": 0
+          },
+          "enc5": {
+            "type": "string",
+            "description": "2.4G SSID3加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key5": {
+            "type": "string",
+            "description": "2.4G SSID3密码",
+            "example": ""
+          },
+          "enc6": {
+            "type": "string",
+            "description": "2.4G SSID4加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key6": {
+            "type": "string",
+            "description": "2.4G SSID4密码",
+            "example": ""
+          },
+          "ssid5_vlan": {
+            "type": "string",
+            "description": "2.4G SSID3 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid5_vlan_id": {
+            "type": "integer",
+            "description": "2.4G SSID3 VLAN ID",
+            "example": 0
+          },
+          "ssid6_vlan": {
+            "type": "string",
+            "description": "2.4G SSID4 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid6_vlan_id": {
+            "type": "integer",
+            "description": "2.4G SSID4 VLAN ID",
+            "example": 0
+          },
+          "ssid5_ratelimit": {
+            "type": "integer",
+            "description": "2.4G SSID3限速开关",
+            "example": 0
+          },
+          "ssid5_upload": {
+            "type": "integer",
+            "description": "2.4G SSID3上行限速",
+            "example": 0
+          },
+          "ssid5_download": {
+            "type": "integer",
+            "description": "2.4G SSID3下行限速",
+            "example": 0
+          },
+          "ssid6_ratelimit": {
+            "type": "integer",
+            "description": "2.4G SSID4限速开关",
+            "example": 0
+          },
+          "ssid6_upload": {
+            "type": "integer",
+            "description": "2.4G SSID4上行限速",
+            "example": 0
+          },
+          "ssid6_download": {
+            "type": "integer",
+            "description": "2.4G SSID4下行限速",
+            "example": 0
+          },
+          "auth_server5": {
+            "type": "string",
+            "description": "2.4G SSID3 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port5": {
+            "type": "integer",
+            "description": "2.4G SSID3 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret5": {
+            "type": "string",
+            "description": "2.4G SSID3 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth5": {
+            "type": "integer",
+            "description": "2.4G SSID3备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server5": {
+            "type": "string",
+            "description": "2.4G SSID3备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port5": {
+            "type": "integer",
+            "description": "2.4G SSID3备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret5": {
+            "type": "string",
+            "description": "2.4G SSID3备份RADIUS密钥",
+            "example": ""
+          },
+          "auth_server6": {
+            "type": "string",
+            "description": "2.4G SSID4 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port6": {
+            "type": "integer",
+            "description": "2.4G SSID4 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret6": {
+            "type": "string",
+            "description": "2.4G SSID4 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth6": {
+            "type": "integer",
+            "description": "2.4G SSID4备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server6": {
+            "type": "string",
+            "description": "2.4G SSID4备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port6": {
+            "type": "integer",
+            "description": "2.4G SSID4备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret6": {
+            "type": "string",
+            "description": "2.4G SSID4备份RADIUS密钥",
+            "example": ""
+          },
+          "ssid7": {
+            "type": "string",
+            "description": "5G SSID3名称",
+            "example": ""
+          },
+          "ssid8": {
+            "type": "string",
+            "description": "5G SSID4名称",
+            "example": ""
+          },
+          "hide_ssid7": {
+            "type": "integer",
+            "description": "5G隐藏SSID3开关",
+            "example": 0
+          },
+          "hide_ssid8": {
+            "type": "integer",
+            "description": "5G隐藏SSID4开关",
+            "example": 0
+          },
+          "isolate7": {
+            "type": "integer",
+            "description": "5G SSID3访客模式开关",
+            "example": 0
+          },
+          "isolate8": {
+            "type": "integer",
+            "description": "5G SSID4访客模式开关",
+            "example": 0
+          },
+          "enc7": {
+            "type": "string",
+            "description": "5G SSID3加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key7": {
+            "type": "string",
+            "description": "5G SSID3密码",
+            "example": ""
+          },
+          "enc8": {
+            "type": "string",
+            "description": "5G SSID4加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key8": {
+            "type": "string",
+            "description": "5G SSID4密码",
+            "example": ""
+          },
+          "ssid7_vlan": {
+            "type": "string",
+            "description": "5G SSID3 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid7_vlan_id": {
+            "type": "integer",
+            "description": "5G SSID3 VLAN ID",
+            "example": 0
+          },
+          "ssid8_vlan": {
+            "type": "string",
+            "description": "5G SSID4 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid8_vlan_id": {
+            "type": "integer",
+            "description": "5G SSID4 VLAN ID",
+            "example": 0
+          },
+          "ssid7_ratelimit": {
+            "type": "integer",
+            "description": "5G SSID3限速开关",
+            "example": 0
+          },
+          "ssid7_upload": {
+            "type": "integer",
+            "description": "5G SSID3上行限速",
+            "example": 0
+          },
+          "ssid7_download": {
+            "type": "integer",
+            "description": "5G SSID3下行限速",
+            "example": 0
+          },
+          "ssid8_ratelimit": {
+            "type": "integer",
+            "description": "5G SSID4限速开关",
+            "example": 0
+          },
+          "ssid8_upload": {
+            "type": "integer",
+            "description": "5G SSID4上行限速",
+            "example": 0
+          },
+          "ssid8_download": {
+            "type": "integer",
+            "description": "5G SSID4下行限速",
+            "example": 0
+          },
+          "auth_server7": {
+            "type": "string",
+            "description": "5G SSID3 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port7": {
+            "type": "integer",
+            "description": "5G SSID3 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret7": {
+            "type": "string",
+            "description": "5G SSID3 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth7": {
+            "type": "integer",
+            "description": "5G SSID3备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server7": {
+            "type": "string",
+            "description": "5G SSID3备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port7": {
+            "type": "integer",
+            "description": "5G SSID3备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret7": {
+            "type": "string",
+            "description": "5G SSID3备份RADIUS密钥",
+            "example": ""
+          },
+          "auth_server8": {
+            "type": "string",
+            "description": "5G SSID4 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port8": {
+            "type": "integer",
+            "description": "5G SSID4 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret8": {
+            "type": "string",
+            "description": "5G SSID4 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth8": {
+            "type": "integer",
+            "description": "5G SSID4备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server8": {
+            "type": "string",
+            "description": "5G SSID4备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port8": {
+            "type": "integer",
+            "description": "5G SSID4备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret8": {
+            "type": "string",
+            "description": "5G SSID4备份RADIUS密钥",
+            "example": ""
+          },
+          "ssid9": {
+            "type": "string",
+            "description": "5G Radio2 SSID1名称",
+            "example": ""
+          },
+          "ssid10": {
+            "type": "string",
+            "description": "5G Radio2 SSID2名称",
+            "example": ""
+          },
+          "ssid11": {
+            "type": "string",
+            "description": "5G Radio2 SSID3名称",
+            "example": ""
+          },
+          "ssid12": {
+            "type": "string",
+            "description": "5G Radio2 SSID4名称",
+            "example": ""
+          },
+          "hide_ssid9": {
+            "type": "integer",
+            "description": "5G Radio2 SSID1隐藏开关",
+            "example": 0
+          },
+          "hide_ssid10": {
+            "type": "integer",
+            "description": "5G Radio2 SSID2隐藏开关",
+            "example": 0
+          },
+          "hide_ssid11": {
+            "type": "integer",
+            "description": "5G Radio2 SSID3隐藏开关",
+            "example": 0
+          },
+          "hide_ssid12": {
+            "type": "integer",
+            "description": "5G Radio2 SSID4隐藏开关",
+            "example": 0
+          },
+          "isolate9": {
+            "type": "integer",
+            "description": "5G Radio2 SSID1访客模式",
+            "example": 0
+          },
+          "isolate10": {
+            "type": "integer",
+            "description": "5G Radio2 SSID2访客模式",
+            "example": 0
+          },
+          "isolate11": {
+            "type": "integer",
+            "description": "5G Radio2 SSID3访客模式",
+            "example": 0
+          },
+          "isolate12": {
+            "type": "integer",
+            "description": "5G Radio2 SSID4访客模式",
+            "example": 0
+          },
+          "enc9": {
+            "type": "string",
+            "description": "5G Radio2 SSID1加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key9": {
+            "type": "string",
+            "description": "5G Radio2 SSID1密码",
+            "example": ""
+          },
+          "enc10": {
+            "type": "string",
+            "description": "5G Radio2 SSID2加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key10": {
+            "type": "string",
+            "description": "5G Radio2 SSID2密码",
+            "example": ""
+          },
+          "enc11": {
+            "type": "string",
+            "description": "5G Radio2 SSID3加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key11": {
+            "type": "string",
+            "description": "5G Radio2 SSID3密码",
+            "example": ""
+          },
+          "enc12": {
+            "type": "string",
+            "description": "5G Radio2 SSID4加密策略",
+            "enum": [
+              "off",
+              "wpa",
+              "wpa2",
+              "wpa+wpa2",
+              "8021x"
+            ],
+            "example": "off"
+          },
+          "key12": {
+            "type": "string",
+            "description": "5G Radio2 SSID4密码",
+            "example": ""
+          },
+          "ssid9_vlan": {
+            "type": "string",
+            "description": "5G Radio2 SSID1 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid9_vlan_id": {
+            "type": "integer",
+            "description": "5G Radio2 SSID1 VLAN ID",
+            "example": 1
+          },
+          "ssid10_vlan": {
+            "type": "string",
+            "description": "5G Radio2 SSID2 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid10_vlan_id": {
+            "type": "integer",
+            "description": "5G Radio2 SSID2 VLAN ID",
+            "example": 1
+          },
+          "ssid11_vlan": {
+            "type": "string",
+            "description": "5G Radio2 SSID3 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid11_vlan_id": {
+            "type": "integer",
+            "description": "5G Radio2 SSID3 VLAN ID",
+            "example": 1
+          },
+          "ssid12_vlan": {
+            "type": "string",
+            "description": "5G Radio2 SSID4 VLAN开关",
+            "enum": [
+              "off",
+              "on"
+            ],
+            "example": "off"
+          },
+          "ssid12_vlan_id": {
+            "type": "integer",
+            "description": "5G Radio2 SSID4 VLAN ID",
+            "example": 1
+          },
+          "ssid9_ratelimit": {
+            "type": "integer",
+            "description": "5G Radio2 SSID1限速开关",
+            "example": 0
+          },
+          "ssid9_upload": {
+            "type": "integer",
+            "description": "5G Radio2 SSID1上行限速",
+            "example": 0
+          },
+          "ssid9_download": {
+            "type": "integer",
+            "description": "5G Radio2 SSID1下行限速",
+            "example": 0
+          },
+          "ssid10_ratelimit": {
+            "type": "integer",
+            "description": "5G Radio2 SSID2限速开关",
+            "example": 0
+          },
+          "ssid10_upload": {
+            "type": "integer",
+            "description": "5G Radio2 SSID2上行限速",
+            "example": 0
+          },
+          "ssid10_download": {
+            "type": "integer",
+            "description": "5G Radio2 SSID2下行限速",
+            "example": 0
+          },
+          "ssid11_ratelimit": {
+            "type": "integer",
+            "description": "5G Radio2 SSID3限速开关",
+            "example": 0
+          },
+          "ssid11_upload": {
+            "type": "integer",
+            "description": "5G Radio2 SSID3上行限速",
+            "example": 0
+          },
+          "ssid11_download": {
+            "type": "integer",
+            "description": "5G Radio2 SSID3下行限速",
+            "example": 0
+          },
+          "ssid12_ratelimit": {
+            "type": "integer",
+            "description": "5G Radio2 SSID4限速开关",
+            "example": 0
+          },
+          "ssid12_upload": {
+            "type": "integer",
+            "description": "5G Radio2 SSID4上行限速",
+            "example": 0
+          },
+          "ssid12_download": {
+            "type": "integer",
+            "description": "5G Radio2 SSID4下行限速",
+            "example": 0
+          },
+          "auth_server9": {
+            "type": "string",
+            "description": "5G Radio2 SSID1 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port9": {
+            "type": "integer",
+            "description": "5G Radio2 SSID1 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret9": {
+            "type": "string",
+            "description": "5G Radio2 SSID1 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth9": {
+            "type": "integer",
+            "description": "5G Radio2 SSID1备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server9": {
+            "type": "string",
+            "description": "5G Radio2 SSID1备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port9": {
+            "type": "integer",
+            "description": "5G Radio2 SSID1备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret9": {
+            "type": "string",
+            "description": "5G Radio2 SSID1备份RADIUS密钥",
+            "example": ""
+          },
+          "auth_server10": {
+            "type": "string",
+            "description": "5G Radio2 SSID2 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port10": {
+            "type": "integer",
+            "description": "5G Radio2 SSID2 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret10": {
+            "type": "string",
+            "description": "5G Radio2 SSID2 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth10": {
+            "type": "integer",
+            "description": "5G Radio2 SSID2备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server10": {
+            "type": "string",
+            "description": "5G Radio2 SSID2备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port10": {
+            "type": "integer",
+            "description": "5G Radio2 SSID2备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret10": {
+            "type": "string",
+            "description": "5G Radio2 SSID2备份RADIUS密钥",
+            "example": ""
+          },
+          "auth_server11": {
+            "type": "string",
+            "description": "5G Radio2 SSID3 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port11": {
+            "type": "integer",
+            "description": "5G Radio2 SSID3 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret11": {
+            "type": "string",
+            "description": "5G Radio2 SSID3 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth11": {
+            "type": "integer",
+            "description": "5G Radio2 SSID3备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server11": {
+            "type": "string",
+            "description": "5G Radio2 SSID3备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port11": {
+            "type": "integer",
+            "description": "5G Radio2 SSID3备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret11": {
+            "type": "string",
+            "description": "5G Radio2 SSID3备份RADIUS密钥",
+            "example": ""
+          },
+          "auth_server12": {
+            "type": "string",
+            "description": "5G Radio2 SSID4 RADIUS服务器IP",
+            "example": ""
+          },
+          "auth_port12": {
+            "type": "integer",
+            "description": "5G Radio2 SSID4 RADIUS服务端口",
+            "example": 1812
+          },
+          "acct_secret12": {
+            "type": "string",
+            "description": "5G Radio2 SSID4 RADIUS密钥",
+            "example": ""
+          },
+          "slave_auth12": {
+            "type": "integer",
+            "description": "5G Radio2 SSID4备份RADIUS服务是否开启",
+            "example": 0
+          },
+          "slave_auth_server12": {
+            "type": "string",
+            "description": "5G Radio2 SSID4备份RADIUS服务器IP",
+            "example": ""
+          },
+          "slave_auth_port12": {
+            "type": "integer",
+            "description": "5G Radio2 SSID4备份RADIUS服务端口",
+            "example": 1812
+          },
+          "slave_acct_secret12": {
+            "type": "string",
+            "description": "5G Radio2 SSID4备份RADIUS密钥",
+            "example": ""
+          },
+          "load_strategy_d5g": {
+            "type": "integer",
+            "description": "5G Radio2负载策略",
+            "example": 0
+          },
+          "autohide_maxsta_d5g": {
+            "type": "integer",
+            "description": "5G Radio2负载策略阀值1",
+            "example": 1
+          },
+          "autohide_resume_d5g": {
+            "type": "integer",
+            "description": "5G Radio2负载策略阀值2",
+            "example": 0
+          },
+          "qos_atf_d5g": {
+            "type": "integer",
+            "description": "5G Radio2 ATF公平调度算法",
+            "example": 0
+          },
+          "channel_d5g": {
+            "type": "integer",
+            "description": "5G Radio2信道",
+            "example": 0
+          },
+          "min_signal_d5g": {
+            "type": "integer",
+            "description": "5G Radio2最低连接信号",
+            "example": 0
+          },
+          "signal_str_d5g": {
+            "type": "integer",
+            "description": "5G Radio2信号强度",
+            "example": 0
+          },
+          "studio_ssid_d5g": {
+            "type": "string",
+            "description": "5G Radio2工作室SSID列表",
+            "example": ""
+          },
+          "channel_width_d5g": {
+            "type": "integer",
+            "description": "5G Radio2频宽",
+            "enum": [
+              20,
+              40,
+              80,
+              160
+            ],
+            "example": 40
+          },
+          "advanced": {
+            "type": "integer",
+            "description": "2.4G高级设置开关",
+            "example": 0
+          },
+          "beacon_interval": {
+            "type": "integer",
+            "description": "2.4G高级设置-beacon帧间隔",
+            "minimum": 100,
+            "maximum": 1000,
+            "example": 200
+          },
+          "beacon_txpower": {
+            "type": "integer",
+            "description": "2.4G高级设置-beacon发射功率",
+            "minimum": 0,
+            "maximum": 100,
+            "example": 0
+          },
+          "rts": {
+            "type": "integer",
+            "description": "2.4G高级设置-RTS门限",
+            "minimum": 0,
+            "maximum": 2346,
+            "example": 0
+          },
+          "hwmode": {
+            "type": "string",
+            "description": "2.4G高级设置-射频工作模式",
+            "enum": [
+              "11b/g/n/ax/be",
+              "11b/g/n/ax",
+              "11b/g/n",
+              "11n",
+              "11b/g"
+            ],
+            "example": ""
+          },
+          "dis_legacy": {
+            "type": "string",
+            "description": "2.4G高级设置-低速率接入限制",
+            "example": "0"
+          },
+          "mgmt_rate": {
+            "type": "integer",
+            "description": "2.4G高级设置-管理帧速率",
+            "enum": [
+              1000,
+              2000,
+              5500,
+              6000,
+              11000
+            ],
+            "example": 1000
+          },
+          "advanced_5g": {
+            "type": "integer",
+            "description": "5G Radio1高级设置开关",
+            "example": 0
+          },
+          "beacon_interval_5g": {
+            "type": "integer",
+            "description": "5G Radio1高级设置-beacon帧间隔",
+            "minimum": 100,
+            "maximum": 1000,
+            "example": 200
+          },
+          "beacon_txpower_5g": {
+            "type": "integer",
+            "description": "5G Radio1高级设置-beacon发射功率",
+            "minimum": 0,
+            "maximum": 100,
+            "example": 0
+          },
+          "rts_5g": {
+            "type": "integer",
+            "description": "5G Radio1高级设置-RTS门限",
+            "minimum": 0,
+            "maximum": 2346,
+            "example": 0
+          },
+          "hwmode_5g": {
+            "type": "string",
+            "description": "5G Radio1高级设置-射频工作模式",
+            "enum": [
+              "11a/n/ac/ax/be",
+              "11a/n/ac/ax",
+              "11a/n/ac",
+              "11n",
+              "11a/n"
+            ],
+            "example": ""
+          },
+          "advanced_d5g": {
+            "type": "integer",
+            "description": "5G Radio2高级设置开关",
+            "example": 0
+          },
+          "beacon_interval_d5g": {
+            "type": "integer",
+            "description": "5G Radio2高级设置-beacon帧间隔",
+            "minimum": 100,
+            "maximum": 1000,
+            "example": 200
+          },
+          "beacon_txpower_d5g": {
+            "type": "integer",
+            "description": "5G Radio2高级设置-beacon发射功率",
+            "minimum": 0,
+            "maximum": 100,
+            "example": 0
+          },
+          "rts_d5g": {
+            "type": "integer",
+            "description": "5G Radio2高级设置-RTS门限",
+            "minimum": 0,
+            "maximum": 2346,
+            "example": 0
+          },
+          "hwmode_d5g": {
+            "type": "string",
+            "description": "5G Radio2高级设置-射频工作模式",
+            "enum": [
+              "11a/n/ac/ax/be",
+              "11a/n/ac/ax",
+              "11a/n/ac",
+              "11n",
+              "11a/n"
+            ],
+            "example": ""
+          }
+        }
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer <token>\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "ac-service",
+      "x-displayName": "AC服务管理",
+      "description": "AC服务的启动、停止和状态查询"
+    },
+    {
+      "name": "ap-config",
+      "x-displayName": "AP配置管理",
+      "description": "AP设备配置的获取和管理"
+    }
+  ]
+}

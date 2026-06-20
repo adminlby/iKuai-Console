@@ -1,0 +1,1076 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "DHCP静态分配管理API",
+    "version": "1.0.0",
+    "summary": "DHCP静态IP地址分配的完整管理功能",
+    "description": "提供DHCP静态分配的完整管理功能，包括：\n- 静态分配规则创建和管理\n- 为特定MAC地址分配固定IP\n- 支持自定义网关和DNS配置\n- 规则的启用/停用管理\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/network/dhcp/static": {
+      "get": {
+        "summary": "获取静态分配列表",
+        "description": "获取当前配置的所有DHCP静态分配规则列表。\n支持分页、过滤和排序功能。\n",
+        "operationId": "listDhcpStatic",
+        "tags": [
+          "dhcp-static"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：\n- ==（等于）\n- !=（不等于）\n- >（大于）\n- >=（大于等于）\n- <（小于）\n- <=（小于等于）\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,filter=field2==value2\n\n使用示例：\n- 单条件：filter=enabled==yes\n- AND条件：filter=enabled==yes&filter=interface==lan1\n- OR条件：filter=mac==11:22:33:44:55:66,mac==11:22:33:44:55:77\n",
+            "schema": {
+              "type": "string",
+              "example": "enabled==yes"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取静态分配列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DhcpStaticListResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "static_total": 2,
+                    "static_data": [
+                      {
+                        "mac": "11:22:33:44:55:66",
+                        "gateway": "192.168.9.1",
+                        "dns1": "223.5.5.5",
+                        "dns2": "223.6.6.6",
+                        "ip_addr": "192.168.9.120",
+                        "ip_addr_int": 3232237944,
+                        "comment": "test001",
+                        "id": 1,
+                        "enabled": "yes",
+                        "hostname": "",
+                        "tagname": "term001",
+                        "interface": "lan1"
+                      },
+                      {
+                        "mac": "11:22:33:44:55:77",
+                        "gateway": "192.168.9.1",
+                        "dns1": "223.5.5.5",
+                        "dns2": "119.29.29.29",
+                        "ip_addr": "192.168.9.111",
+                        "ip_addr_int": 3232237935,
+                        "comment": "test003",
+                        "id": 2,
+                        "enabled": "yes",
+                        "hostname": "",
+                        "tagname": "test002",
+                        "interface": "lan1"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "创建静态分配规则",
+        "description": "添加新的DHCP静态分配规则，为特定MAC地址分配固定IP地址。\n所有必需字段必须提供。\n",
+        "operationId": "createDhcpStatic",
+        "tags": [
+          "dhcp-static"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "静态分配规则配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DhcpStaticInput"
+              },
+              "example": {
+                "enabled": "yes",
+                "comment": "备注",
+                "interface": "lan1",
+                "ip_addr": "192.168.1.100",
+                "mac": "xx:xx:xx:xx:xx:xx",
+                "gateway": "192.168.1.1",
+                "dns1": "8.8.8.8",
+                "dns2": "8.8.4.4",
+                "tagname": "test",
+                "hostname": ""
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success",
+                      "rowid": 1
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "message": "请求参数不合法"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "description": "资源冲突（MAC地址或IP地址已存在）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "message": "MAC地址或IP地址已存在"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/network/dhcp/static/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/staticIdParam"
+        }
+      ],
+      "get": {
+        "summary": "获取指定静态分配规则",
+        "description": "根据规则ID获取单个DHCP静态分配规则的详细信息。\n需要提供有效的规则ID。\n",
+        "operationId": "getDhcpStatic",
+        "tags": [
+          "dhcp-static"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取静态分配规则详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DhcpStaticResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新静态分配规则",
+        "description": "完全更新现有的DHCP静态分配规则配置。\n\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateDhcpStatic",
+        "tags": [
+          "dhcp-static"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "完整的静态分配规则配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DhcpStaticInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "启用/停用静态分配规则",
+        "description": "部分更新现有的DHCP静态分配规则配置。\n主要用于启用/停用规则状态。\n",
+        "operationId": "patchDhcpStatic",
+        "tags": [
+          "dhcp-static"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "部分更新数据（如启用状态）",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "enabled"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "string",
+                    "enum": [
+                      "yes",
+                      "no"
+                    ],
+                    "description": "规则启用状态",
+                    "example": "yes"
+                  }
+                },
+                "example": {
+                  "enabled": "yes"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除静态分配规则",
+        "description": "删除指定的DHCP静态分配规则。\n删除后无法恢复，请谨慎操作。\n",
+        "operationId": "deleteDhcpStatic",
+        "tags": [
+          "dhcp-static"
+        ],
+        "responses": {
+          "200": {
+            "description": "静态分配规则删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "staticIdParam": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "静态分配规则ID",
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 1,
+          "example": 1
+        }
+      },
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 20,
+          "example": 20
+        }
+      },
+      "orderParam": {
+        "name": "order",
+        "in": "query",
+        "description": "排序方向，asc为升序（默认），desc为降序",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "asc",
+          "example": "asc"
+        }
+      },
+      "orderByParam": {
+        "name": "order_by",
+        "in": "query",
+        "description": "排序字段，支持id、interface、ip_addr、mac等字段",
+        "schema": {
+          "type": "string",
+          "default": "id",
+          "example": "id"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源冲突（如唯一性冲突，需调整请求逻辑）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "DhcpStaticCreateResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "成功状态码，创建接口中为0",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "success"
+          },
+          "rowid": {
+            "type": "integer",
+            "description": "创建的规则ID",
+            "example": 1
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "rowid"
+        ],
+        "additionalProperties": false
+      },
+      "DhcpStaticResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DhcpStatic"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "DhcpStaticListResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "static_total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 2
+              },
+              "static_data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DhcpStatic"
+                }
+              }
+            },
+            "required": [
+              "static_total",
+              "static_data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "DhcpStatic": {
+        "type": "object",
+        "required": [
+          "id",
+          "enabled",
+          "mac",
+          "ip_addr",
+          "interface",
+          "tagname"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "规则ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "规则启用状态，yes为启用（默认），no为停用",
+            "example": "yes"
+          },
+          "mac": {
+            "type": "string",
+            "description": "MAC地址",
+            "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$|^([0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2}$|^[0-9A-Fa-f]{12}$",
+            "example": "11:22:33:44:55:66"
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "IP地址",
+            "format": "ipv4",
+            "example": "192.168.9.120"
+          },
+          "ip_addr_int": {
+            "type": "integer",
+            "description": "IP地址的整数表示",
+            "format": "int64",
+            "example": 3232237944
+          },
+          "interface": {
+            "type": "string",
+            "description": "接口名称，支持 auto、lan* 或 vlan* 格式，最大15个字符",
+            "pattern": "^(auto|lan[a-zA-Z0-9]*|vlan[a-zA-Z0-9]*)$",
+            "maxLength": 15,
+            "example": "lan1"
+          },
+          "gateway": {
+            "type": "string",
+            "description": "网关地址",
+            "example": "192.168.9.1"
+          },
+          "dns1": {
+            "type": "string",
+            "description": "DNS1服务器地址",
+            "example": "223.5.5.5"
+          },
+          "dns2": {
+            "type": "string",
+            "description": "DNS2服务器地址",
+            "example": "223.6.6.6"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": "test001"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "名称，支持中文、英文、数字、下划线和连字符，1-15个字符，不能以下划线或连字符开头",
+            "minLength": 1,
+            "maxLength": 15,
+            "example": "term001"
+          },
+          "hostname": {
+            "type": "string",
+            "description": "主机名",
+            "maxLength": 255,
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "DhcpStaticInput": {
+        "type": "object",
+        "required": [
+          "enabled",
+          "mac",
+          "ip_addr",
+          "interface",
+          "tagname"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "规则启用状态，yes为启用（默认），no为停用",
+            "example": "yes"
+          },
+          "mac": {
+            "type": "string",
+            "description": "MAC地址",
+            "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$|^([0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2}$|^[0-9A-Fa-f]{12}$",
+            "example": "11:22:33:44:55:66"
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "IP地址",
+            "format": "ipv4",
+            "example": "192.168.1.100"
+          },
+          "interface": {
+            "type": "string",
+            "description": "接口名称，支持 auto、lan* 或 vlan* 格式，最大15个字符",
+            "pattern": "^(auto|lan[a-zA-Z0-9]*|vlan[a-zA-Z0-9]*)$",
+            "maxLength": 15,
+            "example": "lan1"
+          },
+          "gateway": {
+            "type": "string",
+            "description": "网关地址，不填则为空",
+            "example": "192.168.1.1"
+          },
+          "dns1": {
+            "type": "string",
+            "description": "DNS1服务器地址",
+            "example": "8.8.8.8"
+          },
+          "dns2": {
+            "type": "string",
+            "description": "DNS2服务器地址",
+            "example": "8.8.4.4"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": "备注"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "名称，支持中文、英文、数字、下划线和连字符，1-15个字符，不能以下划线或连字符开头",
+            "minLength": 1,
+            "maxLength": 15,
+            "example": "test"
+          },
+          "hostname": {
+            "type": "string",
+            "description": "主机名",
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/DhcpStaticCreateResponse"
+          },
+          {
+            "$ref": "#/components/schemas/CreateBusinessErrorResponse"
+          }
+        ],
+        "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "CreateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "dhcp-static",
+      "x-displayName": "DHCP静态分配",
+      "description": "DHCP静态IP地址分配规则的管理和配置"
+    }
+  ]
+}

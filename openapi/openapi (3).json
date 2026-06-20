@@ -1,0 +1,497 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "CPU频率管理API",
+    "version": "1.0.0",
+    "summary": "CPU频率监控和管理的完整功能",
+    "description": "提供CPU频率监控和管理的完整功能，包括：\n- CPU实时频率监控\n- CPU工作模式配置\n- 睿频模式控制\n- CPU使用率统计\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/system/cpufreq": {
+      "get": {
+        "summary": "获取CPU实时频率",
+        "description": "获取所有CPU核心的实时频率信息、使用率、中断统计等数据。\n包含CPU ID、物理ID、核心ID、频率、使用率、软硬中断数等信息。\n",
+        "operationId": "getCpuFrequency",
+        "tags": [
+          "cpu-freq-monitor"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取CPU实时频率数据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CpuFrequencyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/system/cpufreq/mode": {
+      "get": {
+        "summary": "获取CPU工作模式",
+        "description": "获取CPU的工作模式配置信息，包括当前调频模式、睿频状态、\n支持的模式列表等配置。\n",
+        "operationId": "getCpuFrequencyMode",
+        "tags": [
+          "cpu-freq"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取CPU工作模式",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CpuFrequencyModeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "配置CPU工作模式",
+        "description": "全量更新CPU工作模式配置。所有字段均为必填，即使未修改也必须携带原值。\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateCpuFrequencyMode",
+        "tags": [
+          "cpu-freq"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "全量更新，所有字段必填，未修改的字段须传原值",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CpuFrequencyModeEditInput"
+              },
+              "example": {
+                "turbo": 1,
+                "mode": "performance"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "CPU工作模式配置更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源冲突（如唯一性冲突，需调整请求逻辑）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "CpuFrequencyResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "softirq_data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CpuFrequencyData"
+                }
+              }
+            },
+            "required": [
+              "softirq_data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "CpuFrequencyModeResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "cpufreq_support": {
+                "type": "integer",
+                "description": "是否支持调频，0为不支持，1为支持",
+                "enum": [
+                  0,
+                  1
+                ],
+                "example": 1
+              },
+              "current_cpufreq": {
+                "type": "string",
+                "description": "当前的调频模式",
+                "enum": [
+                  "off",
+                  "conservative",
+                  "ondemand",
+                  "powersave",
+                  "performance",
+                  "schedutil"
+                ],
+                "example": "performance"
+              },
+              "current_turbo": {
+                "type": "integer",
+                "description": "当前的睿频模式，0为关闭，1为开启",
+                "enum": [
+                  0,
+                  1
+                ],
+                "example": 0
+              },
+              "cpufreq_list": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "off",
+                    "conservative",
+                    "ondemand",
+                    "powersave",
+                    "performance",
+                    "schedutil"
+                  ]
+                },
+                "description": "支持的调频模式列表",
+                "example": [
+                  "conservative",
+                  "ondemand",
+                  "powersave",
+                  "performance",
+                  "schedutil"
+                ]
+              },
+              "turbo_support": {
+                "type": "integer",
+                "description": "是否支持睿频，0为不支持，1为支持",
+                "enum": [
+                  0,
+                  1
+                ],
+                "example": 0
+              }
+            },
+            "required": [
+              "cpufreq_support",
+              "current_cpufreq",
+              "current_turbo",
+              "cpufreq_list",
+              "turbo_support"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "CpuFrequencyData": {
+        "type": "object",
+        "required": [
+          "cpuid",
+          "freq",
+          "phyid",
+          "coreid",
+          "used",
+          "softirq",
+          "hardirq"
+        ],
+        "properties": {
+          "cpuid": {
+            "type": "string",
+            "description": "CPU逻辑处理器ID",
+            "example": "0"
+          },
+          "freq": {
+            "type": "string",
+            "description": "CPU频率（MHz）",
+            "example": "2000"
+          },
+          "phyid": {
+            "type": "string",
+            "description": "物理CPU ID",
+            "example": "0"
+          },
+          "coreid": {
+            "type": "string",
+            "description": "CPU核心ID",
+            "example": "0"
+          },
+          "used": {
+            "type": "string",
+            "description": "CPU使用率百分比",
+            "pattern": "^[0-9]+\\.[0-9]+%$",
+            "example": "0.99%"
+          },
+          "softirq": {
+            "type": "integer",
+            "description": "软中断是否开启",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "hardirq": {
+            "type": "integer",
+            "description": "硬中断是否开启",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "CpuFrequencyModeEditInput": {
+        "type": "object",
+        "description": "CPU工作模式全量编辑。所有字段均为必填，未修改的字段须传原值。",
+        "required": [
+          "mode",
+          "turbo"
+        ],
+        "properties": {
+          "mode": {
+            "type": "string",
+            "description": "CPU调频模式",
+            "enum": [
+              "off",
+              "conservative",
+              "ondemand",
+              "powersave",
+              "performance",
+              "schedutil"
+            ],
+            "example": "performance"
+          },
+          "turbo": {
+            "type": "integer",
+            "description": "CPU睿频开关（0关闭，1开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "cpu-freq-monitor",
+      "x-displayName": "CPU频率监控",
+      "description": "CPU实时频率、使用率和中断统计信息监控"
+    },
+    {
+      "name": "cpu-freq",
+      "x-displayName": "CPU频率管理",
+      "description": "CPU工作模式和睿频配置管理"
+    }
+  ]
+}

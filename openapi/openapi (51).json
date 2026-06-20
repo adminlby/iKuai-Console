@@ -1,0 +1,671 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "IKEv2/IPSec服务器管理API",
+    "version": "1.0.0",
+    "summary": "IKEv2/IPSec服务器配置管理",
+    "description": "提供IKEv2/IPSec服务器的配置管理功能，包括：\n- IKEv2/IPSec服务基础配置\n- 认证方式配置（secret/mschapv2）\n- 地址池和DNS配置\n- 证书和密钥管理\n- 连接控制和安全设置\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/vpn/ikev2/services": {
+      "get": {
+        "summary": "获取IKEv2/IPSec服务器配置",
+        "description": "获取当前IKEv2/IPSec服务器的配置信息。\n包括服务状态、认证方式、网络配置、证书等。\n",
+        "operationId": "getIkev2ServerConfig",
+        "tags": [
+          "ikev2-server"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取IKEv2/IPSec配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ikev2ServerConfigResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "data": [
+                      {
+                        "id": 1,
+                        "enabled": "no",
+                        "name": "",
+                        "authby": "mschapv2",
+                        "addrpool": "10.6.1.0/24",
+                        "keyexchange": "ikev2",
+                        "aggressive": "yes",
+                        "secret": "verystrong",
+                        "leftid": "",
+                        "rightid": "",
+                        "dns1": "114.114.114.114",
+                        "dns2": "119.29.29.29",
+                        "share_deny": 0,
+                        "mtu": 1400,
+                        "privatekey": "-----BEGIN#RSA#PRIVATE#KEY-----@MIIEowIBAAKCAQEAsikev2PrivateKeyDemoData11111111111111111111111111@2222222222222222222222222222222222222222222222222222222222222222@3333333333333333333333333333333333333333333333333333333333333333@AoIBAFikev2PrivateKeyDemoPayload4444444444444444444444444444444444@5555555555555555555555555555555555555555555555555555555555555555@6666666666666666666666666666666666666666666666666666666666666666@-----END#RSA#PRIVATE#KEY-----@",
+                        "leftcert": "-----BEGIN#CERTIFICATE-----@MIIDWjCCAkKgAwIBAgIJAOikev2LeftCertDemoMA0GCSqGSIb3DQEBCwUAMDcxCzAJ@BgNVBAYTAkNOMQ4wDAYDVQQKDAVpS3VhaTEYMBYGA1UEAwwPaUt1YWkgSUtFdjIg@Q0EwHhcNMjYwMjA2MTAzMTEwWhcNMzYwMjA0MTAzMTEwWjA4MQswCQYDVQQGEwJD@TjEOMAwGA1UECgwFaUt1YWkxGTAXBgNVBAMMEHZwbi5leGFtcGxlLmNvbTCCASIw@DQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKikev2LeftCertDemoData11111@2222222222222222222222222222222222222222222222222222222222222222@3333333333333333333333333333333333333333333333333333333333333333@AgMBAAGjUDBOMB0GA1UdDgQWBBRikev2LeftCertDemo111111111111111111111@MA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAAaaaabbbbccccdddd@1111111111111111111111111111111111111111111111111111111111111111@2222222222222222222222222222222222222222222222222222222222222222@-----END#CERTIFICATE-----@"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新IKEv2/IPSec服务器配置",
+        "description": "更新IKEv2/IPSec服务器的配置信息。\n支持更新认证方式、网络配置、证书、安全设置等。\n\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateIkev2ServerConfig",
+        "tags": [
+          "ikev2-server"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "IKEv2/IPSec服务器配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Ikev2ServerConfigInput"
+              },
+              "example": {
+                "enabled": "yes",
+                "authby": "mschapv2",
+                "addrpool": "10.6.1.0/24",
+                "secret": "verystrong",
+                "leftid": "vpn.example.com",
+                "rightid": "",
+                "dns1": "114.114.114.114",
+                "dns2": "119.29.29.29",
+                "share_deny": 0,
+                "mtu": 1400,
+                "privatekey": "-----BEGIN#RSA#PRIVATE#KEY-----@MIIEowIBAAKCAQEAsikev2PrivateKeyDemoData11111111111111111111111111@2222222222222222222222222222222222222222222222222222222222222222@3333333333333333333333333333333333333333333333333333333333333333@AoIBAFikev2PrivateKeyDemoPayload4444444444444444444444444444444444@5555555555555555555555555555555555555555555555555555555555555555@6666666666666666666666666666666666666666666666666666666666666666@-----END#RSA#PRIVATE#KEY-----@",
+                "leftcert": "-----BEGIN#CERTIFICATE-----@MIIDWjCCAkKgAwIBAgIJAOikev2LeftCertDemoMA0GCSqGSIb3DQEBCwUAMDcxCzAJ@BgNVBAYTAkNOMQ4wDAYDVQQKDAVpS3VhaTEYMBYGA1UEAwwPaUt1YWkgSUtFdjIg@Q0EwHhcNMjYwMjA2MTAzMTEwWhcNMzYwMjA0MTAzMTEwWjA4MQswCQYDVQQGEwJD@TjEOMAwGA1UECgwFaUt1YWkxGTAXBgNVBAMMEHZwbi5leGFtcGxlLmNvbTCCASIw@DQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKikev2LeftCertDemoData11111@2222222222222222222222222222222222222222222222222222222222222222@3333333333333333333333333333333333333333333333333333333333333333@AgMBAAGjUDBOMB0GA1UdDgQWBBRikev2LeftCertDemo111111111111111111111@MA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAAaaaabbbbccccdddd@1111111111111111111111111111111111111111111111111111111111111111@2222222222222222222222222222222222222222222222222222222222222222@-----END#CERTIFICATE-----@"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源冲突（如唯一性冲突，需调整请求逻辑）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "Ikev2ServerConfig": {
+        "type": "object",
+        "required": [
+          "id",
+          "enabled",
+          "name",
+          "authby",
+          "addrpool",
+          "keyexchange",
+          "aggressive",
+          "secret",
+          "dns1",
+          "dns2",
+          "share_deny",
+          "mtu",
+          "leftid",
+          "rightid",
+          "privatekey",
+          "leftcert"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "配置ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "description": "服务开启状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "no"
+          },
+          "name": {
+            "type": "string",
+            "description": "服务名称（唯一）",
+            "example": ""
+          },
+          "authby": {
+            "type": "string",
+            "description": "认证方式：secret-预共享密钥，mschapv2-EAP-MSCHAPv2",
+            "enum": [
+              "secret",
+              "mschapv2"
+            ],
+            "example": "mschapv2"
+          },
+          "addrpool": {
+            "type": "string",
+            "description": "客户端地址池，CIDR网络地址格式（如 10.6.1.0/24），必须为网络地址而非主机地址",
+            "example": "10.6.1.0/24"
+          },
+          "keyexchange": {
+            "type": "string",
+            "description": "密钥交换协议",
+            "enum": [
+              "ikev2"
+            ],
+            "example": "ikev2"
+          },
+          "aggressive": {
+            "type": "string",
+            "description": "是否开启激进模式",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "secret": {
+            "type": "string",
+            "description": "预共享密钥（authby=secret时必填，1-64个字符，）",
+            "maxLength": 64,
+            "example": "verystrong"
+          },
+          "leftid": {
+            "type": "string",
+            "description": "本地标识，长度为 1-64 个字符。\n当 authby=mschapv2 时，建议配置为服务端证书对应的标识值。\n对于非 iKuai 路由客户端对接场景，必须使用以域名签发的服务器证书，并将本地标识配置为与该证书主题名称（CN）或主体备用名称（SAN）一致的完整域名（FQDN）。\n若本地标识与证书对应域名不一致，可能导致客户端身份校验失败或连接建立失败。\n",
+            "minLength": 1,
+            "maxLength": 64,
+            "example": "vpn.example.com"
+          },
+          "rightid": {
+            "type": "string",
+            "description": "对端标识（允许为空，最多100个字符）",
+            "maxLength": 100,
+            "example": ""
+          },
+          "dns1": {
+            "type": "string",
+            "description": "DNS服务器1，必须为合法IP",
+            "example": "114.114.114.114"
+          },
+          "dns2": {
+            "type": "string",
+            "description": "DNS服务器2，必须为合法IP",
+            "example": "119.29.29.29"
+          },
+          "share_deny": {
+            "type": "integer",
+            "description": "共享数超出处理动作",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "mtu": {
+            "type": "integer",
+            "description": "MTU值",
+            "minimum": 1000,
+            "maximum": 1492,
+            "default": 1400,
+            "example": 1400
+          },
+          "privatekey": {
+            "type": "string",
+            "description": "私钥，authby=mschapv2 时必填，使用转义后的单行 PEM 字符串传递：\n- 原始换行符替换为 `@`\n- 原始空格替换为 `#`\n按上述规则还原后，应得到可被 OpenSSL 正常识别的 PEM 私钥内容。\n",
+            "example": "-----BEGIN#RSA#PRIVATE#KEY-----@MIIEowIBAAKCAQEAsikev2PrivateKeyDemoData11111111111111111111111111@2222222222222222222222222222222222222222222222222222222222222222@3333333333333333333333333333333333333333333333333333333333333333@AoIBAFikev2PrivateKeyDemoPayload4444444444444444444444444444444444@5555555555555555555555555555555555555555555555555555555555555555@6666666666666666666666666666666666666666666666666666666666666666@-----END#RSA#PRIVATE#KEY-----@"
+          },
+          "leftcert": {
+            "type": "string",
+            "description": "本地证书，authby=mschapv2 时必填，使用转义后的单行 PEM 字符串传递：\n- 原始换行符替换为 `@`\n- 原始空格替换为 `#`\n按上述规则还原后，应得到可被 OpenSSL 以 X.509 证书方式正常解析的 PEM 内容。\n",
+            "example": "-----BEGIN#CERTIFICATE-----@MIIDWjCCAkKgAwIBAgIJAOikev2LeftCertDemoMA0GCSqGSIb3DQEBCwUAMDcxCzAJ@BgNVBAYTAkNOMQ4wDAYDVQQKDAVpS3VhaTEYMBYGA1UEAwwPaUt1YWkgSUtFdjIg@Q0EwHhcNMjYwMjA2MTAzMTEwWhcNMzYwMjA0MTAzMTEwWjA4MQswCQYDVQQGEwJD@TjEOMAwGA1UECgwFaUt1YWkxGTAXBgNVBAMMEHZwbi5leGFtcGxlLmNvbTCCASIw@DQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKikev2LeftCertDemoData11111@2222222222222222222222222222222222222222222222222222222222222222@3333333333333333333333333333333333333333333333333333333333333333@AgMBAAGjUDBOMB0GA1UdDgQWBBRikev2LeftCertDemo111111111111111111111@MA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAAaaaabbbbccccdddd@1111111111111111111111111111111111111111111111111111111111111111@2222222222222222222222222222222222222222222222222222222222222222@-----END#CERTIFICATE-----@"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Ikev2ServerConfigInput": {
+        "type": "object",
+        "description": "PUT全量修改，所有字段均为required；不修改的字段请传空值或原值",
+        "required": [
+          "id",
+          "enabled",
+          "authby",
+          "addrpool",
+          "secret",
+          "leftid",
+          "rightid",
+          "dns1",
+          "dns2",
+          "share_deny",
+          "mtu",
+          "privatekey",
+          "leftcert"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "配置ID，必须传入",
+            "minimum": 1,
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "description": "服务开启状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "authby": {
+            "type": "string",
+            "description": "认证方式：secret-预共享密钥，mschapv2-EAP-MSCHAPv2",
+            "enum": [
+              "secret",
+              "mschapv2"
+            ],
+            "default": "mschapv2",
+            "example": "mschapv2"
+          },
+          "addrpool": {
+            "type": "string",
+            "description": "客户端地址池，CIDR网络地址格式（如 10.6.1.0/24），必须为网络地址而非主机地址",
+            "default": "10.6.1.0/24",
+            "example": "10.6.1.0/24"
+          },
+          "secret": {
+            "type": "string",
+            "description": "预共享密钥（authby=secret时必填，1-64个字符，）",
+            "maxLength": 64,
+            "example": "verystrong"
+          },
+          "leftid": {
+            "type": "string",
+            "description": "本地标识，authby=mschapv2 时必填，长度为 1-64 个字符。\n对于非 iKuai 路由客户端对接场景，必须使用以域名签发的服务器证书，并将本地标识配置为与该证书主题名称（CN）或主体备用名称（SAN）一致的完整域名（FQDN）。\n若本地标识与证书对应域名不一致，可能导致客户端身份校验失败或连接建立失败。\n",
+            "minLength": 1,
+            "maxLength": 64,
+            "example": "vpn.example.com"
+          },
+          "rightid": {
+            "type": "string",
+            "description": "对端标识（1-100个字符，）",
+            "maxLength": 100,
+            "example": ""
+          },
+          "dns1": {
+            "type": "string",
+            "description": "DNS服务器1，必须为合法IP",
+            "default": "114.114.114.114",
+            "example": "114.114.114.114"
+          },
+          "dns2": {
+            "type": "string",
+            "description": "DNS服务器2，必须为合法IP",
+            "default": "119.29.29.29",
+            "example": "119.29.29.29"
+          },
+          "share_deny": {
+            "type": "integer",
+            "description": "共享数超出处理动作",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "mtu": {
+            "type": "integer",
+            "description": "MTU值",
+            "minimum": 1000,
+            "maximum": 1492,
+            "default": 1400,
+            "example": 1400
+          },
+          "privatekey": {
+            "type": "string",
+            "description": "私钥，authby=mschapv2 时必填，使用转义后的单行 PEM 字符串传递：\n- 原始换行符替换为 `@`\n- 原始空格替换为 `#`\n按上述规则还原后，应得到可被 OpenSSL 正常识别的 PEM 私钥内容。\n",
+            "example": "-----BEGIN#RSA#PRIVATE#KEY-----@MIIEowIBAAKCAQEAsikev2PrivateKeyDemoData11111111111111111111111111@2222222222222222222222222222222222222222222222222222222222222222@3333333333333333333333333333333333333333333333333333333333333333@AoIBAFikev2PrivateKeyDemoPayload4444444444444444444444444444444444@5555555555555555555555555555555555555555555555555555555555555555@6666666666666666666666666666666666666666666666666666666666666666@-----END#RSA#PRIVATE#KEY-----@"
+          },
+          "leftcert": {
+            "type": "string",
+            "description": "本地证书，authby=mschapv2 时必填，使用转义后的单行 PEM 字符串传递：\n- 原始换行符替换为 `@`\n- 原始空格替换为 `#`\n按上述规则还原后，应得到可被 OpenSSL 以 X.509 证书方式正常解析的 PEM 内容。\n",
+            "example": "-----BEGIN#CERTIFICATE-----@MIIDWjCCAkKgAwIBAgIJAOikev2LeftCertDemoMA0GCSqGSIb3DQEBCwUAMDcxCzAJ@BgNVBAYTAkNOMQ4wDAYDVQQKDAVpS3VhaTEYMBYGA1UEAwwPaUt1YWkgSUtFdjIg@Q0EwHhcNMjYwMjA2MTAzMTEwWhcNMzYwMjA0MTAzMTEwWjA4MQswCQYDVQQGEwJD@TjEOMAwGA1UECgwFaUt1YWkxGTAXBgNVBAMMEHZwbi5leGFtcGxlLmNvbTCCASIw@DQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKikev2LeftCertDemoData11111@2222222222222222222222222222222222222222222222222222222222222222@3333333333333333333333333333333333333333333333333333333333333333@AgMBAAGjUDBOMB0GA1UdDgQWBBRikev2LeftCertDemo111111111111111111111@MA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAAaaaabbbbccccdddd@1111111111111111111111111111111111111111111111111111111111111111@2222222222222222222222222222222222222222222222222222222222222222@-----END#CERTIFICATE-----@"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Ikev2ServerConfigResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Ikev2ServerConfig"
+                }
+              }
+            },
+            "required": [
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "ikev2-server",
+      "x-displayName": "IKEv2/IPSec服务器管理",
+      "description": "IKEv2/IPSec服务器的配置管理，包括认证、网络、证书等设置"
+    }
+  ]
+}

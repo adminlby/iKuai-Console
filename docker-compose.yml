@@ -1,0 +1,45 @@
+# Two roles of the same image, decoupled via MySQL:
+#   probe → host network (accurate ISP detection + latency, ICMP, reaches WAN gateway)
+#   web   → 1panel-network (serves the SPA + reverse-proxies /api + serves /svc)
+# Both read config from backend/.env. Set DB_HOST to the MySQL IP (or use
+# extra_hosts) so the bridge-networked web container can resolve it.
+services:
+  web:
+    build: .
+    image: ikuai-console:latest
+    restart: unless-stopped
+    env_file:
+      - backend/.env
+    environment:
+      ROLE: web
+      FRONTEND_DIR: /app/public
+      # web is on 1panel-network → reach the MySQL container directly.
+      # Use its 1panel-network IP (from 1Panel) or its container name.
+      DB_HOST: 172.18.0.2
+    ports:
+      - "60001:5274"          # browser -> http://<host>:60001
+    networks:
+      - 1panel-network
+    # The web container is on a bridge net, so it can't resolve a host-only name
+    # like "Rasp-Mysql". Set DB_HOST to the MySQL IP in backend/.env (simplest,
+    # works for both containers), or map the name here:
+    # extra_hosts:
+    #   - "Rasp-Mysql:192.168.x.y"
+
+  probe:
+    image: ikuai-console:latest   # reuses the image built by `web`
+    restart: unless-stopped
+    env_file:
+      - backend/.env
+    environment:
+      ROLE: probe
+      # On host network, reach MySQL via its host-published 127.0.0.1:3306
+      # (the web container instead reaches it by name on 1panel-network).
+      DB_HOST: 127.0.0.1
+    network_mode: host            # ISP 检测 + 延迟走宿主网卡
+    cap_add:
+      - NET_RAW                   # ICMP for the ISP-gateway latency
+
+networks:
+  1panel-network:
+    external: true

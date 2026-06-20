@@ -1,0 +1,395 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "消息中心API",
+    "version": "1.0.0",
+    "summary": "消息中心查询",
+    "description": "提供消息中心的只读查询功能，包括：\n- 消息中心列表查询\n- 未读消息数量统计\n- 支持分页、排序、过滤和模糊搜索\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/log/message-center": {
+      "get": {
+        "summary": "获取消息中心列表",
+        "description": "获取消息中心通知列表。\n支持按消息类型、已读状态、时间戳等字段过滤，也支持按标题、详情等字段模糊搜索。\n",
+        "operationId": "listMessageCenterMessages",
+        "tags": [
+          "log-message-center"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "$ref": "#/components/parameters/filterParam"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "模糊搜索字段名，与 pattern 联合使用，支持 title、detail",
+            "schema": {
+              "type": "string"
+            },
+            "example": "title,detail"
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "description": "模糊搜索关键词，与 key 联合使用",
+            "schema": {
+              "type": "string"
+            },
+            "example": "升级"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取消息中心列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageNotificationListResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "total": 2,
+                    "data": [
+                      {
+                        "id": 1,
+                        "timestamp": 1778763600,
+                        "title": "发现新版本",
+                        "type": 1,
+                        "detail": "检测到可升级版本 4.0.111",
+                        "image": "",
+                        "status": 0
+                      },
+                      {
+                        "id": 2,
+                        "timestamp": 1778756400,
+                        "title": "自动备份成功",
+                        "type": 2,
+                        "detail": "配置文件自动备份已完成",
+                        "image": "",
+                        "status": 1
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 50,
+          "example": 50
+        }
+      },
+      "orderParam": {
+        "name": "order",
+        "in": "query",
+        "description": "排序方向，asc为升序，desc为降序",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "desc",
+          "example": "desc"
+        }
+      },
+      "orderByParam": {
+        "name": "order_by",
+        "in": "query",
+        "description": "排序字段，支持 id、timestamp、type、status、title",
+        "schema": {
+          "type": "string",
+          "default": "timestamp",
+          "example": "timestamp"
+        }
+      },
+      "filterParam": {
+        "name": "filter",
+        "in": "query",
+        "description": "过滤条件，支持精确匹配、范围匹配和多条件组合。\n\n支持的操作符：\n- \"==（等于）\"\n- \"!=（不等于）\"\n- \">（大于）\"\n- \">=（大于等于）\"\n- \"<（小于）\"\n- \"<=（小于等于）\"\n- \"：（包含）\"\n- \"!：（不包含）\"\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,field2==value2\n\n使用示例：\n- 消息类型过滤：filter=type==1\n- 未读消息过滤：filter=status==0\n- 时间范围过滤：filter=timestamp>=1778760000&filter=timestamp<1778846400\n",
+        "schema": {
+          "type": "string"
+        },
+        "example": "status==0"
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 400,
+              "message": "请求语法错误或参数不合法（检查请求参数、过滤条件或排序字段）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 401,
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 403,
+              "message": "无权限访问消息中心"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 500,
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "MessageNotificationListResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示成功",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "响应消息",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/MessageNotificationListResult"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MessageNotificationListResult": {
+        "type": "object",
+        "required": [
+          "total",
+          "data"
+        ],
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "符合过滤条件的消息总数",
+            "minimum": 0,
+            "example": 2
+          },
+          "data": {
+            "type": "array",
+            "description": "消息中心列表",
+            "items": {
+              "$ref": "#/components/schemas/MessageNotification"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "MessageNotification": {
+        "type": "object",
+        "required": [
+          "id",
+          "timestamp",
+          "title",
+          "type",
+          "detail",
+          "image",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "消息ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "消息产生时间戳",
+            "example": 1778763600
+          },
+          "title": {
+            "type": "string",
+            "description": "消息标题",
+            "maxLength": 255,
+            "example": "发现新版本"
+          },
+          "type": {
+            "type": "integer",
+            "description": "消息类型，1-路由，2-业务，3-固件，4-官方通知",
+            "enum": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "example": 1
+          },
+          "detail": {
+            "type": "string",
+            "description": "消息详情",
+            "maxLength": 2000,
+            "example": "检测到可升级版本 4.0.111"
+          },
+          "image": {
+            "type": "string",
+            "description": "文案图片路径，空字符串表示无图片",
+            "maxLength": 500,
+            "example": ""
+          },
+          "status": {
+            "type": "integer",
+            "description": "阅读状态，0-未读，1-已读",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "错误码",
+            "example": 400
+          },
+          "message": {
+            "type": "string",
+            "description": "错误信息",
+            "example": "请求参数错误"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer <token>\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "log-message-center",
+      "x-displayName": "消息中心",
+      "description": "消息中心列表和未读数量查询"
+    }
+  ]
+}

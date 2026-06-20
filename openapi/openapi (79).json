@@ -1,0 +1,601 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "认证用户管理API",
+    "version": "1.0.0",
+    "summary": "认证用户的完整管理功能",
+    "description": "提供认证用户的完整管理功能，包括：\n- 认证用户列表查询\n- 断开认证用户连接\n- 支持分页、模糊匹配和过滤功能\n- 支持多种认证类型：PPPoE、PPTP、L2TP、OpenVPN、WEB、IPSec等\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/auth/online-users": {
+      "get": {
+        "summary": "获取认证用户列表",
+        "description": "获取所有认证用户配置列表。\n支持分页、排序、模糊匹配和过滤功能。\n包括在线用户的详细信息，如认证时间、会话ID、IP地址、MAC地址等。\n",
+        "operationId": "listAuthUsers",
+        "tags": [
+          "online-users"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码（从1开始）",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "每页记录数",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 20
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：\n- \"==\"（等于）\n- \"!=\"（不等于）\n- \">\"（大于）\n- \">=\"（大于等于）\n- \"<\"（小于）\n- \"<=\"（小于等于）\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,filter=field2==value2\n\n支持的字段：username、name、ppptype、ip_addr、mac、auth_time、phone、interface、proxy_username、comment等\n",
+            "schema": {
+              "type": "string"
+            },
+            "example": "ppptype==pptp"
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "排序字段（id、username、auth_time等）",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "id",
+                "username",
+                "ip_addr_int",
+                "auth_time"
+              ],
+              "default": "auth_time"
+            }
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "description": "排序方式（asc:升序, desc:降序）",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取认证用户列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthUserListResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "total": 1,
+                    "data": [
+                      {
+                        "username": "test001",
+                        "ppptype": "pptp",
+                        "auth_time": 1766483110,
+                        "session": "1766483110220428830",
+                        "id": 1,
+                        "interface": "",
+                        "pppdev": "ppp0",
+                        "webid": 0,
+                        "expires": 0,
+                        "packages": 0,
+                        "upload": 0,
+                        "download": 0,
+                        "proxy_username": "",
+                        "pppoev6_wan": "",
+                        "check_vlan_res": 1,
+                        "ip_addr_int": "167772162",
+                        "mac": "192.168.3.119",
+                        "comment": "",
+                        "name": "",
+                        "phone": "",
+                        "packname": "",
+                        "ip_addr": "10.0.0.2"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/auth/online-users/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "认证用户ID",
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "example": 1
+          }
+        }
+      ],
+      "get": {
+        "summary": "获取指定认证用户",
+        "description": "根据ID获取单个认证用户的详细信息。\n需要提供有效的用户ID。\n",
+        "operationId": "getAuthUser",
+        "tags": [
+          "online-users"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取认证用户详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthUserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "断开认证用户",
+        "description": "断开指定认证用户的连接。\n删除后用户将被强制下线，需要重新认证。\n",
+        "operationId": "deleteAuthUser",
+        "tags": [
+          "online-users"
+        ],
+        "responses": {
+          "200": {
+            "description": "认证用户断开成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "message": "success"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求参数错误"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问认证用户管理"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "认证用户不存在"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "AuthUser": {
+        "type": "object",
+        "required": [
+          "id",
+          "auth_time",
+          "session",
+          "username",
+          "ppptype",
+          "ip_addr",
+          "mac"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "用户ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "auth_time": {
+            "type": "integer",
+            "description": "认证时间（时间戳）",
+            "minimum": 0,
+            "example": 1766483110
+          },
+          "session": {
+            "type": "string",
+            "description": "SESSION会话ID",
+            "example": "1766483110220428830"
+          },
+          "uid": {
+            "type": "string",
+            "description": "用户ID",
+            "example": "user123"
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名",
+            "minLength": 1,
+            "maxLength": 64,
+            "example": "test001"
+          },
+          "ppptype": {
+            "type": "string",
+            "description": "认证类型：\n- any: 任意认证\n- pppoe: PPPoE认证\n- pptp: PPTP认证\n- l2tp: L2TP认证\n- ovpn: OpenVPN认证\n- web: WEB认证\n- pppoe_relay: PPPoE中继\n- ike: IPSec认证\n",
+            "enum": [
+              "any",
+              "pppoe",
+              "pptp",
+              "l2tp",
+              "ovpn",
+              "web",
+              "pppoe_relay",
+              "ike"
+            ],
+            "example": "pptp"
+          },
+          "pppdev": {
+            "type": "string",
+            "description": "PPPD设备（PPPD认证时必填）",
+            "example": "ppp0"
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "客户端IP地址",
+            "format": "ipv4",
+            "example": "10.0.0.2"
+          },
+          "ip_addr_int": {
+            "type": "string",
+            "description": "客户端IP地址（整数格式）",
+            "example": "167772162"
+          },
+          "upload": {
+            "type": "integer",
+            "description": "限速上行（kbps）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "download": {
+            "type": "integer",
+            "description": "限速下行（kbps）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "mac": {
+            "type": "string",
+            "description": "MAC地址",
+            "pattern": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$",
+            "example": "192.168.3.119"
+          },
+          "interface": {
+            "type": "string",
+            "description": "接口名称",
+            "example": "wan1"
+          },
+          "expires": {
+            "type": "integer",
+            "description": "过期时间（时间戳）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "packages": {
+            "type": "integer",
+            "description": "套餐ID",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "packname": {
+            "type": "string",
+            "description": "套餐名称",
+            "example": "基础套餐"
+          },
+          "phone": {
+            "type": "string",
+            "description": "手机号",
+            "pattern": "^[0-9]{11}$",
+            "example": "13800138000"
+          },
+          "name": {
+            "type": "string",
+            "description": "姓名",
+            "example": "张三"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "minLength": 0,
+            "maxLength": 64,
+            "pattern": "^[\\\\u4e00-\\\\u9fa5a-zA-Z0-9][\\\\u4e00-\\\\u9fa5a-zA-Z0-9_-]*$",
+            "example": ""
+          },
+          "proxy_username": {
+            "type": "string",
+            "description": "代拨账号",
+            "example": ""
+          },
+          "pppoev6_wan": {
+            "type": "string",
+            "description": "PPPoE接口继承WAN的前缀",
+            "example": ""
+          },
+          "check_vlan_res": {
+            "type": "integer",
+            "description": "PPPoE的QinQ VLAN检测结果",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 1,
+            "example": 1
+          },
+          "webid": {
+            "type": "integer",
+            "description": "WEB认证类型ID（WEB认证时必填）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "AuthUserResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AuthUser"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "AuthUserListResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 25
+              },
+              "data": {
+                "type": "array",
+                "description": "认证用户列表",
+                "items": {
+                  "$ref": "#/components/schemas/AuthUser"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "online-users",
+      "x-displayName": "认证用户管理",
+      "description": "认证用户管理和连接控制，支持PPPoE、PPTP、L2TP、OpenVPN、WEB等多种认证方式"
+    }
+  ]
+}

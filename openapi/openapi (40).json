@@ -1,0 +1,931 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "IPv6对象管理API",
+    "version": "1.0.0",
+    "summary": "IPv6对象管理完整功能",
+    "description": "提供IPv6对象的完整管理功能，包括：\n- IPv6对象的创建、查询、更新、删除\n- 对象启用/停用状态控制\n- IPv6对象引用关系查询\n支持分页功能。\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/ip6-objects": {
+      "get": {
+        "summary": "获取IPv6对象列表",
+        "description": "获取所有IPv6对象策略列表。\n支持分页功能。\n",
+        "operationId": "listIp6Objects",
+        "tags": [
+          "object-ipv6"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码（从1开始）",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "每页记录数",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取IPv6对象列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ip6ObjectListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "创建IPv6对象",
+        "description": "创建新的IPv6对象策略。\n支持单个IPv6地址或IPv6地址段。\n",
+        "operationId": "createIp6Object",
+        "tags": [
+          "object-ipv6"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "IPv6对象配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Ip6ObjectInput"
+              },
+              "example": {
+                "group_name": "ipv600",
+                "group_value": [
+                  {
+                    "ipv6": "2408:8207:3050:6360:aab8:e0ff:fe00:f72a",
+                    "comment": "test11"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success",
+                      "rowid": 1
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/ip6-objects/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "IPv6对象ID",
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "example": 1
+          }
+        }
+      ],
+      "get": {
+        "summary": "获取指定IPv6对象",
+        "description": "根据ID获取单个IPv6对象的详细信息。\n需要提供有效的对象ID。\n",
+        "operationId": "getIp6Object",
+        "tags": [
+          "object-ipv6"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取IPv6对象详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ip6ObjectResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新IPv6对象",
+        "description": "修改指定IPv6对象的配置信息。\n支持部分字段更新。\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateIp6Object",
+        "tags": [
+          "object-ipv6"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "IPv6对象更新数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Ip6ObjectInput"
+              },
+              "example": {
+                "group_name": "ipv600",
+                "group_value": [
+                  {
+                    "ipv6": "2408:8207:3050:6360:aab8:e0ff:fe00:f72a",
+                    "comment": "updated"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除IPv6对象",
+        "description": "删除指定的IPv6对象。\n删除后对象将被永久移除，无法恢复。\n",
+        "operationId": "deleteIp6Object",
+        "tags": [
+          "object-ipv6"
+        ],
+        "responses": {
+          "200": {
+            "description": "IPv6对象删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "message": "success"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/ip6-objects/ref": {
+      "get": {
+        "summary": "查询IPv6对象引用关系",
+        "description": "查询引用指定IPv6对象的所有规则列表。\n需要提供group_name参数。\n",
+        "operationId": "getIp6ObjectReferences",
+        "tags": [
+          "object-ipv6"
+        ],
+        "parameters": [
+          {
+            "name": "group_name",
+            "in": "query",
+            "required": true,
+            "description": "对象名称",
+            "schema": {
+              "type": "string"
+            },
+            "example": "ipv600"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取IPv6对象引用关系",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ip6ObjectReferenceResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求参数错误"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问IPv6对象管理"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "IPv6对象不存在"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应状态码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "CreateSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应状态码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "success"
+          },
+          "rowid": {
+            "type": "integer",
+            "description": "创建成功后返回的资源ID",
+            "example": 1
+          }
+        },
+        "required": [
+          "message",
+          "rowid"
+        ],
+        "additionalProperties": false
+      },
+      "Ip6Object": {
+        "type": "object",
+        "required": [
+          "id",
+          "group_name",
+          "group_value"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "对象ID",
+            "minimum": 1,
+            "example": 15
+          },
+          "group_name": {
+            "type": "string",
+            "description": "对象名称（仅支持中文、英文、数字，长度限制1-15字符）",
+            "minLength": 1,
+            "maxLength": 15,
+            "pattern": "^[\\\\u4e00-\\\\u9fa5a-zA-Z0-9]+$",
+            "example": "ipv600"
+          },
+          "group_value": {
+            "type": "array",
+            "description": "IPv6地址列表",
+            "items": {
+              "type": "object",
+              "required": [
+                "ipv6"
+              ],
+              "properties": {
+                "ipv6": {
+                  "type": "string",
+                  "description": "IPv6地址",
+                  "format": "ipv6",
+                  "example": "2408:8207:3050:6360:aab8:e0ff:fe00:f72a"
+                },
+                "comment": {
+                  "type": "string",
+                  "description": "备注信息，最多64个字符，不支持特殊字符",
+                  "maxLength": 64,
+                  "example": "test11"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "Ip6ObjectInput": {
+        "type": "object",
+        "required": [
+          "group_name",
+          "group_value"
+        ],
+        "properties": {
+          "group_name": {
+            "type": "string",
+            "description": "对象名称（仅支持中文、英文、数字，长度限制1-15字符）",
+            "minLength": 1,
+            "maxLength": 15,
+            "pattern": "^[\\\\u4e00-\\\\u9fa5a-zA-Z0-9]+$",
+            "example": "ipv600"
+          },
+          "group_value": {
+            "type": "array",
+            "description": "IPv6地址列表",
+            "items": {
+              "type": "object",
+              "required": [
+                "ipv6"
+              ],
+              "properties": {
+                "ipv6": {
+                  "type": "string",
+                  "description": "IPv6地址",
+                  "format": "ipv6",
+                  "example": "2408:8207:3050:6360:aab8:e0ff:fe00:f72a"
+                },
+                "comment": {
+                  "type": "string",
+                  "description": "备注信息，最多64个字符，不支持特殊字符",
+                  "maxLength": 64,
+                  "example": "test11"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "Ip6ObjectResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应状态码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "ip6_data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Ip6Object"
+                }
+              },
+              "ip6_total": {
+                "type": "integer",
+                "description": "IPv6对象总数",
+                "example": 1
+              }
+            },
+            "required": [
+              "ip6_data",
+              "ip6_total"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "Ip6ObjectListResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应状态码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "ip6_data": {
+                "type": "array",
+                "description": "IPv6对象列表",
+                "items": {
+                  "$ref": "#/components/schemas/Ip6Object"
+                }
+              },
+              "ip6_total": {
+                "type": "integer",
+                "description": "IPv6对象总数",
+                "example": 5
+              }
+            },
+            "required": [
+              "ip6_data",
+              "ip6_total"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "Ip6ObjectReferenceResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应状态码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "rules_ref": {
+                "type": "object",
+                "properties": {
+                  "acl": {
+                    "type": "array",
+                    "description": "ACL规则列表",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "tagname": {
+                          "type": "string",
+                          "description": "标识名称（支持中文/数字/字母/下划线/连字符，不能以符号开头，1-15字符）",
+                          "example": "acl33"
+                        },
+                        "enabled": {
+                          "type": "string",
+                          "description": "规则是否启用",
+                          "enum": [
+                            "yes",
+                            "no"
+                          ],
+                          "example": "yes"
+                        },
+                        "id": {
+                          "type": "integer",
+                          "description": "规则ID",
+                          "example": 1
+                        }
+                      },
+                      "required": [
+                        "tagname",
+                        "enabled",
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "acl"
+                ]
+              }
+            },
+            "required": [
+              "rules_ref"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "CreateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/CreateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/CreateBusinessErrorResponse"
+          }
+        ],
+        "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "CreateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "object-ipv6",
+      "x-displayName": "IPv6对象管理",
+      "description": "IPv6对象管理，支持IPv6地址配置和引用关系查询"
+    }
+  ]
+}

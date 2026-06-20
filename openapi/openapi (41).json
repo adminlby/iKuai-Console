@@ -1,0 +1,976 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "MAC对象管理API",
+    "version": "1.0.0",
+    "summary": "MAC对象管理完整功能",
+    "description": "提供MAC对象的完整管理功能，包括：\n- MAC对象的创建、查询、更新、删除\n- 对象启用/停用状态控制\n- MAC对象引用关系查询\n支持分页功能。\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/mac-objects": {
+      "get": {
+        "summary": "获取MAC对象列表",
+        "description": "获取所有MAC对象策略列表。\n支持分页功能。\n",
+        "operationId": "listMacObjects",
+        "tags": [
+          "object-mac"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取MAC对象列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MacObjectListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "创建MAC对象",
+        "description": "创建新的MAC对象策略。\n支持MAC地址格式：08:9b:4b:00:10:6e。\n",
+        "operationId": "createMacObject",
+        "tags": [
+          "object-mac"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "MAC对象配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MACObjectInput"
+              },
+              "example": {
+                "group_name": "mac00",
+                "group_value": [
+                  {
+                    "mac": "08:9b:4b:00:10:6e",
+                    "comment": "test11"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/mac-objects/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/macObjectIdParam"
+        }
+      ],
+      "get": {
+        "summary": "获取指定MAC对象",
+        "description": "根据ID获取单个MAC对象的详细信息。\n需要提供有效的对象ID。\n",
+        "operationId": "getMacObject",
+        "tags": [
+          "object-mac"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取MAC对象详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MacObjectResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新MAC对象",
+        "description": "完全更新现有的MAC对象配置。\n需要提供所有字段。\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateMacObject",
+        "tags": [
+          "object-mac"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "完整的MAC对象配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MACObjectInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除MAC对象",
+        "description": "删除指定的MAC对象。\n删除后无法恢复，请谨慎操作。\n",
+        "operationId": "deleteMacObject",
+        "tags": [
+          "object-mac"
+        ],
+        "responses": {
+          "200": {
+            "description": "MAC对象删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/mac-objects/ref": {
+      "get": {
+        "summary": "查询MAC对象引用",
+        "description": "获取引用指定MAC对象的规则列表。\n可以查询哪些ACL规则引用了特定的对象。\n",
+        "operationId": "getMacObjectReferences",
+        "tags": [
+          "object-mac"
+        ],
+        "parameters": [
+          {
+            "name": "group_name",
+            "in": "query",
+            "required": true,
+            "description": "MAC对象名称",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "example": "mac00"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取引用信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MACObjectReferencesResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "rules_ref": {
+                      "acl": [
+                        {
+                          "tagname": "acl33",
+                          "enabled": "yes",
+                          "id": 1
+                        },
+                        {
+                          "tagname": "001",
+                          "enabled": "yes",
+                          "id": 50
+                        },
+                        {
+                          "tagname": "053",
+                          "enabled": "yes",
+                          "id": 100
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "macObjectIdParam": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "MAC对象ID",
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 1,
+          "example": 1
+        }
+      },
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 20,
+          "example": 20
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源冲突（如唯一性冲突，需调整请求逻辑）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "成功状态码，创建接口中为0",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "MacObjectResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "mac_data": {
+                "type": "array",
+                "description": "MAC对象列表",
+                "items": {
+                  "$ref": "#/components/schemas/MACObject"
+                }
+              },
+              "mac_total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 1
+              }
+            },
+            "required": [
+              "mac_data",
+              "mac_total"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "MacObjectListResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "mac_data": {
+                "type": "array",
+                "description": "MAC对象列表",
+                "items": {
+                  "$ref": "#/components/schemas/MACObject"
+                }
+              },
+              "mac_total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 25
+              }
+            },
+            "required": [
+              "mac_data",
+              "mac_total"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "MacObjectValue": {
+        "type": "object",
+        "required": [
+          "mac"
+        ],
+        "properties": {
+          "mac": {
+            "type": "string",
+            "description": "MAC地址，格式：08:9b:4b:00:10:6e\n使用冒号分隔的6组十六进制数\n",
+            "pattern": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$",
+            "example": "08:9b:4b:00:10:6e"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": "test11"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MACObject": {
+        "type": "object",
+        "required": [
+          "id",
+          "group_name",
+          "group_value",
+          "enabled"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "对象ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "group_name": {
+            "type": "string",
+            "description": "对象名称（仅支持中文、英文、数字，长度限制1-15字符）",
+            "pattern": "^[\\\\u4e00-\\\\u9fa5a-zA-Z0-9]+$",
+            "minLength": 1,
+            "maxLength": 15,
+            "example": "mac00"
+          },
+          "group_value": {
+            "type": "array",
+            "description": "对象内容列表",
+            "items": {
+              "$ref": "#/components/schemas/MacObjectValue"
+            },
+            "minItems": 1,
+            "maxItems": 100,
+            "example": [
+              {
+                "mac": "08:9b:4b:00:10:6e",
+                "comment": "test11"
+              }
+            ]
+          },
+          "enabled": {
+            "type": "string",
+            "description": "对象启用状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "created_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "创建时间",
+            "readOnly": true,
+            "example": "2023-10-30T10:00:00Z"
+          },
+          "updated_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "更新时间",
+            "readOnly": true,
+            "example": "2023-10-30T10:00:00Z"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MACObjectInput": {
+        "type": "object",
+        "required": [
+          "group_name",
+          "group_value"
+        ],
+        "properties": {
+          "group_name": {
+            "type": "string",
+            "description": "对象名称（仅支持中文、英文、数字，长度限制1-15字符）",
+            "pattern": "^[\\\\u4e00-\\\\u9fa5a-zA-Z0-9]+$",
+            "minLength": 1,
+            "maxLength": 15,
+            "example": "mac00"
+          },
+          "group_value": {
+            "type": "array",
+            "description": "对象内容列表",
+            "items": {
+              "$ref": "#/components/schemas/MacObjectValue"
+            },
+            "minItems": 1,
+            "maxItems": 100,
+            "example": [
+              {
+                "mac": "08:9b:4b:00:10:6e",
+                "comment": "test11"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "MacObjectReference": {
+        "type": "object",
+        "required": [
+          "tagname",
+          "id",
+          "enabled"
+        ],
+        "properties": {
+          "tagname": {
+            "type": "string",
+            "description": "标识名称（支持中文/数字/字母/下划线/连字符，不能以符号开头，1-15字符）",
+            "maxLength": 100,
+            "example": "acl33"
+          },
+          "id": {
+            "type": "integer",
+            "description": "规则ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "description": "规则是否启用",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MACObjectReferences": {
+        "type": "object",
+        "properties": {
+          "acl": {
+            "type": "array",
+            "description": "ACL规则引用列表",
+            "items": {
+              "$ref": "#/components/schemas/MacObjectReference"
+            },
+            "example": [
+              {
+                "tagname": "acl33",
+                "enabled": "yes",
+                "id": 1
+              },
+              {
+                "tagname": "001",
+                "enabled": "yes",
+                "id": 50
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "MACObjectReferencesResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "rules_ref": {
+                "$ref": "#/components/schemas/MACObjectReferences"
+              }
+            },
+            "required": [
+              "rules_ref"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "CreateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/SuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/CreateBusinessErrorResponse"
+          }
+        ],
+        "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "CreateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "object-mac",
+      "x-displayName": "MAC对象管理",
+      "description": "MAC对象策略的管理和配置"
+    }
+  ]
+}

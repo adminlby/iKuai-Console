@@ -1,0 +1,312 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "系统文件管理API",
+    "version": "1.0.0",
+    "summary": "查询文件存储根目录与指定路径下的文件列表",
+    "description": "提供文件管理查询能力，包括：\n- 查询系统中可用的文件存储根目录\n- 查询指定路径下的文件与目录列表\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/system/files": {
+      "get": {
+        "summary": "获取文件列表",
+        "description": "根据 `path` 查询文件列表。\n\n常见用法：\n- `path=/`：获取系统中可用的文件存储根目录\n- `path=/test-001`：获取指定目录下的文件和子目录列表\n",
+        "operationId": "getSystemFiles",
+        "tags": [
+          "system-files"
+        ],
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "required": true,
+            "description": "要查询的文件路径",
+            "schema": {
+              "type": "string",
+              "example": "/"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取文件列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemFileListResponse"
+                },
+                "examples": {
+                  "storageRoots": {
+                    "summary": "查询可用存储根目录",
+                    "value": {
+                      "code": 0,
+                      "message": "Success",
+                      "results": {
+                        "data": [
+                          {
+                            "f_name": "test-001",
+                            "st_mtime": 1776158091,
+                            "st_type": 0,
+                            "st_size": 244062085120,
+                            "st_inode": 2
+                          },
+                          {
+                            "f_name": "test-002",
+                            "st_mtime": 1770200504,
+                            "st_type": 0,
+                            "st_size": 247772393472,
+                            "st_inode": 2
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "directoryEntries": {
+                    "summary": "查询指定目录下的文件与目录",
+                    "value": {
+                      "code": 0,
+                      "message": "Success",
+                      "results": {
+                        "data": [
+                          {
+                            "st_size": 4096,
+                            "st_inode": 12582913,
+                            "f_name": "a",
+                            "st_mtime": 1776158048,
+                            "st_type": 1
+                          },
+                          {
+                            "st_size": 6,
+                            "st_inode": 12,
+                            "f_name": "example",
+                            "st_mtime": 1776158104,
+                            "st_type": 2
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数错误"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 401,
+              "message": "未认证或凭证无效"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 403,
+              "message": "无权限访问"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 500,
+              "message": "服务器内部错误"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "错误状态码",
+            "example": 400
+          },
+          "message": {
+            "type": "string",
+            "description": "错误信息",
+            "example": "请求参数错误"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SystemFileEntry": {
+        "type": "object",
+        "required": [
+          "f_name",
+          "st_mtime",
+          "st_type",
+          "st_size",
+          "st_inode"
+        ],
+        "properties": {
+          "f_name": {
+            "type": "string",
+            "description": "文件或文件夹名称",
+            "example": "test-001"
+          },
+          "st_mtime": {
+            "type": "integer",
+            "format": "int64",
+            "description": "修改时间，Unix 时间戳",
+            "example": 1776158091
+          },
+          "st_type": {
+            "type": "integer",
+            "description": "文件类型，`-1` 未知，`0` 磁盘，`1` 目录，`2` 文件，`3` 链接",
+            "enum": [
+              -1,
+              0,
+              1,
+              2,
+              3
+            ],
+            "example": 0
+          },
+          "st_size": {
+            "type": "integer",
+            "format": "int64",
+            "description": "文件大小，单位 Byte",
+            "example": 244062085120
+          },
+          "st_inode": {
+            "type": "integer",
+            "format": "int64",
+            "description": "文件 inode 值",
+            "example": 2
+          }
+        },
+        "additionalProperties": false
+      },
+      "SystemFileListResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应状态码，`0` 表示成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "响应消息",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "array",
+                "description": "文件或目录列表",
+                "items": {
+                  "$ref": "#/components/schemas/SystemFileEntry"
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用 JWT Bearer Token 进行认证。\n在请求头中添加：Authorization: Bearer {token}\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "system-files",
+      "x-displayName": "系统文件管理",
+      "description": "查询可用存储根目录与指定路径下的文件列表"
+    }
+  ]
+}

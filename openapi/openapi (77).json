@@ -1,0 +1,2593 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "WEB认证服务管理API",
+    "version": "1.0.0",
+    "summary": "WEB认证服务的完整管理功能",
+    "description": "提供WEB认证服务的完整管理功能，包括：\n- WEB认证服务配置的查询和更新\n- 支持多种认证方式（微信、QQ、微博、手机号等）\n- 认证超时和空闲时间控制\n- 各认证方式独立超时配置\n- 各认证方式独立QoS限速\n- Radius和LDAP协议对接\n- 白名单和访问控制\n- 同步认证和HTTPS跳转\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/auth/web/services": {
+      "get": {
+        "summary": "获取WEB认证服务配置",
+        "description": "获取当前WEB认证服务的配置信息。\n包括认证方式、超时设置、QoS限速、Radius/LDAP配置、白名单等。\n认证的配置需要确保云平台开启过认证。\n",
+        "operationId": "getWebAuthServiceConfig",
+        "tags": [
+          "web-auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取WEB认证服务配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebAuthServiceConfigResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "data": [
+                      {
+                        "id": 1,
+                        "enabled": "no",
+                        "max_time": 0,
+                        "idle_time": 60,
+                        "enc_ssid_noauth": 1,
+                        "timer_restart": 0,
+                        "timer_event": "",
+                        "timer_restart_week": "1234567",
+                        "timer_restart_time": "07:00",
+                        "user_auth": 1,
+                        "coupon_auth": 1,
+                        "qq_auth": 0,
+                        "weibo_auth": 0,
+                        "phone_auth": 0,
+                        "static_pwd": 1,
+                        "nopasswd": 0,
+                        "weixin": 0,
+                        "weixin2": 0,
+                        "weixin_mini": 0,
+                        "facebook_auth": 0,
+                        "twitter_auth": 0,
+                        "google_auth": 0,
+                        "redpacket_auth": 0,
+                        "hotel_auth": 0,
+                        "openapi_auth": 0,
+                        "custom_auth": 0,
+                        "custom_appkey": "",
+                        "authip_mode": 0,
+                        "allow_tryout": 0,
+                        "tryout_time": 30,
+                        "auto_auth": 0,
+                        "ldap_auth": 0,
+                        "popups": 1,
+                        "popups_ios": 1,
+                        "popups_android": 1,
+                        "auto_auth_timeout": 1,
+                        "api_switch": 0,
+                        "api_url": "",
+                        "passwd": "",
+                        "ipgroup": "",
+                        "noauth_mac": "",
+                        "whitelist": "",
+                        "whitelist_https": "",
+                        "whiteip": "",
+                        "api_radius": 0,
+                        "imperceptible": 0,
+                        "macbind_server": "",
+                        "nasname": "iKuai",
+                        "radius_ip": "127.0.0.1",
+                        "radius_key": "123",
+                        "radius_authport": 1812,
+                        "radius_accountport": 1813,
+                        "radius_interval": 60,
+                        "radius_basip": "",
+                        "api_ipchange_url": "",
+                        "coupon_up": 0,
+                        "coupon_down": 0,
+                        "weixin_up": 0,
+                        "weixin_down": 0,
+                        "phone_up": 0,
+                        "phone_down": 0,
+                        "nopasswd_up": 0,
+                        "nopasswd_down": 0,
+                        "static_pwd_up": 0,
+                        "static_pwd_down": 0,
+                        "weibo_up": 0,
+                        "weibo_down": 0,
+                        "tryout_up": 0,
+                        "tryout_down": 0,
+                        "qq_up": 0,
+                        "qq_down": 0,
+                        "facebook_up": 0,
+                        "facebook_down": 0,
+                        "google_up": 0,
+                        "google_down": 0,
+                        "twitter_up": 0,
+                        "twitter_down": 0,
+                        "redpacket_up": 0,
+                        "redpacket_down": 0,
+                        "hotel_up": 0,
+                        "hotel_down": 0,
+                        "weixin_absorb": 0,
+                        "https_redirect": 0,
+                        "user_timeout": 0,
+                        "coupon_timeout": 0,
+                        "qq_timeout": 0,
+                        "weibo_timeout": 0,
+                        "phone_timeout": 0,
+                        "static_timeout": 0,
+                        "nopasswd_timeout": 0,
+                        "weixin_timeout": 0,
+                        "redpacket_timeout": 0,
+                        "facebook_timeout": 0,
+                        "google_timeout": 0,
+                        "twitter_timeout": 0,
+                        "tryout_timeout": 0,
+                        "hotel_timeout": 0,
+                        "user_max_time": 0,
+                        "user_idle_time": 0,
+                        "coupon_max_time": 0,
+                        "coupon_idle_time": 0,
+                        "qq_max_time": 0,
+                        "qq_idle_time": 0,
+                        "weibo_max_time": 0,
+                        "weibo_idle_time": 0,
+                        "phone_max_time": 0,
+                        "phone_idle_time": 0,
+                        "static_max_time": 0,
+                        "static_idle_time": 0,
+                        "nopasswd_max_time": 0,
+                        "nopasswd_idle_time": 0,
+                        "weixin_max_time": 0,
+                        "weixin_idle_time": 0,
+                        "facebook_max_time": 0,
+                        "facebook_idle_time": 0,
+                        "google_max_time": 0,
+                        "google_idle_time": 0,
+                        "twitter_max_time": 0,
+                        "twitter_idle_time": 0,
+                        "redpacket_max_time": 0,
+                        "redpacket_idle_time": 0,
+                        "tryout_max_time": 0,
+                        "tryout_idle_time": 0,
+                        "hotel_max_time": 0,
+                        "hotel_idle_time": 0,
+                        "uri_add_apinfo": 0,
+                        "sync_switch": 0,
+                        "interface": "lan1",
+                        "group_key": "testing123",
+                        "group_id": 0,
+                        "ldap_usergroup": "",
+                        "ldap_url": "",
+                        "ldap_port": 389,
+                        "ldap_mode": 0,
+                        "ldap_base": "",
+                        "ldap_cname": "cn",
+                        "ldap_admin_dn": "",
+                        "ldap_admin_passwd": "",
+                        "proxy_service": 0,
+                        "proxy_ipaddr": "",
+                        "ldap_share_count": 0
+                      }
+                    ],
+                    "interface": [
+                      "lan1",
+                      "lan2",
+                      "lan3",
+                      "wan1",
+                      "vwan11"
+                    ],
+                    "template": 1
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求参数错误"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问WEB认证服务管理"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应状态码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "WebAuthServiceConfig": {
+        "type": "object",
+        "required": [
+          "id",
+          "enabled",
+          "max_time",
+          "idle_time"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "配置ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "description": "服务开启状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "max_time": {
+            "type": "integer",
+            "description": "重新认证超时时间（分钟），0表示不限制",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "idle_time": {
+            "type": "integer",
+            "description": "空闲时间自动下线（秒），0表示不限制",
+            "minimum": 0,
+            "default": 60,
+            "example": 60
+          },
+          "enc_ssid_noauth": {
+            "type": "integer",
+            "description": "加密SSID免认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 1,
+            "example": 1
+          },
+          "timer_restart": {
+            "type": "integer",
+            "description": "定时重新认证（定时全部踢下线）",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "timer_event": {
+            "type": "string",
+            "description": "定时事件，默认为空；设置为period表示时间段开启认证",
+            "example": ""
+          },
+          "timer_restart_week": {
+            "type": "string",
+            "description": "定时重新认证周期（1-7代表周一到周日）",
+            "pattern": "^[1-7]*$",
+            "default": "1234567",
+            "example": "1234567"
+          },
+          "timer_restart_time": {
+            "type": "string",
+            "description": "定时重新认证时间，timer_event为period时为时间范围如08:00-18:00",
+            "default": "07:00",
+            "example": "07:00"
+          },
+          "user_auth": {
+            "type": "integer",
+            "description": "用户密码认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 1
+          },
+          "coupon_auth": {
+            "type": "integer",
+            "description": "优惠券认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 1
+          },
+          "qq_auth": {
+            "type": "integer",
+            "description": "QQ认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "weibo_auth": {
+            "type": "integer",
+            "description": "微博认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "phone_auth": {
+            "type": "integer",
+            "description": "手机认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "static_pwd": {
+            "type": "integer",
+            "description": "固定密码认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 1
+          },
+          "nopasswd": {
+            "type": "integer",
+            "description": "一键认证（无密码）",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "weixin": {
+            "type": "integer",
+            "description": "微信认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 1,
+            "example": 0
+          },
+          "weixin2": {
+            "type": "integer",
+            "description": "微信扫码认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "weixin_mini": {
+            "type": "integer",
+            "description": "微信小程序认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "facebook_auth": {
+            "type": "integer",
+            "description": "Facebook认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "twitter_auth": {
+            "type": "integer",
+            "description": "Twitter认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "google_auth": {
+            "type": "integer",
+            "description": "Google认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "redpacket_auth": {
+            "type": "integer",
+            "description": "红包认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "hotel_auth": {
+            "type": "integer",
+            "description": "酒店认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "openapi_auth": {
+            "type": "integer",
+            "description": "OpenAPI认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "custom_auth": {
+            "type": "integer",
+            "description": "自定义认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "custom_appkey": {
+            "type": "string",
+            "description": "自定义认证appkey",
+            "default": "",
+            "example": ""
+          },
+          "authip_mode": {
+            "type": "integer",
+            "description": "认证IP方式（0全部IP认证，1部分IP认证）",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "allow_tryout": {
+            "type": "integer",
+            "description": "允许试用",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "tryout_time": {
+            "type": "integer",
+            "description": "试用时长（分钟）",
+            "minimum": 0,
+            "default": 30,
+            "example": 30
+          },
+          "auto_auth": {
+            "type": "integer",
+            "description": "开启自动认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "ldap_auth": {
+            "type": "integer",
+            "description": "LDAP协议认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "popups": {
+            "type": "integer",
+            "description": "开启portal弹窗",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 1,
+            "example": 1
+          },
+          "popups_ios": {
+            "type": "integer",
+            "description": "开启iOS系统弹窗",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 1,
+            "example": 1
+          },
+          "popups_android": {
+            "type": "integer",
+            "description": "开启安卓系统弹窗",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 1,
+            "example": 1
+          },
+          "auto_auth_timeout": {
+            "type": "integer",
+            "description": "自动认证有效时长（天）",
+            "minimum": 0,
+            "default": 1,
+            "example": 1
+          },
+          "api_switch": {
+            "type": "integer",
+            "description": "第三方对接开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "api_url": {
+            "type": "string",
+            "description": "第三方对接跳转地址",
+            "example": ""
+          },
+          "passwd": {
+            "type": "string",
+            "description": "固定密码（MD5哈希值）",
+            "pattern": "^[a-fA-F0-9]{32}$",
+            "example": ""
+          },
+          "ipgroup": {
+            "type": "string",
+            "description": "认证IP群组，多个用逗号分隔，格式为IP范围如192.168.1.1-192.168.1.254",
+            "example": ""
+          },
+          "noauth_mac": {
+            "type": "string",
+            "description": "免认证MAC地址，多个用逗号分隔",
+            "example": ""
+          },
+          "whitelist": {
+            "type": "string",
+            "description": "白名单域名（HTTP），多个用逗号分隔",
+            "example": ""
+          },
+          "whitelist_https": {
+            "type": "string",
+            "description": "白名单域名（HTTPS），多个用逗号分隔",
+            "example": ""
+          },
+          "whiteip": {
+            "type": "string",
+            "description": "白名单IP，多个用逗号分隔",
+            "example": ""
+          },
+          "api_radius": {
+            "type": "integer",
+            "description": "开启Radius对接",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "imperceptible": {
+            "type": "integer",
+            "description": "Radius无感知认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "macbind_server": {
+            "type": "string",
+            "description": "MAC绑定服务器地址，为空时使用radius_ip",
+            "example": ""
+          },
+          "nasname": {
+            "type": "string",
+            "description": "Radius NAS名称",
+            "default": "iKuai",
+            "example": "iKuai"
+          },
+          "radius_ip": {
+            "type": "string",
+            "description": "Radius服务器IP",
+            "format": "ipv4",
+            "default": "127.0.0.1",
+            "example": "127.0.0.1"
+          },
+          "radius_key": {
+            "type": "string",
+            "description": "Radius共享密钥",
+            "default": "123",
+            "example": "123"
+          },
+          "radius_authport": {
+            "type": "integer",
+            "description": "Radius认证端口",
+            "minimum": 1,
+            "maximum": 65535,
+            "default": 1812,
+            "example": 1812
+          },
+          "radius_accountport": {
+            "type": "integer",
+            "description": "Radius记账端口",
+            "minimum": 1,
+            "maximum": 65535,
+            "default": 1813,
+            "example": 1813
+          },
+          "radius_interval": {
+            "type": "integer",
+            "description": "发送计费包间隔时长（秒）",
+            "minimum": 1,
+            "default": 60,
+            "example": 60
+          },
+          "radius_basip": {
+            "type": "string",
+            "description": "Portal回调Radius IP",
+            "example": ""
+          },
+          "api_ipchange_url": {
+            "type": "string",
+            "description": "用户IP变更上报地址",
+            "example": ""
+          },
+          "coupon_up": {
+            "type": "integer",
+            "description": "优惠券认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "coupon_down": {
+            "type": "integer",
+            "description": "优惠券认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "weixin_up": {
+            "type": "integer",
+            "description": "微信认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "weixin_down": {
+            "type": "integer",
+            "description": "微信认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "phone_up": {
+            "type": "integer",
+            "description": "手机认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "phone_down": {
+            "type": "integer",
+            "description": "手机认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "nopasswd_up": {
+            "type": "integer",
+            "description": "一键认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "nopasswd_down": {
+            "type": "integer",
+            "description": "一键认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "static_pwd_up": {
+            "type": "integer",
+            "description": "固定密码认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "static_pwd_down": {
+            "type": "integer",
+            "description": "固定密码认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "weibo_up": {
+            "type": "integer",
+            "description": "微博认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "weibo_down": {
+            "type": "integer",
+            "description": "微博认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "tryout_up": {
+            "type": "integer",
+            "description": "试用认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "tryout_down": {
+            "type": "integer",
+            "description": "试用认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "qq_up": {
+            "type": "integer",
+            "description": "QQ认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "qq_down": {
+            "type": "integer",
+            "description": "QQ认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "facebook_up": {
+            "type": "integer",
+            "description": "Facebook认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "facebook_down": {
+            "type": "integer",
+            "description": "Facebook认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "google_up": {
+            "type": "integer",
+            "description": "Google认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "google_down": {
+            "type": "integer",
+            "description": "Google认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "twitter_up": {
+            "type": "integer",
+            "description": "Twitter认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "twitter_down": {
+            "type": "integer",
+            "description": "Twitter认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "redpacket_up": {
+            "type": "integer",
+            "description": "红包认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "redpacket_down": {
+            "type": "integer",
+            "description": "红包认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "hotel_up": {
+            "type": "integer",
+            "description": "酒店认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "hotel_down": {
+            "type": "integer",
+            "description": "酒店认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "weixin_absorb": {
+            "type": "integer",
+            "description": "微信吸粉（开启后自动启用weixin2扫码）",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "https_redirect": {
+            "type": "integer",
+            "description": "HTTPS跳转portal页面",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "user_timeout": {
+            "type": "integer",
+            "description": "用户密码认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "coupon_timeout": {
+            "type": "integer",
+            "description": "优惠券认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "qq_timeout": {
+            "type": "integer",
+            "description": "QQ认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "weibo_timeout": {
+            "type": "integer",
+            "description": "微博认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "phone_timeout": {
+            "type": "integer",
+            "description": "手机认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "static_timeout": {
+            "type": "integer",
+            "description": "固定密码认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "nopasswd_timeout": {
+            "type": "integer",
+            "description": "一键认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "weixin_timeout": {
+            "type": "integer",
+            "description": "微信认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "redpacket_timeout": {
+            "type": "integer",
+            "description": "红包认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "facebook_timeout": {
+            "type": "integer",
+            "description": "Facebook认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "google_timeout": {
+            "type": "integer",
+            "description": "Google认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "twitter_timeout": {
+            "type": "integer",
+            "description": "Twitter认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "tryout_timeout": {
+            "type": "integer",
+            "description": "试用认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "hotel_timeout": {
+            "type": "integer",
+            "description": "酒店认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "user_max_time": {
+            "type": "integer",
+            "description": "用户密码认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "user_idle_time": {
+            "type": "integer",
+            "description": "用户密码认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "coupon_max_time": {
+            "type": "integer",
+            "description": "优惠券认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "coupon_idle_time": {
+            "type": "integer",
+            "description": "优惠券认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "qq_max_time": {
+            "type": "integer",
+            "description": "QQ认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "qq_idle_time": {
+            "type": "integer",
+            "description": "QQ认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "weibo_max_time": {
+            "type": "integer",
+            "description": "微博认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "weibo_idle_time": {
+            "type": "integer",
+            "description": "微博认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "phone_max_time": {
+            "type": "integer",
+            "description": "手机认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "phone_idle_time": {
+            "type": "integer",
+            "description": "手机认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "static_max_time": {
+            "type": "integer",
+            "description": "固定密码认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "static_idle_time": {
+            "type": "integer",
+            "description": "固定密码认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "nopasswd_max_time": {
+            "type": "integer",
+            "description": "一键认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "nopasswd_idle_time": {
+            "type": "integer",
+            "description": "一键认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "weixin_max_time": {
+            "type": "integer",
+            "description": "微信认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "weixin_idle_time": {
+            "type": "integer",
+            "description": "微信认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "facebook_max_time": {
+            "type": "integer",
+            "description": "Facebook认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "facebook_idle_time": {
+            "type": "integer",
+            "description": "Facebook认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "google_max_time": {
+            "type": "integer",
+            "description": "Google认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "google_idle_time": {
+            "type": "integer",
+            "description": "Google认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "twitter_max_time": {
+            "type": "integer",
+            "description": "Twitter认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "twitter_idle_time": {
+            "type": "integer",
+            "description": "Twitter认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "redpacket_max_time": {
+            "type": "integer",
+            "description": "红包认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "redpacket_idle_time": {
+            "type": "integer",
+            "description": "红包认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "tryout_max_time": {
+            "type": "integer",
+            "description": "试用认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "tryout_idle_time": {
+            "type": "integer",
+            "description": "试用认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "hotel_max_time": {
+            "type": "integer",
+            "description": "酒店认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "hotel_idle_time": {
+            "type": "integer",
+            "description": "酒店认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "uri_add_apinfo": {
+            "type": "integer",
+            "description": "portal页URL是否追加连接AP信息",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "sync_switch": {
+            "type": "integer",
+            "description": "同步认证开关（开启后需配置interface、group_key、group_id）",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "interface": {
+            "type": "string",
+            "description": "同步认证网卡接口",
+            "default": "lan1",
+            "example": "lan1"
+          },
+          "group_key": {
+            "type": "string",
+            "description": "同步认证组密钥",
+            "default": "testing123",
+            "example": "testing123"
+          },
+          "group_id": {
+            "type": "integer",
+            "description": "同步认证组播ID",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "ldap_usergroup": {
+            "type": "string",
+            "description": "LDAP用户所在组路径",
+            "example": ""
+          },
+          "ldap_url": {
+            "type": "string",
+            "description": "LDAP服务器地址",
+            "example": ""
+          },
+          "ldap_port": {
+            "type": "integer",
+            "description": "LDAP端口",
+            "minimum": 1,
+            "maximum": 65535,
+            "default": 389,
+            "example": 389
+          },
+          "ldap_mode": {
+            "type": "integer",
+            "description": "LDAP用户模式（0单用户组，1多用户组）",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "ldap_base": {
+            "type": "string",
+            "description": "LDAP base_dn",
+            "example": ""
+          },
+          "ldap_cname": {
+            "type": "string",
+            "description": "LDAP common name属性（cn或sAMAccountName）",
+            "default": "cn",
+            "example": "cn"
+          },
+          "ldap_admin_dn": {
+            "type": "string",
+            "description": "LDAP管理员全路径DN",
+            "example": ""
+          },
+          "ldap_admin_passwd": {
+            "type": "string",
+            "description": "LDAP管理员密码",
+            "example": ""
+          },
+          "ldap_share_count": {
+            "type": "integer",
+            "description": "LDAP允许同时上线个数（0表示不限制）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "proxy_service": {
+            "type": "integer",
+            "description": "HTTPS 443代理服务",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "proxy_ipaddr": {
+            "type": "string",
+            "description": "HTTPS代理IP地址",
+            "format": "ipv4",
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "WebAuthServiceConfigInput": {
+        "type": "object",
+        "required": [
+          "enabled",
+          "max_time",
+          "idle_time"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "description": "服务开启状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "max_time": {
+            "type": "integer",
+            "description": "重新认证超时时间（分钟），0表示不限制",
+            "minimum": 0,
+            "default": 0,
+            "example": 1200
+          },
+          "idle_time": {
+            "type": "integer",
+            "description": "空闲时间自动下线（秒），0表示不限制",
+            "minimum": 0,
+            "default": 60,
+            "example": 60
+          },
+          "enc_ssid_noauth": {
+            "type": "integer",
+            "description": "加密SSID免认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 1,
+            "example": 1
+          },
+          "timer_restart": {
+            "type": "integer",
+            "description": "定时重新认证（定时全部踢下线）",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "timer_event": {
+            "type": "string",
+            "description": "定时事件，默认为空；设置为period表示时间段开启认证",
+            "example": ""
+          },
+          "timer_restart_week": {
+            "type": "string",
+            "description": "定时重新认证周期（1-7代表周一到周日）",
+            "pattern": "^[1-7]*$",
+            "default": "1234567",
+            "example": "1234567"
+          },
+          "timer_restart_time": {
+            "type": "string",
+            "description": "定时重新认证时间，timer_event为period时为时间范围如08:00-18:00",
+            "default": "07:00",
+            "example": "07:00"
+          },
+          "user_auth": {
+            "type": "integer",
+            "description": "用户密码认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 1
+          },
+          "coupon_auth": {
+            "type": "integer",
+            "description": "优惠券认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 1
+          },
+          "qq_auth": {
+            "type": "integer",
+            "description": "QQ认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "weibo_auth": {
+            "type": "integer",
+            "description": "微博认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "phone_auth": {
+            "type": "integer",
+            "description": "手机认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "redpacket_auth": {
+            "type": "integer",
+            "description": "红包认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "static_pwd": {
+            "type": "integer",
+            "description": "固定密码认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 1
+          },
+          "nopasswd": {
+            "type": "integer",
+            "description": "一键认证（无密码）",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "weixin": {
+            "type": "integer",
+            "description": "微信认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 1,
+            "example": 1
+          },
+          "weixin2": {
+            "type": "integer",
+            "description": "微信扫码认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "weixin_mini": {
+            "type": "integer",
+            "description": "微信小程序认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "facebook_auth": {
+            "type": "integer",
+            "description": "Facebook认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "twitter_auth": {
+            "type": "integer",
+            "description": "Twitter认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "google_auth": {
+            "type": "integer",
+            "description": "Google认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "openapi_auth": {
+            "type": "integer",
+            "description": "OpenAPI认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "custom_auth": {
+            "type": "integer",
+            "description": "自定义认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "hotel_auth": {
+            "type": "integer",
+            "description": "酒店认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "custom_appkey": {
+            "type": "string",
+            "description": "自定义认证appkey",
+            "example": ""
+          },
+          "authip_mode": {
+            "type": "integer",
+            "description": "认证IP方式（0全部IP认证，1部分IP认证）",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "allow_tryout": {
+            "type": "integer",
+            "description": "允许试用",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "tryout_time": {
+            "type": "integer",
+            "description": "试用时长（分钟）",
+            "minimum": 0,
+            "default": 30,
+            "example": 30
+          },
+          "auto_auth": {
+            "type": "integer",
+            "description": "开启自动认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "ldap_auth": {
+            "type": "integer",
+            "description": "LDAP协议认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "popups": {
+            "type": "integer",
+            "description": "开启portal弹窗",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 1,
+            "example": 1
+          },
+          "popups_ios": {
+            "type": "integer",
+            "description": "开启iOS系统弹窗",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 1,
+            "example": 1
+          },
+          "popups_android": {
+            "type": "integer",
+            "description": "开启安卓系统弹窗",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 1,
+            "example": 1
+          },
+          "auto_auth_timeout": {
+            "type": "integer",
+            "description": "自动认证有效时长（天）",
+            "minimum": 0,
+            "default": 1,
+            "example": 1
+          },
+          "api_switch": {
+            "type": "integer",
+            "description": "第三方对接开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "api_url": {
+            "type": "string",
+            "description": "第三方对接跳转地址",
+            "example": ""
+          },
+          "passwd": {
+            "type": "string",
+            "description": "固定密码（MD5哈希值）",
+            "pattern": "^[a-fA-F0-9]{32}$",
+            "example": "96e79218965eb72c92a549dd5a330112"
+          },
+          "ipgroup": {
+            "type": "string",
+            "description": "认证IP群组，多个用逗号分隔，格式为IP范围如192.168.1.1-192.168.1.254",
+            "example": ""
+          },
+          "noauth_mac": {
+            "type": "string",
+            "description": "免认证MAC地址，多个用逗号分隔",
+            "example": ""
+          },
+          "whitelist": {
+            "type": "string",
+            "description": "白名单域名（HTTP），多个用逗号分隔",
+            "example": ""
+          },
+          "whitelist_https": {
+            "type": "string",
+            "description": "白名单域名（HTTPS），多个用逗号分隔",
+            "example": ""
+          },
+          "whiteip": {
+            "type": "string",
+            "description": "白名单IP，多个用逗号分隔",
+            "example": ""
+          },
+          "api_radius": {
+            "type": "integer",
+            "description": "开启Radius对接",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "imperceptible": {
+            "type": "integer",
+            "description": "Radius无感知认证",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "macbind_server": {
+            "type": "string",
+            "description": "MAC绑定服务器地址，为空时使用radius_ip",
+            "example": ""
+          },
+          "nasname": {
+            "type": "string",
+            "description": "Radius NAS名称",
+            "default": "iKuai",
+            "example": "iKuai"
+          },
+          "radius_ip": {
+            "type": "string",
+            "description": "Radius服务器IP",
+            "format": "ipv4",
+            "example": "127.0.0.1"
+          },
+          "radius_key": {
+            "type": "string",
+            "description": "Radius共享密钥",
+            "example": "123"
+          },
+          "radius_authport": {
+            "type": "integer",
+            "description": "Radius认证端口",
+            "minimum": 1,
+            "maximum": 65535,
+            "default": 1812,
+            "example": 1812
+          },
+          "radius_accountport": {
+            "type": "integer",
+            "description": "Radius记账端口",
+            "minimum": 1,
+            "maximum": 65535,
+            "default": 1813,
+            "example": 1813
+          },
+          "radius_interval": {
+            "type": "integer",
+            "description": "发送计费包间隔时长（秒）",
+            "minimum": 1,
+            "default": 60,
+            "example": 60
+          },
+          "radius_basip": {
+            "type": "string",
+            "description": "Portal回调Radius IP",
+            "example": ""
+          },
+          "api_ipchange_url": {
+            "type": "string",
+            "description": "用户IP变更上报地址",
+            "example": ""
+          },
+          "coupon_up": {
+            "type": "integer",
+            "description": "优惠券认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "coupon_down": {
+            "type": "integer",
+            "description": "优惠券认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "weixin_up": {
+            "type": "integer",
+            "description": "微信认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "weixin_down": {
+            "type": "integer",
+            "description": "微信认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "phone_up": {
+            "type": "integer",
+            "description": "手机认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "phone_down": {
+            "type": "integer",
+            "description": "手机认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "nopasswd_up": {
+            "type": "integer",
+            "description": "一键认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "nopasswd_down": {
+            "type": "integer",
+            "description": "一键认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "static_pwd_up": {
+            "type": "integer",
+            "description": "固定密码认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "static_pwd_down": {
+            "type": "integer",
+            "description": "固定密码认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "weibo_up": {
+            "type": "integer",
+            "description": "微博认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "weibo_down": {
+            "type": "integer",
+            "description": "微博认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "tryout_up": {
+            "type": "integer",
+            "description": "试用认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "tryout_down": {
+            "type": "integer",
+            "description": "试用认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "qq_up": {
+            "type": "integer",
+            "description": "QQ认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "qq_down": {
+            "type": "integer",
+            "description": "QQ认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "facebook_up": {
+            "type": "integer",
+            "description": "Facebook认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "facebook_down": {
+            "type": "integer",
+            "description": "Facebook认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "google_up": {
+            "type": "integer",
+            "description": "Google认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "google_down": {
+            "type": "integer",
+            "description": "Google认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "twitter_up": {
+            "type": "integer",
+            "description": "Twitter认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "twitter_down": {
+            "type": "integer",
+            "description": "Twitter认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "redpacket_up": {
+            "type": "integer",
+            "description": "红包认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "redpacket_down": {
+            "type": "integer",
+            "description": "红包认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "hotel_up": {
+            "type": "integer",
+            "description": "酒店认证上传限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "hotel_down": {
+            "type": "integer",
+            "description": "酒店认证下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "weixin_absorb": {
+            "type": "integer",
+            "description": "微信吸粉（开启后自动启用weixin2扫码）",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "https_redirect": {
+            "type": "integer",
+            "description": "HTTPS跳转portal页面",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "user_timeout": {
+            "type": "integer",
+            "description": "用户密码认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "coupon_timeout": {
+            "type": "integer",
+            "description": "优惠券认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "qq_timeout": {
+            "type": "integer",
+            "description": "QQ认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "weibo_timeout": {
+            "type": "integer",
+            "description": "微博认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "phone_timeout": {
+            "type": "integer",
+            "description": "手机认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "static_timeout": {
+            "type": "integer",
+            "description": "固定密码认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "nopasswd_timeout": {
+            "type": "integer",
+            "description": "一键认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "weixin_timeout": {
+            "type": "integer",
+            "description": "微信认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "redpacket_timeout": {
+            "type": "integer",
+            "description": "红包认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "facebook_timeout": {
+            "type": "integer",
+            "description": "Facebook认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "google_timeout": {
+            "type": "integer",
+            "description": "Google认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "twitter_timeout": {
+            "type": "integer",
+            "description": "Twitter认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "tryout_timeout": {
+            "type": "integer",
+            "description": "试用认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "hotel_timeout": {
+            "type": "integer",
+            "description": "酒店认证独立超时开关",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "user_max_time": {
+            "type": "integer",
+            "description": "用户密码认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "user_idle_time": {
+            "type": "integer",
+            "description": "用户密码认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "coupon_max_time": {
+            "type": "integer",
+            "description": "优惠券认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "coupon_idle_time": {
+            "type": "integer",
+            "description": "优惠券认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "qq_max_time": {
+            "type": "integer",
+            "description": "QQ认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "qq_idle_time": {
+            "type": "integer",
+            "description": "QQ认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "weibo_max_time": {
+            "type": "integer",
+            "description": "微博认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "weibo_idle_time": {
+            "type": "integer",
+            "description": "微博认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "phone_max_time": {
+            "type": "integer",
+            "description": "手机认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "phone_idle_time": {
+            "type": "integer",
+            "description": "手机认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "static_max_time": {
+            "type": "integer",
+            "description": "固定密码认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "static_idle_time": {
+            "type": "integer",
+            "description": "固定密码认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "nopasswd_max_time": {
+            "type": "integer",
+            "description": "一键认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "nopasswd_idle_time": {
+            "type": "integer",
+            "description": "一键认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "weixin_max_time": {
+            "type": "integer",
+            "description": "微信认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "weixin_idle_time": {
+            "type": "integer",
+            "description": "微信认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "facebook_max_time": {
+            "type": "integer",
+            "description": "Facebook认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "facebook_idle_time": {
+            "type": "integer",
+            "description": "Facebook认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "google_max_time": {
+            "type": "integer",
+            "description": "Google认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "google_idle_time": {
+            "type": "integer",
+            "description": "Google认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "twitter_max_time": {
+            "type": "integer",
+            "description": "Twitter认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "twitter_idle_time": {
+            "type": "integer",
+            "description": "Twitter认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "redpacket_max_time": {
+            "type": "integer",
+            "description": "红包认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "redpacket_idle_time": {
+            "type": "integer",
+            "description": "红包认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "tryout_max_time": {
+            "type": "integer",
+            "description": "试用认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "tryout_idle_time": {
+            "type": "integer",
+            "description": "试用认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "hotel_max_time": {
+            "type": "integer",
+            "description": "酒店认证重新认证超时（分钟）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "hotel_idle_time": {
+            "type": "integer",
+            "description": "酒店认证空闲超时下线（秒）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "uri_add_apinfo": {
+            "type": "integer",
+            "description": "portal页URL是否追加连接AP信息",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "sync_switch": {
+            "type": "integer",
+            "description": "同步认证开关（开启后需配置interface、group_key、group_id）",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "interface": {
+            "type": "string",
+            "description": "同步认证网卡接口",
+            "example": "lan1"
+          },
+          "group_key": {
+            "type": "string",
+            "description": "同步认证组密钥",
+            "default": "testing123",
+            "example": "testing123"
+          },
+          "group_id": {
+            "type": "integer",
+            "description": "同步认证组播ID",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "ldap_usergroup": {
+            "type": "string",
+            "description": "LDAP用户所在组路径",
+            "example": ""
+          },
+          "ldap_url": {
+            "type": "string",
+            "description": "LDAP服务器地址",
+            "example": ""
+          },
+          "ldap_port": {
+            "type": "integer",
+            "description": "LDAP端口",
+            "minimum": 1,
+            "maximum": 65535,
+            "default": 389,
+            "example": 389
+          },
+          "ldap_mode": {
+            "type": "integer",
+            "description": "LDAP用户模式（0单用户组，1多用户组）",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "ldap_base": {
+            "type": "string",
+            "description": "LDAP base_dn",
+            "example": ""
+          },
+          "ldap_cname": {
+            "type": "string",
+            "description": "LDAP common name属性（cn或sAMAccountName）",
+            "default": "cn",
+            "example": "cn"
+          },
+          "ldap_admin_dn": {
+            "type": "string",
+            "description": "LDAP管理员全路径DN",
+            "example": ""
+          },
+          "ldap_admin_passwd": {
+            "type": "string",
+            "description": "LDAP管理员密码",
+            "example": ""
+          },
+          "ldap_share_count": {
+            "type": "integer",
+            "description": "LDAP允许同时上线个数（0表示不限制）",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "proxy_service": {
+            "type": "integer",
+            "description": "HTTPS 443代理服务",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "proxy_ipaddr": {
+            "type": "string",
+            "description": "HTTPS代理IP地址",
+            "format": "ipv4",
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "WebAuthServiceConfigResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应状态码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/WebAuthServiceConfig"
+                }
+              },
+              "interface": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "可用的网卡接口列表（wan和lan）",
+                "example": [
+                  "lan1",
+                  "lan2",
+                  "wan1"
+                ]
+              },
+              "template": {
+                "type": "integer",
+                "description": "是否有自定义模板（0无，1有）",
+                "example": 1
+              }
+            },
+            "required": [
+              "data",
+              "interface",
+              "template"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "web-auth",
+      "x-displayName": "WEB认证服务管理",
+      "description": "WEB认证服务配置管理，支持多种认证方式、QoS限速、独立超时配置和Radius/LDAP协议对接"
+    }
+  ]
+}

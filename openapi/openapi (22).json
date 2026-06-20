@@ -1,0 +1,993 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "高级自定义协议管理API",
+    "version": "1.0.0",
+    "summary": "高级自定义协议管理完整功能",
+    "description": "提供高级自定义协议的完整管理功能，包括：\n- 协议的创建、查询、更新、删除\n- 协议启用/停用状态控制\n- 支持9种协议分类：网络协议、网络游戏、社交通讯等\n- 支持自定义语法规则（Base64编码）\n- 自动生成应用ID\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/network/app-protocols/advanced/rules": {
+      "get": {
+        "summary": "获取高级自定义协议列表",
+        "description": "获取所有高级自定义协议列表。\n支持分页功能。\n",
+        "operationId": "listAdvancedProtocols",
+        "tags": [
+          "advanced-protocols"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取高级自定义协议列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdvancedProtocolListResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "total": 1,
+                    "data": [
+                      {
+                        "id": 1,
+                        "enabled": "yes",
+                        "comment": "test",
+                        "rule": "UHJvdG9jb2w9SFRUUA==",
+                        "name": "test",
+                        "class": 2,
+                        "appid": 2910001
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "创建高级自定义协议",
+        "description": "创建新的高级自定义协议策略。\n支持选择协议分类和自定义语法规则（Base64编码）。\n",
+        "operationId": "createAdvancedProtocol",
+        "tags": [
+          "advanced-protocols"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "高级自定义协议配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvancedProtocolInput"
+              },
+              "example": {
+                "class": "0",
+                "comment": "aa",
+                "name": "aa",
+                "rule": "UHJvdG9jb2w9SFRUUA==",
+                "enabled": "yes"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/network/app-protocols/advanced/rules/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/advancedProtocolIdParam"
+        }
+      ],
+      "get": {
+        "summary": "获取指定高级自定义协议详情",
+        "description": "根据ID获取单个高级自定义协议策略的详细信息。\n需要提供有效的策略ID。\n",
+        "operationId": "getAdvancedProtocol",
+        "tags": [
+          "advanced-protocols"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取高级自定义协议详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdvancedProtocolResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "total": 1,
+                    "data": [
+                      {
+                        "id": 1,
+                        "enabled": "yes",
+                        "comment": "test",
+                        "rule": "UHJvdG9jb2w9SFRUUA==",
+                        "name": "test",
+                        "class": 2,
+                        "appid": 2910001
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新高级自定义协议",
+        "description": "完全更新指定高级自定义协议策略的配置信息。\n需要提供所有字段。\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateAdvancedProtocol",
+        "tags": [
+          "advanced-protocols"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "完整的高级自定义协议配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvancedProtocolEditInput"
+              },
+              "example": {
+                "class": 0,
+                "appid": 2910001,
+                "comment": "updated",
+                "name": "aa",
+                "rule": "UHJvdG9jb2w9SFRUUA==",
+                "enabled": "yes"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "启用/停用高级自定义协议",
+        "description": "部分更新指定高级自定义协议策略。\n主要用于启用/停用状态切换。\n",
+        "operationId": "patchAdvancedProtocol",
+        "tags": [
+          "advanced-protocols"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "部分更新数据（如启用状态）",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "string",
+                    "description": "启用状态",
+                    "enum": [
+                      "yes",
+                      "no"
+                    ],
+                    "example": "yes"
+                  }
+                },
+                "required": [
+                  "enabled"
+                ]
+              },
+              "example": {
+                "enabled": "yes"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除高级自定义协议",
+        "description": "删除指定的高级自定义协议策略。\n删除后无法恢复，请谨慎操作。\n",
+        "operationId": "deleteAdvancedProtocol",
+        "tags": [
+          "advanced-protocols"
+        ],
+        "responses": {
+          "200": {
+            "description": "高级自定义协议删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 20,
+          "example": 20
+        }
+      },
+      "advancedProtocolIdParam": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "高级自定义协议ID",
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 1,
+          "example": 1
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源冲突（如唯一性冲突，需调整请求逻辑）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "成功状态码，创建接口中为0",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "AdvancedProtocol": {
+        "type": "object",
+        "required": [
+          "id",
+          "class",
+          "appid"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "策略ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "description": "规则状态（启用/禁用）",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "example": "test"
+          },
+          "name": {
+            "type": "string",
+            "description": "协议名称（仅支持中文、英文、数字，长度限制1-15字符）",
+            "minLength": 1,
+            "maxLength": 15,
+            "pattern": "^[\\u4e00-\\u9fa5a-zA-Z0-9]+$",
+            "example": "test"
+          },
+          "class": {
+            "type": "integer",
+            "description": "协议分类（0-8）：\n- 0: 网络协议自定义\n- 1: 网络游戏自定义\n- 2: 社交通讯自定义\n- 3: 传输下载自定义\n- 4: 休闲娱乐自定义\n- 5: 效率工具自定义\n- 6: 办公协作自定义\n- 7: 学习教育自定义\n- 8: 生活服务自定义\n",
+            "minimum": 0,
+            "maximum": 8,
+            "example": 2
+          },
+          "appid": {
+            "type": "integer",
+            "description": "应用ID（自动生成，不需要输入）",
+            "readOnly": true,
+            "example": 2910001
+          },
+          "rule": {
+            "type": "string",
+            "description": "语法规则（Base64编码）",
+            "example": "UHJvdG9jb2w9SFRUUA=="
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdvancedProtocolInput": {
+        "type": "object",
+        "required": [
+          "class",
+          "name",
+          "rule",
+          "enabled"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "description": "规则状态（启用/禁用）",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "example": "aa"
+          },
+          "name": {
+            "type": "string",
+            "description": "协议名称（仅支持中文、英文、数字，长度限制1-15字符）",
+            "minLength": 1,
+            "maxLength": 15,
+            "pattern": "^[\\u4e00-\\u9fa5a-zA-Z0-9]+$",
+            "example": "aa"
+          },
+          "class": {
+            "type": "integer",
+            "description": "协议分类（0-8）：\n- 0: 网络协议自定义\n- 1: 网络游戏自定义\n- 2: 社交通讯自定义\n- 3: 传输下载自定义\n- 4: 休闲娱乐自定义\n- 5: 效率工具自定义\n- 6: 办公协作自定义\n- 7: 学习教育自定义\n- 8: 生活服务自定义\n",
+            "minimum": 0,
+            "maximum": 8,
+            "example": 0
+          },
+          "rule": {
+            "type": "string",
+            "description": "语法规则（Base64编码）",
+            "example": "UHJvdG9jb2w9SFRUUA=="
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdvancedProtocolEditInput": {
+        "type": "object",
+        "description": "PUT全量修改，所有字段均为required；不修改的字段请保持原值或传空值，未传入的字段可能被重置。",
+        "required": [
+          "class",
+          "appid",
+          "enabled",
+          "comment",
+          "name",
+          "rule"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "description": "规则状态（启用/禁用）",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "example": "aa"
+          },
+          "name": {
+            "type": "string",
+            "description": "协议名称（仅支持中文、英文、数字，长度限制1-15字符）",
+            "minLength": 1,
+            "maxLength": 15,
+            "pattern": "^[\\u4e00-\\u9fa5a-zA-Z0-9]+$",
+            "example": "aa"
+          },
+          "class": {
+            "type": "integer",
+            "description": "协议分类（0-8）：\n- 0: 网络协议自定义\n- 1: 网络游戏自定义\n- 2: 社交通讯自定义\n- 3: 传输下载自定义\n- 4: 休闲娱乐自定义\n- 5: 效率工具自定义\n- 6: 办公协作自定义\n- 7: 学习教育自定义\n- 8: 生活服务自定义\n",
+            "minimum": 0,
+            "maximum": 8,
+            "example": 0
+          },
+          "appid": {
+            "type": "integer",
+            "description": "应用ID（由系统根据协议名和分类自动生成，需从查询接口获取后传入）",
+            "example": 2910001
+          },
+          "rule": {
+            "type": "string",
+            "description": "语法规则（Base64编码）",
+            "example": "UHJvdG9jb2w9SFRUUA=="
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdvancedProtocolResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AdvancedProtocol"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "AdvancedProtocolListResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 25
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AdvancedProtocol"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "CreateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/SuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/CreateBusinessErrorResponse"
+          }
+        ],
+        "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "CreateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer {token}\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "advanced-protocols",
+      "x-displayName": "高级协议管理",
+      "description": "高级自定义协议管理，支持9种协议分类和自定义语法规则（Base64编码）"
+    }
+  ]
+}

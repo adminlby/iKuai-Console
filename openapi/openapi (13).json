@@ -1,0 +1,2835 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "终端监控管理API",
+    "version": "1.0.0",
+    "summary": "终端状态和流量监控的完整功能",
+    "description": "提供终端监控的完整功能，包括：\n- IPv4/IPv6终端在线状态监控\n- IPv4/IPv6终端离线状态监控\n- 终端当日流量统计\n- 终端5分钟实时流量负载（5秒一个数据点）\n- 指定终端最近24小时协议分类流量统计\n- 指定终端最近24小时协议分类速率负载\n- 指定终端当前访问的应用协议速率统计\n- 支持分页、过滤和模糊匹配\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/monitoring/clients-online": {
+      "get": {
+        "summary": "获取IPv4终端在线统计",
+        "description": "获取当前IPv4在线终端的统计信息，包括MAC地址、SSID、IP地址、\n上下行速率、连接数、厂商型号等详细信息。支持分页、过滤和模糊匹配。\n",
+        "operationId": "getOnlineClients",
+        "tags": [
+          "monitor-clients"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "模糊匹配字段列表，支持 ssid, mac, ip_addr, termname, client_vendor, client_model",
+            "schema": {
+              "type": "string"
+            },
+            "example": "mac,ip_addr"
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "description": "模糊匹配内容",
+            "schema": {
+              "type": "string"
+            },
+            "example": "08:9b:4b"
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：\n- \"==（等于）\"\n- \"!=（不等于）\"\n- \">（大于）\"\n- \">=（大于等于）\"\n- \"<（小于）\"\n- \"<=（小于等于）\"\n- \"：（包含）\"\n- \"!：（不包含）\"\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,field2==value2\n\n使用示例：\n- 单条件：filter=mac==08:9b:4b:01:7e:7c\n- AND条件：filter=interface==lan1&filter=connect_num>1\n- OR条件：filter=mac==08:9b:4b:01:7e:7c,mac==08:9b:4b:13:35:6f\n- 包含过滤：filter=client_vendor:Apple\n- 时间范围：filter=timestamp>1763804000&filter=timestamp<1763805000\n",
+            "schema": {
+              "type": "string"
+            },
+            "example": "mac==08:9b:4b:01:7e:7c"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取在线终端统计",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnlineClientsResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "total": 1,
+                    "data": [
+                      {
+                        "id": 1,
+                        "mac": "08:9b:4b:01:7e:7c",
+                        "ip_addr": "192.168.9.199",
+                        "ip_addr_int": 3232238023,
+                        "ssid": "",
+                        "uplink_dev": "iKuai-lpx",
+                        "uplink_addr": "08:9b:4b:13:35:6f",
+                        "webid": 0,
+                        "connect_num": 3,
+                        "total_up": 3929392,
+                        "total_down": 77762748,
+                        "upload": 0,
+                        "download": 0,
+                        "today_total": 57775943,
+                        "apname": "",
+                        "ac_gid": 0,
+                        "device_icon": "1_107",
+                        "vendor_icon": "2_998",
+                        "timestamp": 1763804867,
+                        "termname": "未知123",
+                        "ipv4_gnames": "",
+                        "ipv6_gnames": "",
+                        "mac_gnames": "11",
+                        "dtalk_name": "",
+                        "link_addr": "",
+                        "client_vendor": "路由器",
+                        "client_model": "test",
+                        "client_type": "iKuaiOS",
+                        "client_typeid": 107998000,
+                        "reject": 0,
+                        "comment": "123",
+                        "bssid": "",
+                        "uprate": "",
+                        "downrate": "",
+                        "enc": "",
+                        "static_status": 0,
+                        "interface": "lan1",
+                        "signal": "",
+                        "auth_type": 0,
+                        "vlan_id": 0,
+                        "uptime": "2025-11-22 17:47:47",
+                        "username": "",
+                        "ppptype": "",
+                        "apmac": ""
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/clients-ip6-online": {
+      "get": {
+        "summary": "获取IPv6终端在线统计",
+        "description": "获取当前IPv6在线终端的统计信息，包括MAC地址、SSID、IP地址、\n上下行速率、连接数、厂商型号等详细信息。支持分页、过滤和模糊匹配。\n",
+        "operationId": "getIp6OnlineClients",
+        "tags": [
+          "monitor-clients"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "模糊匹配字段列表，支持 ssid, mac, ip_addr, termname, client_vendor, client_model",
+            "schema": {
+              "type": "string"
+            },
+            "example": "mac,ip_addr"
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "description": "模糊匹配内容",
+            "schema": {
+              "type": "string"
+            },
+            "example": "08:9b:4b"
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：\n- \"==（等于）\"\n- \"!=（不等于）\"\n- \">（大于）\"\n- \">=（大于等于）\"\n- \"<（小于）\"\n- \"<=（小于等于）\"\n- \"：（包含）\"\n- \"!：（不包含）\"\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,field2==value2\n\n使用示例：\n- 单条件：filter=mac==08:9b:4b:01:7e:7c\n- AND条件：filter=interface==lan1&filter=connect_num>1\n- OR条件：filter=mac==08:9b:4b:01:7e:7c,mac==08:9b:4b:13:35:6f\n- 包含过滤：filter=client_vendor:Apple\n- 时间范围：filter=timestamp>1763804000&filter=timestamp<1763805000\n",
+            "schema": {
+              "type": "string"
+            },
+            "example": "mac==08:9b:4b:01:7e:7c"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取IPv6在线终端统计",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ip6OnlineClientsResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "total": 1,
+                    "data": [
+                      {
+                        "id": 1,
+                        "mac": "1a:00:9c:10:f1:5c",
+                        "ip_addr": "2408:8207:3053:bc21:1800:9cff:fe10:f15c",
+                        "ip_addr_int": 0,
+                        "ssid": "",
+                        "uplink_dev": "1.253",
+                        "uplink_addr": "00:e2:59:00:68:4e",
+                        "webid": 0,
+                        "connect_num": 0,
+                        "total_up": 96,
+                        "total_down": 110,
+                        "upload": 0,
+                        "download": 0,
+                        "today_total": 24514,
+                        "apname": "",
+                        "ac_gid": 0,
+                        "device_icon": "",
+                        "vendor_icon": "",
+                        "timestamp": 1773394260,
+                        "termname": "测试部Ubuntu",
+                        "ipv4_gnames": "",
+                        "ipv6_gnames": "",
+                        "mac_gnames": "",
+                        "dtalk_name": "",
+                        "link_addr": "fe80::1800:9cff:fe10:f15c",
+                        "client_vendor": "Unknown",
+                        "client_model": "",
+                        "client_type": "Unknown",
+                        "client_typeid": 0,
+                        "device_type": "",
+                        "reject": 0,
+                        "comment": "测试部Ubuntu",
+                        "bssid": "",
+                        "uprate": "",
+                        "downrate": "",
+                        "enc": "",
+                        "static_status": 0,
+                        "interface": "vlan5",
+                        "signal": 0,
+                        "channel": "--",
+                        "auth_type": 0,
+                        "vlan_id": 0,
+                        "uptime": "2026-03-13 17:31:00",
+                        "username": "",
+                        "ppptype": "",
+                        "apmac": "",
+                        "frequencies": ""
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/clients-offline": {
+      "get": {
+        "summary": "获取IPv4终端离线统计",
+        "description": "获取IPv4离线终端的统计信息，包括MAC地址、IP地址、下线时间、\n总流量统计、认证类型等详细信息。支持分页、过滤和模糊匹配。\n",
+        "operationId": "getOfflineClients",
+        "tags": [
+          "monitor-clients"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "模糊匹配字段列表，支持 mac, ip_addr, termname, client_vendor, client_model",
+            "schema": {
+              "type": "string"
+            },
+            "example": "mac,ip_addr"
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "description": "模糊匹配内容",
+            "schema": {
+              "type": "string"
+            },
+            "example": "52:83:56"
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：\n- \"==（等于）\"\n- \"!=（不等于）\"\n- \">（大于）\"\n- \">=（大于等于）\"\n- \"<（小于）\"\n- \"<=（小于等于）\"\n- \"：（包含）\"\n- \"!：（不包含）\"\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,field2==value2\n\n使用示例：\n- 单条件：filter=mac==52:83:56:ef:f2:4b\n- AND条件：filter=logout_time>1763814000&filter=total_up>0\n- OR条件：filter=mac==52:83:56:ef:f2:4b,mac==08:9b:4b:01:7e:7c\n- 包含过滤：filter=client_vendor:Apple\n- 时间范围：filter=logout_time>1763814000&filter=logout_time<1763815000\n",
+            "schema": {
+              "type": "string"
+            },
+            "example": "mac==52:83:56:ef:f2:4b"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取离线终端统计",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfflineClientsResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "total": 1,
+                    "offline_data": [
+                      {
+                        "id": 1,
+                        "mac": "52:83:56:ef:f2:4b",
+                        "ip_addr": "192.168.9.105",
+                        "username": "",
+                        "client_typeid": 101000299,
+                        "client_vendor": "Apple",
+                        "client_model": "",
+                        "static_status": 0,
+                        "termname": "",
+                        "comment": "",
+                        "ipv6_gnames": "",
+                        "today_total": 0,
+                        "logout_time": 1763814180,
+                        "total_up": 4105104,
+                        "total_down": 27465719,
+                        "client_type": "iOS",
+                        "ipv4_gnames": "",
+                        "auth": 0,
+                        "mac_gnames": "",
+                        "dtalk_name": "",
+                        "vlan_id": 0
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/clients-ip6-offline": {
+      "get": {
+        "summary": "获取IPv6终端离线统计",
+        "description": "获取IPv6离线终端的统计信息，包括MAC地址、IP地址、下线时间、\n总流量统计、认证类型等详细信息。支持分页、过滤和模糊匹配。\n",
+        "operationId": "getIp6OfflineClients",
+        "tags": [
+          "monitor-clients"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "模糊匹配字段列表，支持 mac, ip_addr, termname, client_vendor, client_model",
+            "schema": {
+              "type": "string"
+            },
+            "example": "mac,ip_addr"
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "description": "模糊匹配内容",
+            "schema": {
+              "type": "string"
+            },
+            "example": "00:71:6f"
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：\n- \"==（等于）\"\n- \"!=（不等于）\"\n- \">（大于）\"\n- \">=（大于等于）\"\n- \"<（小于）\"\n- \"<=（小于等于）\"\n- \":（包含）\"\n- \"!：（不包含）\"\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,field2==value2\n\n使用示例：\n- 单条件：filter=mac==00:71:6f:a6:0c:2d\n- AND条件：filter=logout_time>1773390000&filter=total_up>0\n- OR条件：filter=mac==00:71:6f:a6:0c:2d,mac==08:9b:4b:01:7e:7c\n- 包含过滤：filter=client_vendor:iKuai\n- 时间范围：filter=logout_time>1773390000&filter=logout_time<1773391000\n",
+            "schema": {
+              "type": "string"
+            },
+            "example": "mac==00:71:6f:a6:0c:2d"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取IPv6离线终端统计",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ip6OfflineClientsResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "total": 1,
+                    "offline_data": [
+                      {
+                        "id": 1,
+                        "mac": "00:71:6f:a6:0c:2d",
+                        "ip_addr": "2408:8207:3053:bb90:0271:6fff:fea6:0c2d",
+                        "username": "",
+                        "client_typeid": 107998006,
+                        "client_vendor": "iKuai",
+                        "client_model": "iKuai路由器",
+                        "device_type": "",
+                        "today_total": 8370425,
+                        "logout_time": 1773390540,
+                        "total_up": 4769559,
+                        "total_down": 21154347,
+                        "client_type": "iKuaiOS",
+                        "ipv4_gnames": "",
+                        "ipv6_gnames": "",
+                        "mac_gnames": "",
+                        "auth": 0,
+                        "dtalk_name": "",
+                        "vlan_id": 0,
+                        "termname": "",
+                        "comment": "",
+                        "device_icon": "1_107"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/clients-traffic-summary": {
+      "get": {
+        "summary": "获取终端当日流量统计",
+        "description": "获取所有终端的当日流量统计信息，包括总流量、上行流量、\n下行流量等汇总数据。支持分页功能，不支持key、pattern、filter。\n",
+        "operationId": "getClientTrafficSummary",
+        "tags": [
+          "monitor-clients"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取终端当日流量统计",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientTrafficSummaryResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "terminal": [
+                      {
+                        "id": 1,
+                        "mac": "08:9b:4b:01:7e:7c",
+                        "ip_addr": "192.168.9.199",
+                        "username": "testuser",
+                        "comment": "我的电脑",
+                        "icon": "1_107",
+                        "sum_total": 7006058917,
+                        "sum_total_up": 4546140370,
+                        "sum_total_down": 2459918547
+                      },
+                      {
+                        "id": 2,
+                        "mac": "1a:f8:62:e6:ca:49",
+                        "ip_addr": "192.168.9.105",
+                        "username": "",
+                        "comment": "",
+                        "icon": "",
+                        "sum_total": 114884,
+                        "sum_total_up": 44004,
+                        "sum_total_down": 70880
+                      }
+                    ],
+                    "terminal_total": 2,
+                    "terminal_total_flow": 7006173801
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/clients-traffic-load": {
+      "get": {
+        "summary": "获取指定终端的5分钟流量负载",
+        "description": "获取指定终端的5分钟流量负载，包含上行速率和下行速率，\n5秒一个数据点，共300个数据点。ip和mac均必须输入。\n",
+        "operationId": "getClientTrafficLoad",
+        "tags": [
+          "monitor-clients"
+        ],
+        "parameters": [
+          {
+            "name": "mac",
+            "in": "query",
+            "required": true,
+            "description": "终端MAC地址",
+            "schema": {
+              "type": "string",
+              "pattern": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$",
+              "example": "08:9b:4b:01:7e:7c"
+            }
+          },
+          {
+            "name": "ip",
+            "in": "query",
+            "required": true,
+            "description": "终端IP地址",
+            "schema": {
+              "type": "string",
+              "format": "ipv4",
+              "example": "192.168.9.199"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取终端5分钟流量负载数据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientStreamResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "terminal_stream_collect": [
+                      {
+                        "download": 78335,
+                        "conn_num": "177",
+                        "timestamp": 1773304236,
+                        "upload": 7402
+                      },
+                      {
+                        "download": 49133,
+                        "conn_num": "258",
+                        "timestamp": 1773304241,
+                        "upload": 87372
+                      },
+                      {
+                        "download": 45746,
+                        "conn_num": "242",
+                        "timestamp": 1773304246,
+                        "upload": 280816
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/clients/protocols": {
+      "get": {
+        "summary": "获取指定终端的协议分类流量统计",
+        "description": "获取指定终端最近24小时的协议分类流量统计。\n协议大类包括：网络协议、传输下载、休闲娱乐、生活服务、办公协作、\n社交通讯、效率工具、网络游戏、金融理财、学习教育等。\nmac和ip必须输入，不支持limit、page、key、pattern、filter。\n",
+        "operationId": "getClientProtocols",
+        "tags": [
+          "monitor-clients"
+        ],
+        "parameters": [
+          {
+            "name": "mac",
+            "in": "query",
+            "required": true,
+            "description": "终端MAC地址",
+            "schema": {
+              "type": "string",
+              "pattern": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$",
+              "example": "08:9b:4b:01:7e:7c"
+            }
+          },
+          {
+            "name": "ip",
+            "in": "query",
+            "required": true,
+            "description": "终端IP地址",
+            "schema": {
+              "type": "string",
+              "example": "192.168.9.199"
+            }
+          },
+          {
+            "name": "starttime",
+            "in": "query",
+            "required": false,
+            "description": "开始时间戳",
+            "schema": {
+              "type": "integer",
+              "example": 1773304236
+            }
+          },
+          {
+            "name": "stoptime",
+            "in": "query",
+            "required": false,
+            "description": "结束时间戳",
+            "schema": {
+              "type": "integer",
+              "example": 1773304246
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取指定终端协议分类流量统计",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientProtocolsResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "data": [
+                      {
+                        "id": 1,
+                        "total": 2635725,
+                        "proto": "4:7",
+                        "proto_name": "未知应用"
+                      },
+                      {
+                        "id": 2,
+                        "total": 3439230,
+                        "proto": "3500000:3999999",
+                        "proto_name": "效率工具"
+                      },
+                      {
+                        "id": 3,
+                        "total": 69668994,
+                        "proto": "2500000:2999999",
+                        "proto_name": "传输下载"
+                      },
+                      {
+                        "id": 5,
+                        "total": 267252162,
+                        "proto": "4000000:4499999",
+                        "proto_name": "办公协作"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/clients/protocols/history-load": {
+      "get": {
+        "summary": "获取指定终端的协议分类历史速率",
+        "description": "获取指定终端最近24小时的协议分类速率负载，每5分钟一个数据点，\n包含各协议分类的上下行速率信息，单位字节/秒。\nmac和ip必须输入，不支持limit、page、key、pattern、filter。\n",
+        "operationId": "getClientProtocolsHistoryLoad",
+        "tags": [
+          "monitor-clients"
+        ],
+        "parameters": [
+          {
+            "name": "mac",
+            "in": "query",
+            "required": true,
+            "description": "终端MAC地址",
+            "schema": {
+              "type": "string",
+              "pattern": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$",
+              "example": "08:9b:4b:01:7e:7c"
+            }
+          },
+          {
+            "name": "ip",
+            "in": "query",
+            "required": true,
+            "description": "终端IP地址",
+            "schema": {
+              "type": "string",
+              "example": "192.168.9.199"
+            }
+          },
+          {
+            "name": "starttime",
+            "in": "query",
+            "required": false,
+            "description": "开始时间戳",
+            "schema": {
+              "type": "integer",
+              "example": 1773304236
+            }
+          },
+          {
+            "name": "stoptime",
+            "in": "query",
+            "required": false,
+            "description": "结束时间戳",
+            "schema": {
+              "type": "integer",
+              "example": 1773304246
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取指定终端协议分类历史速率数据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientProtocolHistoryLoadResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "data": [
+                      {
+                        "upload": 1899,
+                        "proto": "1000000:1499999",
+                        "proto_name": "网络协议",
+                        "timestamp": 1773287100,
+                        "download": 2683,
+                        "id": 1
+                      },
+                      {
+                        "upload": 0,
+                        "proto": "2500000:2999999",
+                        "timestamp": 1773287100,
+                        "download": 0,
+                        "id": 2
+                      },
+                      {
+                        "upload": 80,
+                        "proto": "4000000:4499999",
+                        "timestamp": 1773287100,
+                        "download": 123,
+                        "id": 3
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/clients/app-protocols/load": {
+      "get": {
+        "summary": "获取指定终端当前应用协议速率统计",
+        "description": "查询指定终端当前访问的所有应用协议的速率和流量信息，\n包括连接数、上下行速率、总流量及协议分类信息。\nmac 和 ip 必须输入，支持分页。\n",
+        "operationId": "getClientAppProtocolsLoad",
+        "tags": [
+          "monitor-clients"
+        ],
+        "parameters": [
+          {
+            "name": "mac",
+            "in": "query",
+            "description": "终端MAC地址",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "08:9b:4b:01:7e:7c"
+          },
+          {
+            "name": "ip",
+            "in": "query",
+            "description": "终端IP地址",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "ipv4"
+            },
+            "example": "192.168.9.199"
+          },
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "每页返回数量",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 20
+            },
+            "example": 20
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取指定终端当前应用协议速率统计",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientAppProtocolsLoadResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "data": [
+                      {
+                        "conn_cnt": 0,
+                        "upload": 0,
+                        "download": 0,
+                        "appid": 5030009,
+                        "app_name": "今日头条",
+                        "id": 1,
+                        "total": 170,
+                        "total_up": 100,
+                        "total_down": 70,
+                        "proto2_name": "5030001:5040000",
+                        "proto1_name": "5000000:5499999",
+                        "rules": {}
+                      },
+                      {
+                        "conn_cnt": 0,
+                        "upload": 0,
+                        "download": 0,
+                        "appid": 5060190,
+                        "app_name": "谷歌通用账号",
+                        "id": 2,
+                        "total": 190,
+                        "total_up": 80,
+                        "total_down": 110,
+                        "proto2_name": "5060001:5070000",
+                        "proto1_name": "5000000:5499999",
+                        "rules": {}
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 10,
+          "example": 10
+        }
+      },
+      "orderParam": {
+        "name": "order",
+        "in": "query",
+        "description": "排序方向，asc为升序（默认），desc为降序",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "asc",
+          "example": "asc"
+        }
+      },
+      "orderByParam": {
+        "name": "order_by",
+        "in": "query",
+        "description": "排序字段，支持id、timestamp、mac、ip_addr等字段",
+        "schema": {
+          "type": "string",
+          "default": "id",
+          "example": "timestamp"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源冲突（如唯一性冲突，需调整请求逻辑）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息",
+            "example": "请求语法错误或参数不合法"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "OnlineClientsResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/OnlineClientsResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "OnlineClientsResults": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "总记录数",
+            "example": 1
+          },
+          "data": {
+            "type": "array",
+            "description": "在线终端列表",
+            "items": {
+              "$ref": "#/components/schemas/OnlineClient"
+            }
+          }
+        },
+        "required": [
+          "total",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "OnlineClient": {
+        "type": "object",
+        "required": [
+          "id",
+          "mac",
+          "ip_addr",
+          "timestamp",
+          "total_up",
+          "total_down",
+          "connect_num",
+          "upload",
+          "download",
+          "uplink_dev",
+          "uplink_addr",
+          "apname",
+          "bssid",
+          "termname",
+          "comment",
+          "static_status",
+          "client_type",
+          "client_typeid",
+          "interface",
+          "auth_type",
+          "vlan_id",
+          "uptime",
+          "username",
+          "ppptype",
+          "apmac",
+          "today_total",
+          "client_vendor",
+          "client_model",
+          "reject",
+          "frequencies",
+          "uprate",
+          "downrate",
+          "enc",
+          "ipv4_gnames",
+          "ipv6_gnames",
+          "mac_gnames",
+          "dtalk_name",
+          "link_addr",
+          "webid",
+          "device_icon",
+          "vendor_icon",
+          "ac_gid"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "终端ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "mac": {
+            "type": "string",
+            "description": "终端MAC地址",
+            "pattern": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$",
+            "example": "08:9b:4b:01:7e:7c"
+          },
+          "ssid": {
+            "type": "string",
+            "description": "SSID名称（无线连接时有效）",
+            "maxLength": 100,
+            "example": ""
+          },
+          "ip_addr_int": {
+            "type": "integer",
+            "format": "int64",
+            "description": "终端IP地址（整数格式）",
+            "minimum": 0,
+            "example": 3232238023
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "终端IP地址",
+            "format": "ipv4",
+            "example": "192.168.9.199"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "时间戳（Unix时间戳）",
+            "example": 1763804867
+          },
+          "total_up": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总上传字节数",
+            "minimum": 0,
+            "example": 3929392
+          },
+          "total_down": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总下载字节数",
+            "minimum": 0,
+            "example": 77762748
+          },
+          "connect_num": {
+            "type": "integer",
+            "description": "连接数",
+            "minimum": 0,
+            "example": 3
+          },
+          "upload": {
+            "type": "integer",
+            "description": "实时上传速率（B/s）",
+            "minimum": 0,
+            "example": 0
+          },
+          "download": {
+            "type": "integer",
+            "description": "实时下载速率（B/s）",
+            "minimum": 0,
+            "example": 0
+          },
+          "uplink_dev": {
+            "type": "string",
+            "description": "上行设备名称",
+            "maxLength": 100,
+            "example": "iKuai-lpx"
+          },
+          "uplink_addr": {
+            "type": "string",
+            "description": "上行设备MAC地址",
+            "maxLength": 100,
+            "example": "08:9b:4b:13:35:6f"
+          },
+          "apname": {
+            "type": "string",
+            "description": "AP名称（无线连接时有效）",
+            "maxLength": 100,
+            "example": ""
+          },
+          "bssid": {
+            "type": "string",
+            "description": "AP的BSSID（无线连接时有效）",
+            "maxLength": 100,
+            "example": ""
+          },
+          "termname": {
+            "type": "string",
+            "description": "终端名称",
+            "maxLength": 200,
+            "example": "未知123"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": "123"
+          },
+          "static_status": {
+            "type": "integer",
+            "description": "静态状态 (0=动态, 1=静态)",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "client_type": {
+            "type": "string",
+            "description": "终端类型",
+            "maxLength": 50,
+            "example": "iKuaiOS"
+          },
+          "client_typeid": {
+            "type": "integer",
+            "format": "int64",
+            "description": "终端类型ID",
+            "minimum": 0,
+            "example": 107998000
+          },
+          "interface": {
+            "type": "string",
+            "description": "接口名称",
+            "maxLength": 50,
+            "example": "lan1"
+          },
+          "signal": {
+            "type": "string",
+            "description": "信号强度（无线连接时有效）",
+            "maxLength": 50,
+            "example": ""
+          },
+          "auth_type": {
+            "type": "integer",
+            "description": "认证类型",
+            "minimum": 0,
+            "example": 0
+          },
+          "vlan_id": {
+            "type": "integer",
+            "description": "VLAN ID",
+            "minimum": 0,
+            "example": 0
+          },
+          "uptime": {
+            "type": "string",
+            "description": "上线时间",
+            "maxLength": 50,
+            "example": "2025-11-22 17:47:47"
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名",
+            "maxLength": 100,
+            "example": ""
+          },
+          "ppptype": {
+            "type": "string",
+            "description": "PPPoE类型或IP获取方式",
+            "maxLength": 50,
+            "example": ""
+          },
+          "apmac": {
+            "type": "string",
+            "description": "AP的MAC地址（无线连接时有效）",
+            "maxLength": 100,
+            "example": ""
+          },
+          "today_total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "今日总流量（字节）",
+            "minimum": 0,
+            "example": 57775943
+          },
+          "client_vendor": {
+            "type": "string",
+            "description": "客户端厂商",
+            "maxLength": 100,
+            "example": "路由器"
+          },
+          "client_model": {
+            "type": "string",
+            "description": "客户端型号",
+            "maxLength": 100,
+            "example": "test"
+          },
+          "reject": {
+            "type": "integer",
+            "description": "拒绝状态 (0=不拒绝, 1=拒绝)",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "frequencies": {
+            "type": "string",
+            "description": "频率信息（无线连接时有效）",
+            "maxLength": 50,
+            "example": ""
+          },
+          "uprate": {
+            "type": "string",
+            "description": "上行速率信息",
+            "maxLength": 50,
+            "example": ""
+          },
+          "downrate": {
+            "type": "string",
+            "description": "下行速率信息",
+            "maxLength": 50,
+            "example": ""
+          },
+          "enc": {
+            "type": "string",
+            "description": "加密信息（无线连接时有效）",
+            "maxLength": 50,
+            "example": ""
+          },
+          "ipv4_gnames": {
+            "type": "string",
+            "description": "IPv4组名称",
+            "maxLength": 200,
+            "example": ""
+          },
+          "ipv6_gnames": {
+            "type": "string",
+            "description": "IPv6组名称",
+            "maxLength": 200,
+            "example": ""
+          },
+          "mac_gnames": {
+            "type": "string",
+            "description": "MAC组名称",
+            "maxLength": 200,
+            "example": "11"
+          },
+          "dtalk_name": {
+            "type": "string",
+            "description": "D-Talk名称",
+            "maxLength": 100,
+            "example": ""
+          },
+          "link_addr": {
+            "type": "string",
+            "description": "链路地址",
+            "maxLength": 100,
+            "example": ""
+          },
+          "webid": {
+            "type": "integer",
+            "description": "Web认证ID",
+            "minimum": 0,
+            "example": 0
+          },
+          "device_icon": {
+            "type": "string",
+            "description": "设备图标标识",
+            "maxLength": 50,
+            "example": "1_107"
+          },
+          "vendor_icon": {
+            "type": "string",
+            "description": "厂商图标标识",
+            "maxLength": 50,
+            "example": "2_998"
+          },
+          "ac_gid": {
+            "type": "integer",
+            "description": "AC组ID",
+            "minimum": 0,
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "OfflineClientsResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/OfflineClientsResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "OfflineClientsResults": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "总记录数",
+            "example": 1
+          },
+          "offline_data": {
+            "type": "array",
+            "description": "离线终端列表",
+            "items": {
+              "$ref": "#/components/schemas/OfflineClient"
+            }
+          }
+        },
+        "required": [
+          "total",
+          "offline_data"
+        ],
+        "additionalProperties": false
+      },
+      "OfflineClient": {
+        "type": "object",
+        "required": [
+          "id",
+          "mac",
+          "ip_addr",
+          "logout_time",
+          "total_up",
+          "total_down",
+          "today_total",
+          "client_type",
+          "client_typeid",
+          "static_status",
+          "auth",
+          "ipv4_gnames",
+          "ipv6_gnames",
+          "mac_gnames",
+          "dtalk_name",
+          "termname",
+          "comment",
+          "username",
+          "client_vendor",
+          "client_model",
+          "vlan_id"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "终端ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "mac": {
+            "type": "string",
+            "description": "终端MAC地址",
+            "pattern": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$",
+            "example": "52:83:56:ef:f2:4b"
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "终端IP地址",
+            "format": "ipv4",
+            "example": "192.168.9.105"
+          },
+          "logout_time": {
+            "type": "integer",
+            "format": "int64",
+            "description": "下线时间戳（Unix时间戳）",
+            "example": 1763814180
+          },
+          "total_up": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总上传字节数",
+            "minimum": 0,
+            "example": 4105104
+          },
+          "total_down": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总下载字节数",
+            "minimum": 0,
+            "example": 27465719
+          },
+          "today_total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "今日总流量（字节）",
+            "minimum": 0,
+            "example": 0
+          },
+          "client_type": {
+            "type": "string",
+            "description": "终端类型",
+            "maxLength": 50,
+            "example": "iOS"
+          },
+          "client_typeid": {
+            "type": "integer",
+            "format": "int64",
+            "description": "终端类型ID",
+            "minimum": 0,
+            "example": 101000299
+          },
+          "static_status": {
+            "type": "integer",
+            "description": "静态状态 (0=动态, 1=静态)",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "auth": {
+            "type": "integer",
+            "description": "认证状态 (0=未认证, 1=已认证)",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "ipv4_gnames": {
+            "type": "string",
+            "description": "IPv4组名称",
+            "maxLength": 200,
+            "example": ""
+          },
+          "ipv6_gnames": {
+            "type": "string",
+            "description": "IPv6组名称",
+            "maxLength": 200,
+            "example": ""
+          },
+          "mac_gnames": {
+            "type": "string",
+            "description": "MAC组名称",
+            "maxLength": 200,
+            "example": ""
+          },
+          "dtalk_name": {
+            "type": "string",
+            "description": "D-Talk名称",
+            "maxLength": 100,
+            "example": ""
+          },
+          "termname": {
+            "type": "string",
+            "description": "终端名称",
+            "maxLength": 200,
+            "example": ""
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": ""
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名",
+            "maxLength": 100,
+            "example": ""
+          },
+          "client_vendor": {
+            "type": "string",
+            "description": "客户端厂商",
+            "maxLength": 100,
+            "example": "Apple"
+          },
+          "client_model": {
+            "type": "string",
+            "description": "客户端型号",
+            "maxLength": 100,
+            "example": ""
+          },
+          "vlan_id": {
+            "type": "integer",
+            "description": "VLAN ID",
+            "minimum": 0,
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "ClientTrafficSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/ClientTrafficSummaryResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "ClientTrafficSummaryResults": {
+        "type": "object",
+        "properties": {
+          "terminal": {
+            "type": "array",
+            "description": "终端流量统计列表",
+            "items": {
+              "$ref": "#/components/schemas/TerminalTraffic"
+            }
+          },
+          "terminal_total": {
+            "type": "integer",
+            "description": "终端总数量",
+            "minimum": 0,
+            "example": 10
+          },
+          "terminal_total_flow": {
+            "type": "integer",
+            "format": "int64",
+            "description": "所有终端当日总流量（字节）",
+            "minimum": 0,
+            "example": 7006058917
+          }
+        },
+        "required": [
+          "terminal"
+        ],
+        "additionalProperties": false
+      },
+      "TerminalTraffic": {
+        "type": "object",
+        "required": [
+          "id",
+          "mac",
+          "ip_addr",
+          "sum_total",
+          "sum_total_up",
+          "sum_total_down"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "终端ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "mac": {
+            "type": "string",
+            "description": "终端MAC地址",
+            "pattern": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$",
+            "example": "08:9b:4b:01:7e:7c"
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "终端IP地址",
+            "format": "ipv4",
+            "example": "192.168.9.199"
+          },
+          "username": {
+            "type": "string",
+            "description": "终端绑定用户名",
+            "example": "testuser"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "example": "我的电脑"
+          },
+          "icon": {
+            "type": "string",
+            "description": "终端图标标识",
+            "maxLength": 50,
+            "example": "1_107"
+          },
+          "sum_total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "当日总流量（字节）",
+            "minimum": 0,
+            "example": 7006058917
+          },
+          "sum_total_up": {
+            "type": "integer",
+            "format": "int64",
+            "description": "当日上行流量（字节）",
+            "minimum": 0,
+            "example": 4546140370
+          },
+          "sum_total_down": {
+            "type": "integer",
+            "format": "int64",
+            "description": "当日下行流量（字节）",
+            "minimum": 0,
+            "example": 2459918547
+          }
+        },
+        "additionalProperties": false
+      },
+      "ClientStreamResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/ClientStreamResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "ClientStreamResults": {
+        "type": "object",
+        "properties": {
+          "terminal_stream_collect": {
+            "type": "array",
+            "description": "终端流量监控数据列表（5秒一个数据点，共300个）",
+            "items": {
+              "$ref": "#/components/schemas/ClientStream"
+            }
+          }
+        },
+        "required": [
+          "terminal_stream_collect"
+        ],
+        "additionalProperties": false
+      },
+      "ClientStream": {
+        "type": "object",
+        "required": [
+          "timestamp",
+          "upload",
+          "download",
+          "conn_num"
+        ],
+        "properties": {
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "时间戳（Unix时间戳）",
+            "example": 1773304236
+          },
+          "upload": {
+            "type": "integer",
+            "format": "int64",
+            "description": "上传速率（字节/秒）",
+            "minimum": 0,
+            "example": 7402
+          },
+          "download": {
+            "type": "integer",
+            "format": "int64",
+            "description": "下载速率（字节/秒）",
+            "minimum": 0,
+            "example": 78335
+          },
+          "conn_num": {
+            "type": "string",
+            "description": "连接数",
+            "pattern": "^[0-9]*$",
+            "example": "177"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ClientProtocolsResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/ClientProtocolsResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "ClientProtocolsResults": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "终端协议分类流量列表",
+            "items": {
+              "$ref": "#/components/schemas/ClientProtocolItem"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "ClientProtocolItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "total",
+          "proto",
+          "proto_name"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "记录ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总流量（字节）",
+            "minimum": 0,
+            "example": 2635725
+          },
+          "proto": {
+            "type": "string",
+            "description": "协议分类ID范围",
+            "example": "4:7"
+          },
+          "proto_name": {
+            "type": "string",
+            "description": "协议分类名称",
+            "maxLength": 100,
+            "example": "未知应用"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ClientProtocolHistoryLoadResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/ClientProtocolHistoryLoadResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "ClientProtocolHistoryLoadResults": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "终端协议分类历史速率数据列表",
+            "items": {
+              "$ref": "#/components/schemas/ClientProtocolHistoryLoadItem"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "ClientProtocolHistoryLoadItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "proto",
+          "timestamp",
+          "upload",
+          "download"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "记录ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "proto": {
+            "type": "string",
+            "description": "协议分类ID范围",
+            "example": "1000000:1499999"
+          },
+          "proto_name": {
+            "type": "string",
+            "description": "协议分类名称",
+            "maxLength": 100,
+            "example": "网络协议"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "时间戳（Unix时间戳）",
+            "example": 1773287100
+          },
+          "upload": {
+            "type": "integer",
+            "format": "int64",
+            "description": "上行速率（字节/秒）",
+            "minimum": 0,
+            "example": 1899
+          },
+          "download": {
+            "type": "integer",
+            "format": "int64",
+            "description": "下行速率（字节/秒）",
+            "minimum": 0,
+            "example": 2683
+          }
+        },
+        "additionalProperties": false
+      },
+      "ClientAppProtocolsLoadResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/ClientAppProtocolsLoadResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "ClientAppProtocolsLoadResults": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "终端当前应用协议速率列表",
+            "items": {
+              "$ref": "#/components/schemas/ClientAppProtocolLoadItem"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "ClientAppProtocolLoadItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "appid",
+          "app_name",
+          "proto1_name",
+          "proto2_name",
+          "conn_cnt",
+          "upload",
+          "download",
+          "total",
+          "total_up",
+          "total_down",
+          "rules"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "记录ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "appid": {
+            "type": "integer",
+            "format": "int64",
+            "description": "应用协议ID",
+            "minimum": 1,
+            "example": 5030009
+          },
+          "app_name": {
+            "type": "string",
+            "description": "应用协议名称",
+            "maxLength": 100,
+            "example": "今日头条"
+          },
+          "proto1_name": {
+            "type": "string",
+            "description": "一级协议分类ID范围",
+            "example": "5000000:5499999"
+          },
+          "proto2_name": {
+            "type": "string",
+            "description": "二级协议分类ID范围",
+            "example": "5030001:5040000"
+          },
+          "conn_cnt": {
+            "type": "integer",
+            "description": "连接数",
+            "minimum": 0,
+            "example": 0
+          },
+          "upload": {
+            "type": "integer",
+            "format": "int64",
+            "description": "上行速率（字节/秒）",
+            "minimum": 0,
+            "example": 0
+          },
+          "download": {
+            "type": "integer",
+            "format": "int64",
+            "description": "下行速率（字节/秒）",
+            "minimum": 0,
+            "example": 0
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总流量（字节）",
+            "minimum": 0,
+            "example": 170
+          },
+          "total_up": {
+            "type": "integer",
+            "format": "int64",
+            "description": "上行流量（字节）",
+            "minimum": 0,
+            "example": 100
+          },
+          "total_down": {
+            "type": "integer",
+            "format": "int64",
+            "description": "下行流量（字节）",
+            "minimum": 0,
+            "example": 70
+          },
+          "rules": {
+            "type": "object",
+            "description": "规则信息",
+            "additionalProperties": true,
+            "example": {}
+          }
+        },
+        "additionalProperties": false
+      },
+      "Ip6OnlineClientsResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/Ip6OnlineClientsResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "Ip6OnlineClientsResults": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "总记录数",
+            "example": 1
+          },
+          "data": {
+            "type": "array",
+            "description": "IPv6在线终端列表",
+            "items": {
+              "$ref": "#/components/schemas/Ip6OnlineClient"
+            }
+          }
+        },
+        "required": [
+          "total",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "Ip6OnlineClient": {
+        "type": "object",
+        "required": [
+          "id",
+          "mac",
+          "ip_addr",
+          "timestamp",
+          "total_up",
+          "total_down",
+          "connect_num",
+          "upload",
+          "download",
+          "uplink_dev",
+          "uplink_addr",
+          "apname",
+          "bssid",
+          "termname",
+          "comment",
+          "static_status",
+          "client_type",
+          "client_typeid",
+          "interface",
+          "auth_type",
+          "vlan_id",
+          "uptime",
+          "username",
+          "ppptype",
+          "apmac",
+          "today_total",
+          "client_vendor",
+          "client_model",
+          "device_type",
+          "reject",
+          "frequencies",
+          "uprate",
+          "downrate",
+          "enc",
+          "ipv4_gnames",
+          "ipv6_gnames",
+          "mac_gnames",
+          "dtalk_name",
+          "link_addr",
+          "webid",
+          "device_icon",
+          "vendor_icon",
+          "ac_gid",
+          "signal",
+          "channel"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "终端ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "mac": {
+            "type": "string",
+            "description": "终端MAC地址",
+            "pattern": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$",
+            "example": "1a:00:9c:10:f1:5c"
+          },
+          "ssid": {
+            "type": "string",
+            "description": "SSID名称（无线连接时有效）",
+            "maxLength": 100,
+            "example": ""
+          },
+          "ip_addr_int": {
+            "type": "integer",
+            "format": "int64",
+            "description": "终端IP地址（整数格式，IPv6时为0）",
+            "minimum": 0,
+            "example": 0
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "终端IPv6地址",
+            "example": "2408:8207:3053:bc21:1800:9cff:fe10:f15c"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "时间戳（Unix时间戳）",
+            "example": 1773394260
+          },
+          "total_up": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总上传字节数",
+            "minimum": 0,
+            "example": 96
+          },
+          "total_down": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总下载字节数",
+            "minimum": 0,
+            "example": 110
+          },
+          "connect_num": {
+            "type": "integer",
+            "description": "连接数",
+            "minimum": 0,
+            "example": 0
+          },
+          "upload": {
+            "type": "integer",
+            "description": "实时上传速率（B/s）",
+            "minimum": 0,
+            "example": 0
+          },
+          "download": {
+            "type": "integer",
+            "description": "实时下载速率（B/s）",
+            "minimum": 0,
+            "example": 0
+          },
+          "uplink_dev": {
+            "type": "string",
+            "description": "上行设备名称",
+            "maxLength": 100,
+            "example": "1.253"
+          },
+          "uplink_addr": {
+            "type": "string",
+            "description": "上行设备MAC地址",
+            "maxLength": 100,
+            "example": "00:e2:59:00:68:4e"
+          },
+          "apname": {
+            "type": "string",
+            "description": "AP名称（无线连接时有效）",
+            "maxLength": 100,
+            "example": ""
+          },
+          "bssid": {
+            "type": "string",
+            "description": "AP的BSSID（无线连接时有效）",
+            "maxLength": 100,
+            "example": ""
+          },
+          "termname": {
+            "type": "string",
+            "description": "终端名称",
+            "maxLength": 200,
+            "example": "测试部Ubuntu"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": "测试部Ubuntu"
+          },
+          "static_status": {
+            "type": "integer",
+            "description": "静态状态 (0=动态, 1=静态)",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "client_type": {
+            "type": "string",
+            "description": "终端类型",
+            "maxLength": 50,
+            "example": "Unknown"
+          },
+          "client_typeid": {
+            "type": "integer",
+            "format": "int64",
+            "description": "终端类型ID",
+            "minimum": 0,
+            "example": 0
+          },
+          "interface": {
+            "type": "string",
+            "description": "接口名称",
+            "maxLength": 50,
+            "example": "vlan5"
+          },
+          "signal": {
+            "type": "integer",
+            "description": "信号强度（无线连接时有效，0表示无信号）",
+            "example": 0
+          },
+          "channel": {
+            "type": "string",
+            "description": "无线信道（无线连接时有效，有线终端显示\"--\"）",
+            "maxLength": 20,
+            "example": "--"
+          },
+          "auth_type": {
+            "type": "integer",
+            "description": "认证类型",
+            "minimum": 0,
+            "example": 0
+          },
+          "vlan_id": {
+            "type": "integer",
+            "description": "VLAN ID",
+            "minimum": 0,
+            "example": 0
+          },
+          "uptime": {
+            "type": "string",
+            "description": "上线时间",
+            "maxLength": 50,
+            "example": "2026-03-13 17:31:00"
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名",
+            "maxLength": 100,
+            "example": ""
+          },
+          "ppptype": {
+            "type": "string",
+            "description": "PPPoE类型或IP获取方式",
+            "maxLength": 50,
+            "example": ""
+          },
+          "apmac": {
+            "type": "string",
+            "description": "AP的MAC地址（无线连接时有效）",
+            "maxLength": 100,
+            "example": ""
+          },
+          "today_total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "今日总流量（字节）",
+            "minimum": 0,
+            "example": 24514
+          },
+          "client_vendor": {
+            "type": "string",
+            "description": "客户端厂商",
+            "maxLength": 100,
+            "example": "Unknown"
+          },
+          "client_model": {
+            "type": "string",
+            "description": "客户端型号",
+            "maxLength": 100,
+            "example": ""
+          },
+          "device_type": {
+            "type": "string",
+            "description": "设备类型",
+            "maxLength": 100,
+            "example": ""
+          },
+          "reject": {
+            "type": "integer",
+            "description": "拒绝状态 (0=不拒绝, 1=拒绝)",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "frequencies": {
+            "type": "string",
+            "description": "频率信息（无线连接时有效）",
+            "maxLength": 50,
+            "example": ""
+          },
+          "uprate": {
+            "type": "string",
+            "description": "上行速率信息",
+            "maxLength": 50,
+            "example": ""
+          },
+          "downrate": {
+            "type": "string",
+            "description": "下行速率信息",
+            "maxLength": 50,
+            "example": ""
+          },
+          "enc": {
+            "type": "string",
+            "description": "加密信息（无线连接时有效）",
+            "maxLength": 50,
+            "example": ""
+          },
+          "ipv4_gnames": {
+            "type": "string",
+            "description": "IPv4组名称",
+            "maxLength": 200,
+            "example": ""
+          },
+          "ipv6_gnames": {
+            "type": "string",
+            "description": "IPv6组名称",
+            "maxLength": 200,
+            "example": ""
+          },
+          "mac_gnames": {
+            "type": "string",
+            "description": "MAC组名称",
+            "maxLength": 200,
+            "example": ""
+          },
+          "dtalk_name": {
+            "type": "string",
+            "description": "D-Talk名称",
+            "maxLength": 100,
+            "example": ""
+          },
+          "link_addr": {
+            "type": "string",
+            "description": "链路本地地址",
+            "maxLength": 100,
+            "example": "fe80::1800:9cff:fe10:f15c"
+          },
+          "webid": {
+            "type": "integer",
+            "description": "Web认证ID",
+            "minimum": 0,
+            "example": 0
+          },
+          "device_icon": {
+            "type": "string",
+            "description": "设备图标标识",
+            "maxLength": 50,
+            "example": ""
+          },
+          "vendor_icon": {
+            "type": "string",
+            "description": "厂商图标标识",
+            "maxLength": 50,
+            "example": ""
+          },
+          "ac_gid": {
+            "type": "integer",
+            "description": "AC组ID",
+            "minimum": 0,
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "Ip6OfflineClientsResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/Ip6OfflineClientsResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "Ip6OfflineClientsResults": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "总记录数",
+            "example": 1
+          },
+          "offline_data": {
+            "type": "array",
+            "description": "IPv6离线终端列表",
+            "items": {
+              "$ref": "#/components/schemas/Ip6OfflineClient"
+            }
+          }
+        },
+        "required": [
+          "total",
+          "offline_data"
+        ],
+        "additionalProperties": false
+      },
+      "Ip6OfflineClient": {
+        "type": "object",
+        "required": [
+          "id",
+          "mac",
+          "ip_addr",
+          "logout_time",
+          "total_up",
+          "total_down",
+          "today_total",
+          "client_type",
+          "client_typeid",
+          "device_type",
+          "device_icon",
+          "auth",
+          "ipv4_gnames",
+          "ipv6_gnames",
+          "mac_gnames",
+          "dtalk_name",
+          "termname",
+          "comment",
+          "username",
+          "client_vendor",
+          "client_model",
+          "vlan_id"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "终端ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "mac": {
+            "type": "string",
+            "description": "终端MAC地址",
+            "pattern": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$",
+            "example": "00:71:6f:a6:0c:2d"
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "终端IPv6地址",
+            "example": "2408:8207:3053:bb90:0271:6fff:fea6:0c2d"
+          },
+          "logout_time": {
+            "type": "integer",
+            "format": "int64",
+            "description": "下线时间戳（Unix时间戳）",
+            "example": 1773390540
+          },
+          "total_up": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总上传字节数",
+            "minimum": 0,
+            "example": 4769559
+          },
+          "total_down": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总下载字节数",
+            "minimum": 0,
+            "example": 21154347
+          },
+          "today_total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "今日总流量（字节）",
+            "minimum": 0,
+            "example": 8370425
+          },
+          "client_type": {
+            "type": "string",
+            "description": "终端类型",
+            "maxLength": 50,
+            "example": "iKuaiOS"
+          },
+          "client_typeid": {
+            "type": "integer",
+            "format": "int64",
+            "description": "终端类型ID",
+            "minimum": 0,
+            "example": 107998006
+          },
+          "device_type": {
+            "type": "string",
+            "description": "设备类型",
+            "maxLength": 100,
+            "example": ""
+          },
+          "device_icon": {
+            "type": "string",
+            "description": "设备图标标识",
+            "maxLength": 50,
+            "example": "1_107"
+          },
+          "auth": {
+            "type": "integer",
+            "description": "认证状态 (0=未认证, 1=已认证)",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "ipv4_gnames": {
+            "type": "string",
+            "description": "IPv4组名称",
+            "maxLength": 200,
+            "example": ""
+          },
+          "ipv6_gnames": {
+            "type": "string",
+            "description": "IPv6组名称",
+            "maxLength": 200,
+            "example": ""
+          },
+          "mac_gnames": {
+            "type": "string",
+            "description": "MAC组名称",
+            "maxLength": 200,
+            "example": ""
+          },
+          "dtalk_name": {
+            "type": "string",
+            "description": "D-Talk名称",
+            "maxLength": 100,
+            "example": ""
+          },
+          "termname": {
+            "type": "string",
+            "description": "终端名称",
+            "maxLength": 200,
+            "example": ""
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": ""
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名",
+            "maxLength": 100,
+            "example": ""
+          },
+          "client_vendor": {
+            "type": "string",
+            "description": "客户端厂商",
+            "maxLength": 100,
+            "example": "iKuai"
+          },
+          "client_model": {
+            "type": "string",
+            "description": "客户端型号",
+            "maxLength": 100,
+            "example": "iKuai路由器"
+          },
+          "vlan_id": {
+            "type": "integer",
+            "description": "VLAN ID",
+            "minimum": 0,
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer {token}\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "monitor-clients",
+      "x-displayName": "终端监控",
+      "description": "终端状态和流量监控，包括在线/离线统计、实时速率、协议分类流量及应用协议速率查询"
+    }
+  ]
+}

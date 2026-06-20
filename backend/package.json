@@ -1,0 +1,15 @@
+{
+  "name": "ikuai-console-backend",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "description": "ISP-connectivity probe backend (MySQL) for the iKuai console",
+  "main": "src/index.mjs",
+  "scripts": {
+    "start": "node src/index.mjs",
+    "dev": "node src/index.mjs"
+  },
+  "dependencies": {
+    "mysql2": "^3.11.5"
+  }
+}

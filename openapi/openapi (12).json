@@ -1,0 +1,359 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "摄像头监控API",
+    "version": "1.0.0",
+    "summary": "摄像头设备监控查询",
+    "description": "提供摄像头设备的监控查询功能，包括：\n- 摄像头设备列表查询\n- 设备在线状态监控\n- NVR（网络录像机）及其下属摄像头查询\n\n**注意：** 此模块仅提供查询功能，摄像头设备通过自动发现添加。\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/monitoring/cameras": {
+      "get": {
+        "summary": "查询摄像头设备列表",
+        "description": "查询摄像头设备列表，支持分页和过滤。\n",
+        "operationId": "getCameras",
+        "tags": [
+          "monitor-cameras"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：\n- \"==（等于）\"\n- \"!=（不等于）\"\n- \">（大于）\"\n- \">=（大于等于）\"\n- \"<（小于）\"\n- \"<=（小于等于）\"\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,field2==value2\n\n使用示例：\n- 设备类型过滤：filter=flag==1\n- 在线状态过滤：filter=status==0\n- IP地址过滤：filter=ip_addr==192.168.1.100\n",
+            "schema": {
+              "type": "string"
+            },
+            "example": "status==0"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "模糊匹配字段列表，支持 tagname, name, ip_addr, vendor, version, comment",
+            "schema": {
+              "type": "string"
+            },
+            "example": "name,ip_addr,vendor"
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "description": "模糊匹配内容",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Hikvision"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回摄像头列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CameraResponse"
+                },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "results": {
+                        "data": [
+                          {
+                            "id": 1,
+                            "tagname": "一楼大厅摄像头",
+                            "name": "Hikvision Camera",
+                            "vendor": "HIKVISION",
+                            "ip_addr": "192.168.1.100",
+                            "port": 80,
+                            "mac": "aa:bb:cc:dd:ee:ff",
+                            "status": 0,
+                            "flag": 1,
+                            "enabled": "yes",
+                            "comment": "安装在1楼大厅",
+                            "passwd_flag": 1
+                          },
+                          {
+                            "id": 2,
+                            "tagname": "NVR主机",
+                            "name": "Hikvision NVR",
+                            "vendor": "HIKVISION",
+                            "ip_addr": "192.168.1.200",
+                            "port": 80,
+                            "mac": "11:22:33:44:55:66",
+                            "status": 0,
+                            "flag": 2,
+                            "enabled": "yes",
+                            "camera_count": 4
+                          }
+                        ],
+                        "total": 2
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 50,
+          "example": 50
+        }
+      },
+      "orderParam": {
+        "name": "order",
+        "in": "query",
+        "description": "排序方向，asc为升序（默认），desc为降序",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "asc",
+          "example": "asc"
+        }
+      },
+      "orderByParam": {
+        "name": "order_by",
+        "in": "query",
+        "description": "排序字段，支持id、tagname、name、ip_addr、vendor、status等字段",
+        "schema": {
+          "type": "string",
+          "default": "id",
+          "example": "id"
+        }
+      }
+    },
+    "schemas": {
+      "CameraDevice": {
+        "type": "object",
+        "description": "摄像头设备信息",
+        "required": [
+          "id",
+          "tagname"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "设备ID"
+          },
+          "enabled": {
+            "type": "string",
+            "description": "启用状态",
+            "enum": [
+              "yes",
+              "no"
+            ]
+          },
+          "tagname": {
+            "type": "string",
+            "description": "标识名称（支持中文/数字/字母/下划线/连字符，不能以符号开头，1-15字符）"
+          },
+          "name": {
+            "type": "string",
+            "description": "设备名称"
+          },
+          "vendor": {
+            "type": "string",
+            "description": "设备厂商"
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "设备IP地址",
+            "format": "ipv4"
+          },
+          "port": {
+            "type": "integer",
+            "description": "HTTP端口号",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "mac": {
+            "type": "string",
+            "description": "MAC地址",
+            "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"
+          },
+          "status": {
+            "type": "integer",
+            "description": "设备在线状态（0: 在线, 1: 离线）",
+            "enum": [
+              0,
+              1
+            ]
+          },
+          "serialno": {
+            "type": "string",
+            "description": "设备序列号"
+          },
+          "last_time": {
+            "type": "integer",
+            "description": "最近离线时间戳",
+            "format": "int64"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符"
+          },
+          "version": {
+            "type": "string",
+            "description": "固件版本号"
+          },
+          "flag": {
+            "type": "integer",
+            "description": "设备类型标识（1: 摄像头, 2: NVR）",
+            "enum": [
+              1,
+              2
+            ]
+          },
+          "nvr": {
+            "type": "string",
+            "description": "所属NVR设备"
+          },
+          "camera_count": {
+            "type": "integer",
+            "description": "NVR下的摄像头数量（flag=2时有效）"
+          },
+          "passwd_flag": {
+            "type": "integer",
+            "description": "密码正确性标识（0: 无密码, 1: 密码正确, 2: 密码错误）",
+            "enum": [
+              0,
+              1,
+              2
+            ]
+          }
+        }
+      },
+      "CameraResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "description": "摄像头列表",
+                "items": {
+                  "$ref": "#/components/schemas/CameraDevice"
+                }
+              },
+              "total": {
+                "type": "integer",
+                "description": "总记录数"
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求参数错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 400
+                },
+                "message": {
+                  "type": "string",
+                  "example": "参数错误"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 401
+                },
+                "message": {
+                  "type": "string",
+                  "example": "未认证或凭证无效"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "monitor-cameras",
+      "x-displayName": "摄像头监控",
+      "description": "摄像头设备监控查询"
+    }
+  ]
+}

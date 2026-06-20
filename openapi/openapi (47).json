@@ -1,0 +1,1331 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "端口分流策略管理API",
+    "version": "1.0.0",
+    "description": "提供端口分流策略的完整管理功能，包括：\n- 端口分流策略的增删改查\n- 策略启用/停用管理\n- 支持基于五元组的流量分流（源地址、目的地址、协议、源端口、目的端口）\n- 支持wan转发和lan转发两种转发方式\n- 支持地区分流和接口绑定\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "tags": [
+    {
+      "name": "stream-ipport",
+      "x-displayName": "端口分流",
+      "description": "端口分流策略管理和配置"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/routing/five-tuple-rules": {
+      "get": {
+        "tags": [
+          "stream-ipport"
+        ],
+        "summary": "获取所有端口分流策略",
+        "description": "获取当前配置的所有端口分流策略列表。\n支持分页、过滤和排序功能。\n",
+        "operationId": "listFiveTupleRules",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "$ref": "#/components/parameters/filterParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取端口分流策略列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "results": {
+                          "$ref": "#/components/schemas/FiveTupleRulesListResult"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "stream-ipport"
+        ],
+        "summary": "添加端口分流策略",
+        "description": "创建新的端口分流策略。支持基于五元组（源地址、目的地址、协议、源端口、目的端口）的流量分流。\n可配置wan转发或lan转发，支持负载均衡和地区分流。\n",
+        "operationId": "createFiveTupleRule",
+        "requestBody": {
+          "required": true,
+          "description": "端口分流策略配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FiveTupleRuleInput"
+              },
+              "example": {
+                "enabled": "yes",
+                "tagname": "port_rule_1",
+                "type": 0,
+                "interface": "wan2",
+                "protocol": "tcp",
+                "prio": 31,
+                "mode": 0,
+                "src_addr": {
+                  "custom": [
+                    "192.168.9.169",
+                    "08:9b:4b:00:10:6e"
+                  ],
+                  "object": [
+                    {
+                      "type": 0,
+                      "gp_name": "11",
+                      "gid": "GPIP1"
+                    }
+                  ]
+                },
+                "time": {
+                  "custom": [
+                    {
+                      "type": "weekly",
+                      "weekdays": "1234567",
+                      "start_time": "00:00",
+                      "end_time": "20:00",
+                      "comment": "test11"
+                    }
+                  ],
+                  "object": [
+                    {
+                      "type": 4,
+                      "gp_name": "11",
+                      "gid": "TIMEGP1"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "添加端口分流策略的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateFiveTupleRuleResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success",
+                      "rowid": 1
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v4.0/routing/five-tuple-rules/{id}": {
+      "get": {
+        "tags": [
+          "stream-ipport"
+        ],
+        "summary": "获取指定端口分流策略",
+        "description": "获取指定ID的端口分流策略详细信息",
+        "operationId": "getFiveTupleRule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "端口分流策略ID",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取端口分流策略信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/FiveTupleRule"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "stream-ipport"
+        ],
+        "summary": "更新端口分流策略",
+        "description": "完全更新指定ID的端口分流策略\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateFiveTupleRule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "端口分流策略ID",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "端口分流策略配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FiveTupleRuleInput"
+              },
+              "example": {
+                "enabled": "yes",
+                "tagname": "port_rule_1",
+                "comment": "",
+                "type": 0,
+                "nexthop": "",
+                "interface": "wan2",
+                "protocol": "tcp",
+                "prio": 31,
+                "mode": 0,
+                "iface_band": 0,
+                "src_addr_inv": 0,
+                "dst_addr_inv": 0,
+                "src_addr": {
+                  "custom": [
+                    "192.168.9.169",
+                    "08:9b:4b:00:10:6e"
+                  ],
+                  "object": [
+                    {
+                      "type": 0,
+                      "gp_name": "11",
+                      "gid": "GPIP1"
+                    }
+                  ]
+                },
+                "dst_addr": {},
+                "src_port": {},
+                "dst_port": {},
+                "dst_type": 0,
+                "area_code": "",
+                "time": {
+                  "custom": [
+                    {
+                      "type": "weekly",
+                      "weekdays": "1234567",
+                      "start_time": "00:00",
+                      "end_time": "20:00",
+                      "comment": "test11"
+                    }
+                  ],
+                  "object": [
+                    {
+                      "type": 4,
+                      "gp_name": "11",
+                      "gid": "TIMEGP1"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "stream-ipport"
+        ],
+        "summary": "启用/停用端口分流策略",
+        "description": "启用或停用指定ID的端口分流策略",
+        "operationId": "updateFiveTupleRuleStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "端口分流策略ID",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "策略状态更新数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "enabled"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "string",
+                    "enum": [
+                      "yes",
+                      "no"
+                    ],
+                    "description": "策略启用状态，yes为启用，no为停用"
+                  }
+                },
+                "example": {
+                  "enabled": "no"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "stream-ipport"
+        ],
+        "summary": "删除端口分流策略",
+        "description": "删除指定ID的端口分流策略",
+        "operationId": "deleteFiveTupleRule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "端口分流策略ID",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功删除端口分流策略",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 20,
+          "example": 20
+        }
+      },
+      "orderParam": {
+        "name": "order",
+        "in": "query",
+        "description": "排序方向，asc为升序（默认），desc为降序",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "asc",
+          "example": "asc"
+        }
+      },
+      "orderByParam": {
+        "name": "order_by",
+        "in": "query",
+        "description": "排序字段，支持id、tagname、interface、prio等字段",
+        "schema": {
+          "type": "string",
+          "default": "id",
+          "example": "id"
+        }
+      },
+      "filterParam": {
+        "name": "filter",
+        "in": "query",
+        "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：\n- ==（等于）\n- !=（不等于）\n- >（大于）\n- >=（大于等于）\n- <（小于）\n- <=（小于等于）\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,filter=field2==value2\n\n使用示例：\n- 单条件：filter=enabled==yes\n- AND条件：filter=prio>10&filter=type==0\n- OR条件：filter=tagname==rule1,filter=tagname==rule2\n",
+        "schema": {
+          "type": "string",
+          "example": "enabled==yes"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateFiveTupleRuleResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/CreateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/CreateBusinessErrorResponse"
+          }
+        ],
+        "description": "添加端口分流策略的业务响应。\n返回 HTTP 200 时，仍需通过 `code` 字段判断业务是否成功。\n"
+      },
+      "CreateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示创建成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          },
+          "rowid": {
+            "type": "integer",
+            "description": "创建操作返回的资源ID，成功时返回",
+            "example": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      },
+      "FiveTupleRulesListResult": {
+        "type": "object",
+        "required": [
+          "data",
+          "total"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FiveTupleRule"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "description": "总记录数",
+            "example": 1
+          }
+        }
+      },
+      "FiveTupleRule": {
+        "type": "object",
+        "required": [
+          "id",
+          "tagname",
+          "enabled",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "主键ID",
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "规则状态，yes为启用，no为停用",
+            "example": "yes"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "标识名称（支持中文/数字/字母/下划线/连字符，不能以符号开头，1-15字符）",
+            "example": "10"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符",
+            "example": ""
+          },
+          "type": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "description": "转发方式，0:wan转发, 1:lan转发",
+            "example": 0
+          },
+          "nexthop": {
+            "type": "string",
+            "description": "下一跳路由网关（type=1 lan转发时必填）",
+            "example": ""
+          },
+          "interface": {
+            "type": "string",
+            "description": "路由接口（wan转发生效）",
+            "example": "wan2"
+          },
+          "mode": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              6
+            ],
+            "description": "负载均衡方式 0: 新建连接 1:sip 2:sip+sport 3:sip+dip 4:sip+dip+dport 5:sip+sport+dip+dport 6:主备模式",
+            "example": 0
+          },
+          "prio": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 63,
+            "description": "优先级（0-63，0最高）",
+            "example": 31
+          },
+          "src_addr": {
+            "$ref": "#/components/schemas/SrcAddrObject"
+          },
+          "dst_addr": {
+            "$ref": "#/components/schemas/DstAddrObject"
+          },
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "any",
+              "tcp",
+              "udp",
+              "tcp+udp",
+              "icmp"
+            ],
+            "description": "协议类型",
+            "example": "tcp"
+          },
+          "src_port": {
+            "$ref": "#/components/schemas/PortObject"
+          },
+          "dst_port": {
+            "$ref": "#/components/schemas/PortObject"
+          },
+          "dst_type": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "description": "目的类型，0:目的地址, 1:目的地区",
+            "example": 0
+          },
+          "area_code": {
+            "type": "string",
+            "description": "地区代码",
+            "example": ""
+          },
+          "iface_band": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "description": "是否绑定接口，0:不绑定, 1:绑定",
+            "example": 0
+          },
+          "time": {
+            "$ref": "#/components/schemas/TimeObject"
+          }
+        }
+      },
+      "FiveTupleRuleInput": {
+        "type": "object",
+        "required": [
+          "tagname",
+          "type",
+          "src_addr_inv",
+          "dst_addr_inv",
+          "enabled",
+          "interface",
+          "mode",
+          "prio",
+          "src_addr",
+          "dst_addr",
+          "protocol",
+          "src_port",
+          "dst_port",
+          "iface_band",
+          "time"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "规则状态，yes为启用（默认），no为停用",
+            "default": "yes"
+          },
+          "tagname": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 15,
+            "description": "标识名称（支持中文/数字/字母/下划线/连字符，不能以符号开头，1-15字符）",
+            "example": "port_rule_1"
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "备注信息，最多64个字符",
+            "default": ""
+          },
+          "type": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "description": "转发方式，0:wan转发（默认）, 1:lan转发",
+            "default": 0
+          },
+          "nexthop": {
+            "type": "string",
+            "description": "下一跳路由网关（lan转发生效）",
+            "default": ""
+          },
+          "interface": {
+            "type": "string",
+            "description": "路由接口（wan转发生效）",
+            "example": "wan2"
+          },
+          "mode": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              6
+            ],
+            "description": "负载均衡方式 0: 新建连接 1:sip 2:sip+sport 3:sip+dip 4:sip+dip+dport 5:sip+sport+dip+dport 6:主备模式",
+            "default": 0,
+            "example": 0
+          },
+          "prio": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 63,
+            "description": "优先级（0-63，0最高）",
+            "default": 31,
+            "example": 31
+          },
+          "src_addr": {
+            "$ref": "#/components/schemas/SrcAddrObjectInput"
+          },
+          "dst_addr": {
+            "$ref": "#/components/schemas/DstAddrObjectInput"
+          },
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "any",
+              "tcp",
+              "udp",
+              "tcp+udp",
+              "icmp"
+            ],
+            "description": "协议类型",
+            "example": "tcp"
+          },
+          "src_port": {
+            "$ref": "#/components/schemas/PortObjectInput"
+          },
+          "dst_port": {
+            "$ref": "#/components/schemas/PortObjectInput"
+          },
+          "dst_type": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "description": "目的类型，0:目的地址（默认）, 1:目的地区",
+            "default": 0
+          },
+          "area_code": {
+            "type": "string",
+            "description": "地区代码",
+            "default": ""
+          },
+          "iface_band": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "description": "是否绑定接口，0:不绑定（默认）, 1:绑定",
+            "default": 0
+          },
+          "time": {
+            "$ref": "#/components/schemas/TimeObjectInput"
+          },
+          "src_addr_inv": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "description": "源地址取反，0:不取反（默认），1:取反",
+            "default": 0
+          },
+          "dst_addr_inv": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "description": "目的地址取反，0:不取反（默认），1:取反",
+            "default": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "SrcAddrObject": {
+        "type": "object",
+        "description": "源地址对象",
+        "properties": {
+          "custom": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "自定义源地址列表（支持IP和MAC地址）",
+            "example": [
+              "192.168.9.169",
+              "08:9b:4b:00:10:6e"
+            ]
+          },
+          "object": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NetworkObject"
+            },
+            "description": "网络对象列表"
+          }
+        }
+      },
+      "SrcAddrObjectInput": {
+        "type": "object",
+        "description": "源地址对象输入",
+        "properties": {
+          "custom": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "自定义源地址列表（支持IP和MAC地址）",
+            "example": [
+              "192.168.9.169",
+              "08:9b:4b:00:10:6e"
+            ]
+          },
+          "object": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NetworkObject"
+            },
+            "description": "网络对象列表"
+          }
+        }
+      },
+      "DstAddrObject": {
+        "type": "object",
+        "description": "目的地址对象"
+      },
+      "DstAddrObjectInput": {
+        "type": "object",
+        "description": "目的地址对象输入"
+      },
+      "PortObject": {
+        "type": "object",
+        "description": "端口对象"
+      },
+      "PortObjectInput": {
+        "type": "object",
+        "description": "端口对象输入"
+      },
+      "TimeObject": {
+        "type": "object",
+        "description": "生效时间对象",
+        "properties": {
+          "custom": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeCustom"
+            },
+            "description": "自定义时间规则列表"
+          },
+          "object": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NetworkObject"
+            },
+            "description": "时间对象列表"
+          }
+        }
+      },
+      "TimeObjectInput": {
+        "type": "object",
+        "description": "生效时间对象输入",
+        "properties": {
+          "custom": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeCustom"
+            },
+            "description": "自定义时间规则列表"
+          },
+          "object": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NetworkObject"
+            },
+            "description": "时间对象列表"
+          }
+        }
+      },
+      "TimeCustom": {
+        "type": "object",
+        "description": "自定义时间规则",
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "weekly",
+              "date"
+            ],
+            "description": "时间类型，weekly为周期性，date为日期范围"
+          },
+          "weekdays": {
+            "type": "string",
+            "description": "星期几（1-7对应周一到周日），weekly类型时必需",
+            "example": "1234567"
+          },
+          "start_time": {
+            "type": "string",
+            "description": "开始时间",
+            "example": "00:00"
+          },
+          "end_time": {
+            "type": "string",
+            "description": "结束时间",
+            "example": "20:00"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符",
+            "example": "test11"
+          }
+        }
+      },
+      "NetworkObject": {
+        "type": "object",
+        "required": [
+          "type",
+          "gp_name",
+          "gid"
+        ],
+        "properties": {
+          "type": {
+            "type": "integer",
+            "description": "对象类型 0:ipv4 1:ipv6 2:mac 3:port, 4:time, 5:protocol 6:domain",
+            "example": 0
+          },
+          "gp_name": {
+            "type": "string",
+            "description": "对象名称",
+            "example": "11"
+          },
+          "gid": {
+            "type": "string",
+            "description": "对象ID",
+            "example": "GPIP1"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}

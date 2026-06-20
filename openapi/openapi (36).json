@@ -1,0 +1,1085 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "VLAN接口管理API",
+    "version": "1.0.0",
+    "summary": "VLAN接口管理完整功能",
+    "description": "提供VLAN接口的完整管理功能，包括：\n- 查询VLAN接口配置列表（支持分页、关键字搜索、过滤）\n- 查询单个VLAN接口配置\n- 新建VLAN接口\n- 更新VLAN接口配置\n- 删除VLAN接口\n- 启用/停用VLAN接口\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/network/vlan": {
+      "get": {
+        "summary": "获取VLAN接口配置列表",
+        "description": "查询VLAN接口配置列表，支持分页、关键字模糊匹配和字段过滤。\n",
+        "operationId": "getVlanList",
+        "tags": [
+          "vlan"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LimitParam"
+          },
+          {
+            "$ref": "#/components/parameters/PageParam"
+          },
+          {
+            "$ref": "#/components/parameters/KeyParam"
+          },
+          {
+            "$ref": "#/components/parameters/PatternParam"
+          },
+          {
+            "$ref": "#/components/parameters/FilterParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取VLAN接口配置列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VlanListResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "total": 1,
+                    "data": [
+                      {
+                        "id": 1,
+                        "vlan_id": "1001",
+                        "vlan_name": "vlan1001",
+                        "interface": "lan1",
+                        "mac": "",
+                        "ip_addr": "192.168.88.1",
+                        "ip_addr_int": 3232258049,
+                        "netmask": "255.255.255.255",
+                        "ip_mask": "",
+                        "enabled": "yes",
+                        "comment": ""
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "新建VLAN接口",
+        "description": "创建一个新的VLAN接口。\n",
+        "operationId": "createVlan",
+        "tags": [
+          "vlan"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VlanCreateRequest"
+              },
+              "example": {
+                "vlan_id": "1001",
+                "vlan_name": "vlan1001",
+                "interface": "lan1",
+                "mac": "",
+                "ip_addr": "192.168.88.1",
+                "netmask": "255.255.255.255",
+                "ip_mask": "",
+                "enabled": "yes",
+                "comment": ""
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功创建VLAN接口",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateSuccessResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "id": 1
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/network/vlan/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "VLAN记录ID",
+          "schema": {
+            "type": "integer",
+            "minimum": 1,
+            "example": 1
+          }
+        }
+      ],
+      "get": {
+        "summary": "获取单个VLAN接口配置",
+        "description": "根据ID查询单个VLAN接口的配置详情。\n",
+        "operationId": "getVlanById",
+        "tags": [
+          "vlan"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取VLAN接口配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VlanSingleResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "total": 1,
+                    "data": [
+                      {
+                        "id": 1,
+                        "vlan_id": "1001",
+                        "vlan_name": "vlan1001",
+                        "interface": "lan1",
+                        "mac": "",
+                        "ip_addr": "192.168.88.1",
+                        "ip_addr_int": 3232258049,
+                        "netmask": "255.255.255.255",
+                        "ip_mask": "",
+                        "enabled": "yes",
+                        "comment": ""
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新VLAN接口配置",
+        "description": "更新指定ID的VLAN接口配置。\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateVlan",
+        "tags": [
+          "vlan"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VlanUpdateRequest"
+              },
+              "example": {
+                "vlan_id": "1001",
+                "vlan_name": "vlan1001",
+                "interface": "lan1",
+                "mac": "",
+                "ip_addr": "192.168.88.1",
+                "netmask": "255.255.255.255",
+                "ip_mask": "",
+                "enabled": "yes",
+                "comment": ""
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "启用/停用VLAN接口",
+        "description": "切换指定VLAN接口的启用状态。\n",
+        "operationId": "toggleVlan",
+        "tags": [
+          "vlan"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VlanToggleRequest"
+              },
+              "examples": {
+                "enable": {
+                  "summary": "启用VLAN",
+                  "value": {
+                    "enabled": "yes"
+                  }
+                },
+                "disable": {
+                  "summary": "停用VLAN",
+                  "value": {
+                    "enabled": "no"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除VLAN接口",
+        "description": "删除指定ID的VLAN接口。\n",
+        "operationId": "deleteVlan",
+        "tags": [
+          "vlan"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功删除VLAN接口",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "LimitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页返回记录数",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "example": 10
+        }
+      },
+      "PageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "example": 1
+        }
+      },
+      "KeyParam": {
+        "name": "key",
+        "in": "query",
+        "description": "模糊搜索字段名（如 vlan_name、tagname、interface）",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "example": "vlan_name"
+        }
+      },
+      "PatternParam": {
+        "name": "pattern",
+        "in": "query",
+        "description": "模糊搜索关键词（与key配合使用）",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "example": "vlan100"
+        }
+      },
+      "FilterParam": {
+        "name": "filter",
+        "in": "query",
+        "description": "精确过滤条件，支持以下格式：\n- 精确匹配：filter=enabled==yes\n- 包含过滤：filter=interface:lan1\n- AND条件：filter=enabled==yes&filter=interface==lan1\n- OR条件：filter=vlan_id==100,vlan_id==200\n",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "example": "enabled==yes"
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息",
+            "example": "请求语法错误或参数不合法"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码 (0=成功)",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "CreateSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码 (0=成功)",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "description": "新建记录的ID",
+                "example": 1
+              }
+            },
+            "required": [
+              "id"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "VlanListResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码 (0=成功)",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/VlanListResults"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "VlanListResults": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "总记录数",
+            "example": 1
+          },
+          "data": {
+            "type": "array",
+            "description": "VLAN接口配置列表",
+            "items": {
+              "$ref": "#/components/schemas/VlanConfig"
+            }
+          }
+        },
+        "required": [
+          "total",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "VlanSingleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码 (0=成功)",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/VlanListResults"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "VlanConfig": {
+        "type": "object",
+        "required": [
+          "id",
+          "vlan_id",
+          "vlan_name",
+          "interface",
+          "mac",
+          "ip_addr",
+          "ip_addr_int",
+          "netmask",
+          "ip_mask",
+          "enabled",
+          "comment"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "记录ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "vlan_id": {
+            "type": "string",
+            "description": "VLAN ID（1-4094）",
+            "example": "1001"
+          },
+          "vlan_name": {
+            "type": "string",
+            "description": "VLAN接口名称（以vlan开头）",
+            "maxLength": 15,
+            "example": "vlan1001"
+          },
+          "interface": {
+            "type": "string",
+            "description": "所属物理接口（LAN口）",
+            "maxLength": 50,
+            "example": "lan1"
+          },
+          "mac": {
+            "type": "string",
+            "description": "MAC地址（空字符串表示不设置）",
+            "maxLength": 17,
+            "example": ""
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "VLAN接口IP地址",
+            "format": "ipv4",
+            "example": "192.168.88.1"
+          },
+          "ip_addr_int": {
+            "type": "integer",
+            "format": "int64",
+            "description": "IP地址整数表示",
+            "minimum": 0,
+            "example": 3232258049
+          },
+          "netmask": {
+            "type": "string",
+            "description": "子网掩码",
+            "format": "ipv4",
+            "example": "255.255.255.255"
+          },
+          "ip_mask": {
+            "type": "string",
+            "description": "扩展IP输入，格式：192.168.88.1/255.255.255.0,192.168.89.2/255.255.255.0（多个用逗号分隔）",
+            "example": ""
+          },
+          "enabled": {
+            "type": "string",
+            "description": "是否启用",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符",
+            "maxLength": 64,
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "VlanCreateRequest": {
+        "type": "object",
+        "required": [
+          "vlan_id",
+          "vlan_name",
+          "interface",
+          "netmask",
+          "enabled"
+        ],
+        "properties": {
+          "vlan_id": {
+            "type": "string",
+            "description": "VLAN ID（1-4094）",
+            "example": "1001"
+          },
+          "vlan_name": {
+            "type": "string",
+            "description": "VLAN接口名称（以vlan开头）",
+            "maxLength": 15,
+            "example": "vlan1001"
+          },
+          "interface": {
+            "type": "string",
+            "description": "所属物理接口（LAN口）",
+            "maxLength": 50,
+            "example": "lan1"
+          },
+          "mac": {
+            "type": "string",
+            "description": "MAC地址（空字符串表示不设置）",
+            "maxLength": 17,
+            "example": ""
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "VLAN接口IP地址",
+            "format": "ipv4",
+            "example": "192.168.88.1"
+          },
+          "netmask": {
+            "type": "string",
+            "description": "子网掩码",
+            "format": "ipv4",
+            "example": "255.255.255.255"
+          },
+          "ip_mask": {
+            "type": "string",
+            "description": "扩展IP输入，格式：192.168.88.1/255.255.255.0,192.168.89.2/255.255.255.0",
+            "example": ""
+          },
+          "enabled": {
+            "type": "string",
+            "description": "是否启用",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "default": "yes",
+            "example": "yes"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符",
+            "maxLength": 64,
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "VlanUpdateRequest": {
+        "type": "object",
+        "required": [
+          "vlan_id",
+          "vlan_name",
+          "interface",
+          "ip_addr",
+          "netmask",
+          "enabled",
+          "mac",
+          "ip_mask",
+          "comment"
+        ],
+        "properties": {
+          "vlan_id": {
+            "type": "string",
+            "description": "VLAN ID（1-4094）",
+            "example": "1001"
+          },
+          "vlan_name": {
+            "type": "string",
+            "description": "VLAN接口名称（以vlan开头）",
+            "maxLength": 15,
+            "example": "vlan1001"
+          },
+          "interface": {
+            "type": "string",
+            "description": "所属物理接口（LAN口）",
+            "maxLength": 50,
+            "example": "lan1"
+          },
+          "mac": {
+            "type": "string",
+            "description": "MAC地址（空字符串表示不设置）",
+            "maxLength": 17,
+            "example": ""
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "VLAN接口IP地址",
+            "format": "ipv4",
+            "example": "192.168.88.1"
+          },
+          "netmask": {
+            "type": "string",
+            "description": "子网掩码",
+            "format": "ipv4",
+            "example": "255.255.255.255"
+          },
+          "ip_mask": {
+            "type": "string",
+            "description": "扩展IP输入，格式：192.168.88.1/255.255.255.0,192.168.89.2/255.255.255.0",
+            "example": ""
+          },
+          "enabled": {
+            "type": "string",
+            "description": "是否启用",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符",
+            "maxLength": 64,
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "VlanToggleRequest": {
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "description": "启用状态 (yes=启用, no=停用)",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer {token}\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "vlan",
+      "x-displayName": "VLAN接口",
+      "description": "VLAN接口配置的增删改查及启用/停用管理"
+    }
+  ]
+}

@@ -1,0 +1,1123 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "无线访问控制管理API",
+    "version": "1.0.0",
+    "summary": "无线黑白名单的完整管理功能",
+    "description": "提供无线访问控制的完整管理功能，包括：\n- 无线黑白名单规则管理\n- 支持自定义MAC地址和MAC对象组\n- SSID和AP设备过滤\n- 时间段和周期控制\n- 黑白名单模式切换\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com/api/v4",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com/api/v4",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/wireless/access-control/rules": {
+      "get": {
+        "summary": "获取无线黑白名单列表",
+        "description": "获取当前配置的无线黑白名单规则列表，支持分页功能。\n包含规则状态、模式、MAC地址列表、SSID、AP、时间控制等信息。\n",
+        "operationId": "listWirelessAccessRules",
+        "tags": [
+          "wireless-acl"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取无线黑白名单列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WirelessAccessRuleListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "添加无线黑白名单配置",
+        "description": "添加新的无线黑白名单规则，支持黑名单和白名单两种模式。\n可以设置MAC地址过滤、SSID和AP设备控制、时间段限制等。\n",
+        "operationId": "createWirelessAccessRule",
+        "tags": [
+          "wireless-acl"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "无线黑白名单配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WirelessAccessRuleInput"
+              },
+              "example": {
+                "enabled": "yes",
+                "tagname": "11",
+                "mode": 0,
+                "lmac": {
+                  "custom": [
+                    "08:9b:4b:00:10:6e"
+                  ],
+                  "object": [
+                    {
+                      "type": 2,
+                      "gp_name": "mac11",
+                      "gid": "MACGP23"
+                    }
+                  ]
+                },
+                "lssid": "10095g",
+                "lap": "08:9b:4b:01:00:01",
+                "week": "1234567",
+                "time": "00:00-23:59",
+                "comment": ""
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success",
+                      "rowid": 1
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WirelessAccessErrorResponse"
+                },
+                "example": {
+                  "message": "请求参数不合法"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "description": "资源冲突（名称已存在）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WirelessAccessErrorResponse"
+                },
+                "example": {
+                  "message": "规则名称已存在"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/wireless/access-control/rules/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/wirelessAccessRuleIdParam"
+        }
+      ],
+      "get": {
+        "summary": "获取指定无线黑白名单",
+        "description": "根据规则ID获取单个无线黑白名单规则的详细信息。\n",
+        "operationId": "getWirelessAccessRule",
+        "tags": [
+          "wireless-acl"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取无线黑白名单详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WirelessAccessRuleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新无线黑白名单的配置",
+        "description": "完全更新现有的无线黑白名单规则配置。\n需要提供所有字段。\n",
+        "operationId": "updateWirelessAccessRule",
+        "tags": [
+          "wireless-acl"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "完整的无线黑白名单配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WirelessAccessRuleInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "启用/停用无线黑白名单",
+        "description": "部分更新无线黑白名单规则配置，主要用于启用/停用规则状态。\n支持修改enabled字段来控制规则的执行状态。\n",
+        "operationId": "patchWirelessAccessRule",
+        "tags": [
+          "wireless-acl"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "部分更新数据（如启用状态）",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "enabled"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "string",
+                    "enum": [
+                      "yes",
+                      "no"
+                    ],
+                    "description": "规则启用状态",
+                    "example": "yes"
+                  }
+                },
+                "example": {
+                  "enabled": "yes"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除无线黑白名单",
+        "description": "删除指定的无线黑白名单规则。\n删除后无法恢复，请谨慎操作。\n",
+        "operationId": "deleteWirelessAccessRule",
+        "tags": [
+          "wireless-acl"
+        ],
+        "responses": {
+          "200": {
+            "description": "无线黑白名单删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "wirelessAccessRuleIdParam": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "无线访问控制规则ID",
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 1,
+          "example": 1
+        }
+      },
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 20,
+          "example": 20
+        }
+      },
+      "orderParam": {
+        "name": "order",
+        "in": "query",
+        "description": "排序方向，asc为升序（默认），desc为降序",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "asc",
+          "example": "asc"
+        }
+      },
+      "orderByParam": {
+        "name": "order_by",
+        "in": "query",
+        "description": "排序字段，支持id、tagname、enabled等字段",
+        "schema": {
+          "type": "string",
+          "default": "id",
+          "example": "id"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源冲突（如唯一性冲突，需调整请求逻辑）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "CreateSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "成功状态码，创建接口中为0",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "success"
+          },
+          "rowid": {
+            "type": "integer",
+            "description": "新创建记录ID",
+            "example": 1
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "rowid"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "WirelessAccessErrorResponse": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "无线访问控制业务错误信息描述"
+          }
+        }
+      },
+      "WirelessAccessRuleListResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 25
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/WirelessAccessRule"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "WirelessAccessRuleResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/WirelessAccessRule"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "WirelessAccessRule": {
+        "type": "object",
+        "required": [
+          "id",
+          "enabled",
+          "tagname",
+          "mode",
+          "lmac",
+          "lssid",
+          "lap",
+          "week",
+          "time",
+          "comment"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "规则ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "状态，yes为启用，no为停用",
+            "example": "yes"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "名称，支持中文、英文、数字、下划线和连字符，1-15个字符，不能以下划线或连字符开头",
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "maxLength": 15,
+            "example": "11"
+          },
+          "mode": {
+            "type": "integer",
+            "description": "模式，0为黑名单，1为白名单",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "lmac": {
+            "$ref": "#/components/schemas/MacList"
+          },
+          "lssid": {
+            "type": "string",
+            "description": "SSID列表，ALL表示所有SSID",
+            "pattern": "^[a-zA-Z0-9-_,]+$",
+            "default": "ALL",
+            "example": "10095g"
+          },
+          "lap": {
+            "type": "string",
+            "description": "AP列表，ALL表示所有AP，支持MAC地址格式",
+            "pattern": "^[a-zA-Z0-9-_,]+$",
+            "default": "ALL",
+            "example": "08:9b:4b:01:00:01"
+          },
+          "week": {
+            "type": "string",
+            "description": "生效周期，1234567表示周一到周日",
+            "pattern": "^[1-7]*$",
+            "default": "1234567",
+            "example": "1234567"
+          },
+          "time": {
+            "type": "string",
+            "description": "生效时间段，支持多个时间段用逗号分隔",
+            "pattern": "^([0-9]{2}:[0-9]{2}-[0-9]{2}:[0-9]{2})(,([0-9]{2}:[0-9]{2}-[0-9]{2}:[0-9]{2}))*$",
+            "default": "00:00-23:59",
+            "example": "00:00-23:59"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "WirelessAccessRuleInput": {
+        "type": "object",
+        "required": [
+          "enabled",
+          "tagname",
+          "mode",
+          "lmac",
+          "lssid",
+          "week",
+          "time"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "状态，yes为启用，no为停用",
+            "example": "yes"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "名称，支持中文、英文、数字、下划线和连字符，1-15个字符，不能以下划线或连字符开头",
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "maxLength": 15,
+            "example": "11"
+          },
+          "mode": {
+            "type": "integer",
+            "description": "模式，0为黑名单，1为白名单",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "lmac": {
+            "$ref": "#/components/schemas/MacList"
+          },
+          "lssid": {
+            "type": "string",
+            "description": "SSID列表，ALL表示所有SSID",
+            "pattern": "^[a-zA-Z0-9-_,]+$",
+            "default": "ALL",
+            "example": "10095g"
+          },
+          "lap": {
+            "type": "string",
+            "description": "AP列表，ALL表示所有AP，支持MAC地址格式",
+            "pattern": "^[a-zA-Z0-9-_,]+$",
+            "default": "ALL",
+            "example": "08:9b:4b:01:00:01"
+          },
+          "week": {
+            "type": "string",
+            "description": "生效周期，1234567表示周一到周日",
+            "pattern": "^[1-7]*$",
+            "default": "1234567",
+            "example": "1234567"
+          },
+          "time": {
+            "type": "string",
+            "description": "生效时间段，支持多个时间段用逗号分隔",
+            "pattern": "^([0-9]{2}:[0-9]{2}-[0-9]{2}:[0-9]{2})(,([0-9]{2}:[0-9]{2}-[0-9]{2}:[0-9]{2}))*$",
+            "default": "00:00-23:59",
+            "example": "00:00-23:59"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "MacList": {
+        "type": "object",
+        "required": [
+          "custom",
+          "object"
+        ],
+        "properties": {
+          "custom": {
+            "type": "array",
+            "description": "自定义MAC地址列表",
+            "items": {
+              "type": "string",
+              "pattern": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$",
+              "example": "08:9b:4b:00:10:6e"
+            },
+            "example": [
+              "08:9b:4b:00:10:6e",
+              "08:9b:4b:00:10:0e"
+            ]
+          },
+          "object": {
+            "type": "array",
+            "description": "MAC对象组列表",
+            "items": {
+              "$ref": "#/components/schemas/MacObject"
+            },
+            "example": [
+              {
+                "type": 2,
+                "gp_name": "mac11",
+                "gid": "MACGP23"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "MacObject": {
+        "type": "object",
+        "required": [
+          "type",
+          "gp_name",
+          "gid"
+        ],
+        "properties": {
+          "type": {
+            "type": "integer",
+            "description": "对象类型",
+            "minimum": 1,
+            "maximum": 10,
+            "example": 2
+          },
+          "gp_name": {
+            "type": "string",
+            "description": "对象组名称",
+            "maxLength": 50,
+            "example": "mac11"
+          },
+          "gid": {
+            "type": "string",
+            "description": "对象组ID",
+            "maxLength": 50,
+            "example": "MACGP23"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/CreateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/CreateBusinessErrorResponse"
+          }
+        ],
+        "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "CreateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "wireless-acl",
+      "x-displayName": "无线访问控制",
+      "description": "无线黑白名单规则的管理，支持MAC地址、SSID、AP、时间等控制"
+    }
+  ]
+}

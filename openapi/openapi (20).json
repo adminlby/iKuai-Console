@@ -1,0 +1,1014 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "流量审计监控API",
+    "version": "1.0.0",
+    "summary": "终端与账号流量审计查询",
+    "description": "提供流量审计查询功能，包括：\n- MAC 终端流量审计列表\n- MAC 终端流量趋势详情\n- MAC 终端应用流量详情\n- 认证账号流量审计列表\n- 认证账号流量趋势详情\n- 认证账号应用流量详情\n\n本模块仅提供查询能力，不包含导出、清空等数据维护操作。\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "tags": [
+    {
+      "name": "monitor-traffic-audit",
+      "x-displayName": "流量审计",
+      "description": "终端与认证账号流量审计查询"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/monitoring/traffic-audit/terminals": {
+      "get": {
+        "tags": [
+          "monitor-traffic-audit"
+        ],
+        "summary": "查询 MAC 流量审计列表",
+        "description": "查询 MAC 终端维度的流量审计统计列表。\n数据按 MAC 聚合，返回累计上行、累计下行等信息，可按时间范围查询。\n",
+        "operationId": "listMacTrafficAudit",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/starttimeParam"
+          },
+          {
+            "$ref": "#/components/parameters/stoptimeParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取 MAC 流量审计列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MacTrafficAuditListResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "daytime": [
+                      {
+                        "mac": "68:da:73:a1:d9:01",
+                        "comment": "",
+                        "sum_total_up": 1928782910,
+                        "sum_total_down": 7899352962
+                      },
+                      {
+                        "mac": "fe:74:26:af:a4:09",
+                        "comment": "test001",
+                        "sum_total_up": 18983257,
+                        "sum_total_down": 759188865
+                      }
+                    ],
+                    "daytime_total": 9
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/traffic-audit/terminals/trend": {
+      "get": {
+        "tags": [
+          "monitor-traffic-audit"
+        ],
+        "summary": "查询指定 MAC 流量趋势详情",
+        "description": "查询指定 MAC 终端的流量趋势详情。\n返回 IPv4 日流量统计数据，并在存在 IPv6 统计数据时同步返回 IPv6 日流量统计数据。\n终端身份由查询参数 mac 确定，结果默认按统计日期升序返回。\n",
+        "operationId": "getMacTrafficAuditTrend",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/macQueryParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取指定 MAC 流量趋势详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MacTrafficAuditTrendResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "daytime": [
+                      {
+                        "mac": "68:da:73:a1:d9:01",
+                        "base_total_up": 0,
+                        "base_total_down": 0,
+                        "total_up": 219189326,
+                        "total_down": 649378079,
+                        "auth": 0,
+                        "systype": "MacOS",
+                        "devtype": "Apple",
+                        "comment": "",
+                        "sum_total_up": 219189326,
+                        "sum_total_down": 649378079,
+                        "sum_online": 43799,
+                        "termname": "",
+                        "id": 6,
+                        "timestamp": 1776397741,
+                        "logout_time": 1776441540,
+                        "daytime": 1776355200,
+                        "online_time": 43799,
+                        "ip_addr": "192.168.99.102"
+                      }
+                    ],
+                    "daytime6": [
+                      {
+                        "auth": 0,
+                        "systype": "MacOS",
+                        "devtype": "Apple",
+                        "comment": "",
+                        "sum_total_up": 828568,
+                        "sum_total_down": 2772487,
+                        "sum_online": 13140,
+                        "id": 69,
+                        "timestamp": 1777305531,
+                        "logout_time": 1777305540,
+                        "daytime": 1777219200,
+                        "online_time": 9,
+                        "ip_addr": "fc00:78aa:2521:0001:14d7:9c58:4fc2:a58e",
+                        "mac": "68:da:73:a1:d9:01",
+                        "base_total_up": 0,
+                        "base_total_down": 0,
+                        "total_up": 1199,
+                        "total_down": 729
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/traffic-audit/terminals/applications": {
+      "get": {
+        "tags": [
+          "monitor-traffic-audit"
+        ],
+        "summary": "查询指定 MAC 应用流量详情",
+        "description": "查询指定 MAC 终端的应用流量明细。\n- method=day（默认）：返回最近 7 天数据，无需传 starttime/stoptime\n- method=hour：可选传入 starttime/stoptime，未传时默认返回最近 1 小时数据\n返回格式为时间戳到应用流量映射，每条记录按时间升序排列。\n",
+        "operationId": "getMacTrafficAuditApplications",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/macQueryParam"
+          },
+          {
+            "$ref": "#/components/parameters/methodParam"
+          },
+          {
+            "name": "starttime",
+            "in": "query",
+            "required": false,
+            "description": "查询起始时间戳（仅 method=hour 时有效，不传默认为当前时间前 1 小时）",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1778083200
+            }
+          },
+          {
+            "name": "stoptime",
+            "in": "query",
+            "required": false,
+            "description": "查询结束时间戳（仅 method=hour 时有效，不传默认为当前时间）",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1778169600
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取指定 MAC 应用流量详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MacTrafficAuditApplicationsResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "app_data": [
+                      {
+                        "timestamp": 1778083200,
+                        "apps": {
+                          "网页浏览": "1275244107",
+                          "谷歌通用协议": "2182276",
+                          "钉钉": "1701224",
+                          "腾讯私有协议": "1467689"
+                        }
+                      },
+                      {
+                        "timestamp": 1778169600,
+                        "apps": {
+                          "HTTPS": "858993459",
+                          "企业微信": "419430400"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/traffic-audit/accounts": {
+      "get": {
+        "tags": [
+          "monitor-traffic-audit"
+        ],
+        "summary": "查询账号流量审计列表",
+        "description": "查询认证账号维度的流量审计统计列表。\n数据按账号聚合，返回累计上行、累计下行等信息，可按时间范围查询。\n",
+        "operationId": "listAccountTrafficAudit",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/starttimeParam"
+          },
+          {
+            "$ref": "#/components/parameters/stoptimeParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取账号流量审计列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountTrafficAuditListResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "daytime_vpn": [
+                      {
+                        "mac": "vpn_user01",
+                        "comment": "远程办公",
+                        "sum_total_up": 1928782910,
+                        "sum_total_down": 7899352962
+                      }
+                    ],
+                    "daytime_vpn_total": 1
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/traffic-audit/accounts/trend": {
+      "get": {
+        "tags": [
+          "monitor-traffic-audit"
+        ],
+        "summary": "查询指定账号流量趋势详情",
+        "description": "查询指定认证账号的流量趋势详情，返回账号维度的日流量统计数据，结果默认按统计日期升序返回。",
+        "operationId": "getAccountTrafficAuditTrend",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/usernameQueryParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取指定账号流量趋势详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountTrafficAuditTrendResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "daytime_vpn": [
+                      {
+                        "id": 2,
+                        "timestamp": 1778116236,
+                        "logout_time": 1778125080,
+                        "daytime": 1778083200,
+                        "online_time": 8844,
+                        "ip_addr": "10.10.10.2",
+                        "mac": "vpn_user01",
+                        "mac_addr": "68:da:73:a1:d9:01",
+                        "base_total_up": 0,
+                        "base_total_down": 0,
+                        "total_up": 73861576,
+                        "total_down": 1320258077,
+                        "auth": 1,
+                        "systype": "Windows",
+                        "devtype": "PC",
+                        "comment": "远程办公",
+                        "sum_total_up": 73861576,
+                        "sum_total_down": 1320258077,
+                        "sum_online": 8844
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/traffic-audit/accounts/applications": {
+      "get": {
+        "tags": [
+          "monitor-traffic-audit"
+        ],
+        "summary": "查询指定账号应用流量详情",
+        "description": "查询指定认证账号的应用流量明细。\n- method=day（默认）：返回最近 7 天数据，无需传 starttime/stoptime\n- method=hour：可选传入 starttime/stoptime，未传时默认返回最近 1 小时数据\n返回格式为时间戳到应用流量映射，每条记录按时间升序排列。\n",
+        "operationId": "getAccountTrafficAuditApplications",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/usernameQueryParam"
+          },
+          {
+            "$ref": "#/components/parameters/methodParam"
+          },
+          {
+            "name": "starttime",
+            "in": "query",
+            "required": false,
+            "description": "查询起始时间戳（仅 method=hour 时有效，不传默认为当前时间前 1 小时）",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1778083200
+            }
+          },
+          {
+            "name": "stoptime",
+            "in": "query",
+            "required": false,
+            "description": "查询结束时间戳（仅 method=hour 时有效，不传默认为当前时间）",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1778169600
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取指定账号应用流量详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountTrafficAuditApplicationsResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "app_username_data": [
+                      {
+                        "timestamp": 1778083200,
+                        "apps": {
+                          "HTTPS": "209715200",
+                          "企业微信": "83886080",
+                          "远程桌面": "41943040"
+                        }
+                      },
+                      {
+                        "timestamp": 1778169600,
+                        "apps": {
+                          "网页浏览": "536870912",
+                          "钉钉": "268435456"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "分页参数，格式为 offset,count",
+        "schema": {
+          "type": "string",
+          "pattern": "^\\\\d+,\\\\d+$",
+          "default": "0,50",
+          "example": "0,50"
+        }
+      },
+      "starttimeParam": {
+        "name": "starttime",
+        "in": "query",
+        "required": false,
+        "description": "查询起始时间戳",
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "example": 1778121610
+        }
+      },
+      "stoptimeParam": {
+        "name": "stoptime",
+        "in": "query",
+        "required": false,
+        "description": "查询结束时间戳",
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "example": 1778125210
+        }
+      },
+      "methodParam": {
+        "name": "method",
+        "in": "query",
+        "description": "应用流量统计粒度，不传时按日统计",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "hour",
+            "day"
+          ],
+          "default": "day",
+          "example": "hour"
+        }
+      },
+      "macQueryParam": {
+        "name": "mac",
+        "in": "query",
+        "required": true,
+        "description": "MAC 地址",
+        "schema": {
+          "type": "string",
+          "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$",
+          "example": "68:da:73:a1:d9:01"
+        }
+      },
+      "usernameQueryParam": {
+        "name": "username",
+        "in": "query",
+        "required": true,
+        "description": "认证账号名称",
+        "schema": {
+          "type": "string",
+          "example": "vpn_user01"
+        }
+      }
+    },
+    "schemas": {
+      "TrafficAuditDayItem": {
+        "type": "object",
+        "description": "流量审计日统计记录",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "记录 ID"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "上线时间戳"
+          },
+          "logout_time": {
+            "type": "integer",
+            "format": "int64",
+            "description": "下线时间戳"
+          },
+          "daytime": {
+            "type": "integer",
+            "format": "int64",
+            "description": "统计日期对应的零点时间戳"
+          },
+          "online_time": {
+            "type": "integer",
+            "description": "本条记录在线时长，单位秒"
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "IP 地址"
+          },
+          "mac": {
+            "type": "string",
+            "description": "MAC 地址或认证账号"
+          },
+          "mac_addr": {
+            "type": "string",
+            "description": "账号对应的终端 MAC 地址"
+          },
+          "base_total_up": {
+            "type": "integer",
+            "format": "int64",
+            "description": "当日基准上行流量，单位字节"
+          },
+          "base_total_down": {
+            "type": "integer",
+            "format": "int64",
+            "description": "当日基准下行流量，单位字节"
+          },
+          "total_up": {
+            "type": "integer",
+            "format": "int64",
+            "description": "当前累计上行流量，单位字节"
+          },
+          "total_down": {
+            "type": "integer",
+            "format": "int64",
+            "description": "当前累计下行流量，单位字节"
+          },
+          "auth": {
+            "type": "integer",
+            "description": "认证方式"
+          },
+          "systype": {
+            "type": "string",
+            "description": "系统类型"
+          },
+          "devtype": {
+            "type": "string",
+            "description": "设备类型"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注"
+          },
+          "termname": {
+            "type": "string",
+            "description": "终端名称"
+          },
+          "sum_total_up": {
+            "type": "integer",
+            "format": "int64",
+            "description": "聚合上行流量，单位字节"
+          },
+          "sum_total_down": {
+            "type": "integer",
+            "format": "int64",
+            "description": "聚合下行流量，单位字节"
+          },
+          "sum_online": {
+            "type": "integer",
+            "description": "聚合在线时长，单位秒"
+          }
+        }
+      },
+      "TrafficAuditAppItem": {
+        "type": "object",
+        "description": "应用流量明细记录",
+        "properties": {
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "统计时间戳（method=day 时为当日零点，method=hour 时为整点）"
+          },
+          "apps": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "应用名称到流量的映射，流量单位为字节",
+            "example": {
+              "网页浏览": "1275244107",
+              "钉钉": "1701224"
+            }
+          }
+        }
+      },
+      "TrafficAuditListItem": {
+        "type": "object",
+        "description": "流量审计列表记录",
+        "properties": {
+          "mac": {
+            "type": "string",
+            "description": "MAC 地址或认证账号"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注"
+          },
+          "sum_total_down": {
+            "type": "integer",
+            "format": "int64",
+            "description": "聚合下行流量，单位字节"
+          },
+          "sum_total_up": {
+            "type": "integer",
+            "format": "int64",
+            "description": "聚合上行流量，单位字节"
+          }
+        }
+      },
+      "MacTrafficAuditListResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0 表示成功"
+          },
+          "message": {
+            "type": "string",
+            "description": "响应消息"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "daytime": {
+                "type": "array",
+                "description": "MAC 终端流量审计列表",
+                "items": {
+                  "$ref": "#/components/schemas/TrafficAuditListItem"
+                }
+              },
+              "daytime_total": {
+                "type": "integer",
+                "description": "MAC 终端统计总数"
+              }
+            }
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ]
+      },
+      "MacTrafficAuditTrendResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0 表示成功"
+          },
+          "message": {
+            "type": "string",
+            "description": "响应消息"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "daytime": {
+                "type": "array",
+                "description": "MAC 终端 IPv4 日流量统计",
+                "items": {
+                  "$ref": "#/components/schemas/TrafficAuditDayItem"
+                }
+              },
+              "daytime6": {
+                "type": "array",
+                "description": "MAC 终端 IPv6 日流量统计",
+                "items": {
+                  "$ref": "#/components/schemas/TrafficAuditDayItem"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ]
+      },
+      "MacTrafficAuditApplicationsResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0 表示成功"
+          },
+          "message": {
+            "type": "string",
+            "description": "响应消息"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "app_data": {
+                "type": "array",
+                "description": "MAC 终端应用流量明细",
+                "items": {
+                  "$ref": "#/components/schemas/TrafficAuditAppItem"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ]
+      },
+      "AccountTrafficAuditListResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0 表示成功"
+          },
+          "message": {
+            "type": "string",
+            "description": "响应消息"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "daytime_vpn": {
+                "type": "array",
+                "description": "账号流量审计列表",
+                "items": {
+                  "$ref": "#/components/schemas/TrafficAuditListItem"
+                }
+              },
+              "daytime_vpn_total": {
+                "type": "integer",
+                "description": "账号统计总数"
+              }
+            }
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ]
+      },
+      "AccountTrafficAuditTrendResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0 表示成功"
+          },
+          "message": {
+            "type": "string",
+            "description": "响应消息"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "daytime_vpn": {
+                "type": "array",
+                "description": "账号日流量趋势数据",
+                "items": {
+                  "$ref": "#/components/schemas/TrafficAuditDayItem"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ]
+      },
+      "AccountTrafficAuditApplicationsResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0 表示成功"
+          },
+          "message": {
+            "type": "string",
+            "description": "响应消息"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "app_username_data": {
+                "type": "array",
+                "description": "账号应用流量明细",
+                "items": {
+                  "$ref": "#/components/schemas/TrafficAuditAppItem"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "错误码"
+          },
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 400,
+              "message": "请求语法错误或参数不合法"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 401,
+              "message": "未认证或凭证无效"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 403,
+              "message": "无权限访问"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": 500,
+              "message": "服务器内部错误"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用 JWT Bearer Token 进行认证"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}

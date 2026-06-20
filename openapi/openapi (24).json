@@ -1,0 +1,583 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "DHCP客户端管理API",
+    "version": "1.0.0",
+    "summary": "DHCP和DHCPv6客户端终端列表的查询功能",
+    "description": "提供DHCP客户端信息的查询功能，包括：\n- DHCPv4客户端列表查询\n- DHCPv6客户端列表查询\n- 客户端租约信息查看\n- 客户端连接状态监控\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/network/dhcp/clients": {
+      "get": {
+        "summary": "获取DHCP客户端列表",
+        "description": "获取当前通过DHCPv4服务器分配IP地址的所有客户端信息。\n支持分页、过滤和排序功能。\n",
+        "operationId": "listDhcpClients",
+        "tags": [
+          "dhcp-clients"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：\n- ==（等于）\n- !=（不等于）\n- >（大于）\n- >=（大于等于）\n- <（小于）\n- <=（小于等于）\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,filter=field2==value2\n\n使用示例：\n- 单条件：filter=interface==lan1\n- AND条件：filter=interface==lan1&filter=status==0\n- OR条件：filter=mac==7a:38:7a:39:95:71,mac==11:22:33:44:55:66\n",
+            "schema": {
+              "type": "string",
+              "example": "interface==lan1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取DHCP客户端列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DhcpClientsListResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "total": 1,
+                    "data": [
+                      {
+                        "mac": "7a:38:7a:39:95:71",
+                        "start_time": 1767087726,
+                        "end_time": 1767094926,
+                        "timeout": 4630,
+                        "termname": "",
+                        "hostname": "",
+                        "status": 0,
+                        "id": 24,
+                        "interface": "lan1",
+                        "ip_addr_int": 3232260968,
+                        "ip_addr": "192.168.99.104"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/network/dhcp6/clients": {
+      "get": {
+        "summary": "获取DHCPv6客户端列表",
+        "description": "获取当前通过DHCPv6服务器分配IPv6地址的所有客户端信息。\n支持分页、过滤和排序功能。\n",
+        "operationId": "listDhcp6Clients",
+        "tags": [
+          "dhcpv6-clients"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：\n- ==（等于）\n- !=（不等于）\n- >（大于）\n- >=（大于等于）\n- <（小于）\n- <=（小于等于）\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,filter=field2==value2\n\n使用示例：\n- 单条件：filter=interface==lan1\n- AND条件：filter=interface==lan1&filter=timeout>1000\n- OR条件：filter=mac==a6:28:e6:a1:23:5d,mac==11:22:33:44:55:66\n",
+            "schema": {
+              "type": "string",
+              "example": "interface==lan1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取DHCPv6客户端列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dhcp6ClientsListResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "client_total": 1,
+                    "client_data": [
+                      {
+                        "id": 2,
+                        "interface": "lan1",
+                        "link_addr": "fe80::ef:8645:497a:db87",
+                        "duid": "00030001a628e6a1235d",
+                        "hostname": "",
+                        "start_time": 1767089750,
+                        "expires": 1767096950,
+                        "timeout": 6656,
+                        "termname": "",
+                        "ipv6_addr": "fc00:78aa:2521:1::cd1",
+                        "mac": "a6:28:e6:a1:23:5d"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 20,
+          "example": 20
+        }
+      },
+      "orderParam": {
+        "name": "order",
+        "in": "query",
+        "description": "排序方向，asc为升序（默认），desc为降序",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "asc",
+          "example": "asc"
+        }
+      },
+      "orderByParam": {
+        "name": "order_by",
+        "in": "query",
+        "description": "排序字段，支持id、interface、mac、ip_addr、start_time等字段",
+        "schema": {
+          "type": "string",
+          "default": "id",
+          "example": "id"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "DhcpClientsListResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DhcpClient"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "Dhcp6ClientsListResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "响应码",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "client_total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 1
+              },
+              "client_data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Dhcp6Client"
+                }
+              }
+            },
+            "required": [
+              "client_total",
+              "client_data"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "DhcpClient": {
+        "type": "object",
+        "required": [
+          "id",
+          "mac",
+          "ip_addr",
+          "interface",
+          "start_time",
+          "end_time",
+          "timeout",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "客户端记录ID",
+            "minimum": 1,
+            "example": 24
+          },
+          "mac": {
+            "type": "string",
+            "description": "MAC地址",
+            "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$",
+            "example": "7a:38:7a:39:95:71"
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "IPv4地址",
+            "format": "ipv4",
+            "example": "192.168.99.104"
+          },
+          "ip_addr_int": {
+            "type": "integer",
+            "description": "IP地址的整数表示",
+            "format": "int64",
+            "example": 3232260968
+          },
+          "interface": {
+            "type": "string",
+            "description": "网络接口",
+            "pattern": "^[a-zA-Z0-9]+$",
+            "example": "lan1"
+          },
+          "hostname": {
+            "type": "string",
+            "description": "主机名",
+            "maxLength": 255,
+            "example": ""
+          },
+          "termname": {
+            "type": "string",
+            "description": "终端名称",
+            "maxLength": 100,
+            "example": ""
+          },
+          "start_time": {
+            "type": "integer",
+            "description": "租约开始时间（Unix时间戳）",
+            "format": "int64",
+            "example": 1767087726
+          },
+          "end_time": {
+            "type": "integer",
+            "description": "租约结束时间（Unix时间戳）",
+            "format": "int64",
+            "example": 1767094926
+          },
+          "timeout": {
+            "type": "integer",
+            "description": "过期时间（秒）",
+            "minimum": 0,
+            "example": 4630
+          },
+          "status": {
+            "type": "integer",
+            "description": "客户端状态",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "Dhcp6Client": {
+        "type": "object",
+        "required": [
+          "id",
+          "mac",
+          "ipv6_addr",
+          "interface",
+          "duid",
+          "start_time",
+          "expires",
+          "timeout"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "客户端记录ID",
+            "minimum": 1,
+            "example": 2
+          },
+          "mac": {
+            "type": "string",
+            "description": "MAC地址",
+            "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$",
+            "example": "a6:28:e6:a1:23:5d"
+          },
+          "ipv6_addr": {
+            "type": "string",
+            "description": "IPv6地址",
+            "format": "ipv6",
+            "example": "fc00:78aa:2521:1::cd1"
+          },
+          "link_addr": {
+            "type": "string",
+            "description": "链路本地地址",
+            "format": "ipv6",
+            "example": "fe80::ef:8645:497a:db87"
+          },
+          "interface": {
+            "type": "string",
+            "description": "网络接口",
+            "pattern": "^[a-zA-Z0-9]+$",
+            "example": "lan1"
+          },
+          "duid": {
+            "type": "string",
+            "description": "DHCP唯一标识符",
+            "pattern": "^[0-9a-fA-F]+$",
+            "maxLength": 128,
+            "example": "00030001a628e6a1235d"
+          },
+          "hostname": {
+            "type": "string",
+            "description": "主机名",
+            "maxLength": 255,
+            "example": ""
+          },
+          "termname": {
+            "type": "string",
+            "description": "终端名称",
+            "maxLength": 100,
+            "example": ""
+          },
+          "start_time": {
+            "type": "integer",
+            "description": "租约开始时间（Unix时间戳）",
+            "format": "int64",
+            "example": 1767089750
+          },
+          "expires": {
+            "type": "integer",
+            "description": "租约过期时间（Unix时间戳）",
+            "format": "int64",
+            "example": 1767096950
+          },
+          "timeout": {
+            "type": "integer",
+            "description": "过期时间（秒）",
+            "minimum": 0,
+            "example": 6656
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "dhcp-clients",
+      "x-displayName": "DHCP客户端",
+      "description": "DHCPv4客户端信息查询"
+    },
+    {
+      "name": "dhcpv6-clients",
+      "x-displayName": "DHCPv6客户端",
+      "description": "DHCPv6客户端信息查询"
+    }
+  ]
+}

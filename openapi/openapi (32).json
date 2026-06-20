@@ -1,0 +1,1580 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "NAT规则策略管理API",
+    "version": "1.0.0",
+    "summary": "NAT规则策略的完整管理功能",
+    "description": "提供NAT规则策略的完整管理功能，包括：\n- NAT规则的增删改查\n- 支持过滤、DNAT、SNAT三种动作类型\n- 支持源地址、目标地址、端口配置\n- 支持内网接口和外网接口配置\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/network/nat/rules": {
+      "get": {
+        "summary": "获取NAT规则列表",
+        "description": "获取当前配置的NAT规则列表，支持分页功能。\n包含规则名称、动作类型、接口配置、地址配置、端口配置等信息。\n",
+        "operationId": "listNatRules",
+        "tags": [
+          "nat-rules"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取NAT规则列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NatRuleListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "创建NAT规则",
+        "description": "添加新的NAT规则，支持过滤(filter)、DNAT、SNAT三种动作类型。\n可配置源地址、目标地址、端口、接口等参数。\n",
+        "operationId": "createNatRule",
+        "tags": [
+          "nat-rules"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "NAT规则配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NatRuleInput"
+              },
+              "example": {
+                "tagname": "test001",
+                "enabled": "yes",
+                "action": "filter",
+                "iinterface": "lan1",
+                "ointerface": "wan1",
+                "src_addr": {
+                  "custom": [
+                    "192.168.1.1"
+                  ],
+                  "object": [
+                    {
+                      "type": 0,
+                      "gid": "IPGP1",
+                      "gp_name": "test001"
+                    }
+                  ]
+                },
+                "dst_addr": {
+                  "custom": [
+                    "192.168.2.2"
+                  ],
+                  "object": [
+                    {
+                      "type": 0,
+                      "gid": "IPGP5",
+                      "gp_name": "test002"
+                    }
+                  ]
+                },
+                "nat_addr": "",
+                "nat_port": "",
+                "protocol": "tcp",
+                "comment": "test002",
+                "src_port": {
+                  "custom": [],
+                  "object": [
+                    {
+                      "type": 3,
+                      "gid": "PORTGP3",
+                      "gp_name": "test999"
+                    }
+                  ]
+                },
+                "dst_port": {
+                  "custom": [],
+                  "object": [
+                    {
+                      "type": 3,
+                      "gid": "PORTGP4",
+                      "gp_name": "test1000"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NatErrorResponse"
+                },
+                "example": {
+                  "message": "请求参数不合法"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "description": "资源冲突（规则名称已存在）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NatErrorResponse"
+                },
+                "example": {
+                  "message": "NAT规则已存在"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/network/nat/rules/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/natRuleIdParam"
+        }
+      ],
+      "get": {
+        "summary": "获取指定NAT规则详情",
+        "description": "根据规则ID获取单个NAT规则的详细信息。\n",
+        "operationId": "getNatRule",
+        "tags": [
+          "nat-rules"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取NAT规则详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NatRuleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新NAT规则",
+        "description": "完全更新现有的NAT规则配置。\n需要提供所有字段。\n\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateNatRule",
+        "tags": [
+          "nat-rules"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "完整的NAT规则配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NatRuleInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "启用/停用NAT规则",
+        "description": "部分更新现有的NAT规则配置。\n主要用于启用/停用规则状态。\n",
+        "operationId": "patchNatRule",
+        "tags": [
+          "nat-rules"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "部分更新数据（如启用状态）",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "enabled"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "string",
+                    "enum": [
+                      "yes",
+                      "no"
+                    ],
+                    "description": "规则启用状态",
+                    "example": "yes"
+                  }
+                },
+                "example": {
+                  "enabled": "yes"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除NAT规则",
+        "description": "删除指定的NAT规则。\n删除后无法恢复，请谨慎操作。\n",
+        "operationId": "deleteNatRule",
+        "tags": [
+          "nat-rules"
+        ],
+        "responses": {
+          "200": {
+            "description": "NAT规则删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "natRuleIdParam": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "NAT规则ID",
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 1,
+          "example": 1
+        }
+      },
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 20,
+          "example": 20
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源冲突（如唯一性冲突，需调整请求逻辑）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "成功状态码，创建接口中为0",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "NatErrorResponse": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "NAT业务错误信息描述"
+          }
+        }
+      },
+      "NatRuleListResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 10
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/NatRule"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "NatRuleResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/NatRule"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "NatRule": {
+        "type": "object",
+        "required": [
+          "id",
+          "tagname",
+          "enabled",
+          "action",
+          "iinterface",
+          "ointerface",
+          "src_addr",
+          "dst_addr",
+          "nat_addr",
+          "nat_port",
+          "protocol",
+          "comment",
+          "src_port",
+          "dst_port",
+          "src_addr_inv",
+          "dst_addr_inv"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "规则ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "tagname": {
+            "type": "string",
+            "description": "名称，支持中文、英文、数字、下划线和连字符，1-15个字符，不能以下划线或连字符开头",
+            "minLength": 1,
+            "maxLength": 15,
+            "example": "test001"
+          },
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "开启状态，yes为启用，no为停用",
+            "example": "yes"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "filter",
+              "dnat",
+              "snat"
+            ],
+            "description": "NAT动作类型：\n- filter: 过滤规则\n- dnat: 目标地址转换\n- snat: 源地址转换\n",
+            "example": "filter"
+          },
+          "iinterface": {
+            "type": "string",
+            "description": "进接口，多个接口以逗号分隔，any表示任意接口",
+            "example": "lan1"
+          },
+          "ointerface": {
+            "type": "string",
+            "description": "出接口，多个接口以逗号分隔，any表示任意接口",
+            "example": "wan1"
+          },
+          "src_addr": {
+            "type": "object",
+            "description": "源地址配置",
+            "properties": {
+              "custom": {
+                "type": "array",
+                "description": "自定义IP地址列表",
+                "items": {
+                  "type": "string",
+                  "format": "ipv4"
+                },
+                "example": [
+                  "192.168.1.1"
+                ]
+              },
+              "object": {
+                "type": "array",
+                "description": "地址对象组",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "integer",
+                      "description": "对象类型",
+                      "example": 0
+                    },
+                    "gid": {
+                      "type": "string",
+                      "description": "对象组ID",
+                      "example": "IPGP1"
+                    },
+                    "gp_name": {
+                      "type": "string",
+                      "description": "对象组名称",
+                      "example": "test001"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "gid",
+                    "gp_name"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "custom",
+              "object"
+            ],
+            "example": {
+              "custom": [
+                "192.168.1.1"
+              ],
+              "object": [
+                {
+                  "type": 0,
+                  "gid": "IPGP1",
+                  "gp_name": "test001"
+                }
+              ]
+            }
+          },
+          "dst_addr": {
+            "type": "object",
+            "description": "目标地址配置",
+            "properties": {
+              "custom": {
+                "type": "array",
+                "description": "自定义IP地址列表",
+                "items": {
+                  "type": "string",
+                  "format": "ipv4"
+                },
+                "example": [
+                  "192.168.2.2"
+                ]
+              },
+              "object": {
+                "type": "array",
+                "description": "地址对象组",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "integer",
+                      "description": "对象类型",
+                      "example": 0
+                    },
+                    "gid": {
+                      "type": "string",
+                      "description": "对象组ID",
+                      "example": "IPGP5"
+                    },
+                    "gp_name": {
+                      "type": "string",
+                      "description": "对象组名称",
+                      "example": "test002"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "gid",
+                    "gp_name"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "custom",
+              "object"
+            ],
+            "example": {
+              "custom": [
+                "192.168.2.2"
+              ],
+              "object": [
+                {
+                  "type": 0,
+                  "gid": "IPGP5",
+                  "gp_name": "test002"
+                }
+              ]
+            }
+          },
+          "nat_addr": {
+            "type": "string",
+            "description": "NAT地址（action为snat或dnat时使用）",
+            "format": "ipv4",
+            "example": ""
+          },
+          "nat_port": {
+            "type": "string",
+            "description": "NAT端口（action为dnat时使用）",
+            "example": ""
+          },
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "",
+              "any",
+              "tcp",
+              "udp",
+              "tcp+udp"
+            ],
+            "description": "传输协议类型，空字符串或any表示不限制",
+            "example": "tcp"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符",
+            "maxLength": 64,
+            "example": "test002"
+          },
+          "src_port": {
+            "type": "object",
+            "description": "源端口配置",
+            "properties": {
+              "custom": {
+                "type": "array",
+                "description": "自定义端口列表",
+                "items": {
+                  "type": "string"
+                },
+                "example": []
+              },
+              "object": {
+                "type": "array",
+                "description": "端口对象组",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "integer",
+                      "description": "对象类型",
+                      "example": 3
+                    },
+                    "gid": {
+                      "type": "string",
+                      "description": "对象组ID",
+                      "example": "PORTGP3"
+                    },
+                    "gp_name": {
+                      "type": "string",
+                      "description": "对象组名称",
+                      "example": "test999"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "gid",
+                    "gp_name"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "custom",
+              "object"
+            ],
+            "example": {
+              "custom": [],
+              "object": [
+                {
+                  "type": 3,
+                  "gid": "PORTGP3",
+                  "gp_name": "test999"
+                }
+              ]
+            }
+          },
+          "dst_port": {
+            "type": "object",
+            "description": "目标端口配置",
+            "properties": {
+              "custom": {
+                "type": "array",
+                "description": "自定义端口列表",
+                "items": {
+                  "type": "string"
+                },
+                "example": []
+              },
+              "object": {
+                "type": "array",
+                "description": "端口对象组",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "integer",
+                      "description": "对象类型",
+                      "example": 3
+                    },
+                    "gid": {
+                      "type": "string",
+                      "description": "对象组ID",
+                      "example": "PORTGP4"
+                    },
+                    "gp_name": {
+                      "type": "string",
+                      "description": "对象组名称",
+                      "example": "test1000"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "gid",
+                    "gp_name"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "custom",
+              "object"
+            ],
+            "example": {
+              "custom": [],
+              "object": [
+                {
+                  "type": 3,
+                  "gid": "PORTGP4",
+                  "gp_name": "test1000"
+                }
+              ]
+            }
+          },
+          "src_addr_inv": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "description": "源地址取反(0:不取反, 1:取反)",
+            "example": 0
+          },
+          "dst_addr_inv": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "description": "目的地址取反(0:不取反, 1:取反)",
+            "example": 0
+          },
+          "src_addr_int": {
+            "type": "integer",
+            "description": "源地址整数值",
+            "readOnly": true,
+            "example": 0
+          },
+          "dst_addr_int": {
+            "type": "integer",
+            "description": "目的地址整数值",
+            "readOnly": true,
+            "example": 0
+          },
+          "nat_addr_int": {
+            "type": "integer",
+            "description": "NAT地址整数值",
+            "readOnly": true,
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "NatRuleInput": {
+        "type": "object",
+        "required": [
+          "tagname",
+          "enabled",
+          "action",
+          "iinterface",
+          "ointerface",
+          "src_addr_inv",
+          "dst_addr_inv"
+        ],
+        "properties": {
+          "tagname": {
+            "type": "string",
+            "description": "标识名称（支持中文/数字/字母/下划线/连字符，不能以符号开头，1-15字符）",
+            "minLength": 1,
+            "maxLength": 15,
+            "example": "test001"
+          },
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "开启状态，yes为启用，no为停用",
+            "example": "yes"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "filter",
+              "dnat",
+              "snat"
+            ],
+            "description": "NAT动作类型：\n- filter: 过滤规则\n- dnat: 目标地址转换\n- snat: 源地址转换\n",
+            "example": "filter"
+          },
+          "iinterface": {
+            "type": "string",
+            "description": "进接口，多个接口以逗号分隔，any表示任意接口",
+            "example": "lan1"
+          },
+          "ointerface": {
+            "type": "string",
+            "description": "出接口，多个接口以逗号分隔，any表示任意接口",
+            "example": "wan1"
+          },
+          "src_addr": {
+            "type": "object",
+            "description": "源地址配置",
+            "properties": {
+              "custom": {
+                "type": "array",
+                "description": "自定义IP地址列表",
+                "items": {
+                  "type": "string",
+                  "format": "ipv4"
+                },
+                "example": [
+                  "192.168.1.1"
+                ]
+              },
+              "object": {
+                "type": "array",
+                "description": "地址对象组",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "integer",
+                      "description": "对象类型",
+                      "example": 0
+                    },
+                    "gid": {
+                      "type": "string",
+                      "description": "对象组ID",
+                      "example": "IPGP1"
+                    },
+                    "gp_name": {
+                      "type": "string",
+                      "description": "对象组名称",
+                      "example": "test001"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "gid",
+                    "gp_name"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "custom",
+              "object"
+            ],
+            "example": {
+              "custom": [
+                "192.168.1.1"
+              ],
+              "object": [
+                {
+                  "type": 0,
+                  "gid": "IPGP1",
+                  "gp_name": "test001"
+                }
+              ]
+            }
+          },
+          "dst_addr": {
+            "type": "object",
+            "description": "目标地址配置",
+            "properties": {
+              "custom": {
+                "type": "array",
+                "description": "自定义IP地址列表",
+                "items": {
+                  "type": "string",
+                  "format": "ipv4"
+                },
+                "example": [
+                  "192.168.2.2"
+                ]
+              },
+              "object": {
+                "type": "array",
+                "description": "地址对象组",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "integer",
+                      "description": "对象类型",
+                      "example": 0
+                    },
+                    "gid": {
+                      "type": "string",
+                      "description": "对象组ID",
+                      "example": "IPGP5"
+                    },
+                    "gp_name": {
+                      "type": "string",
+                      "description": "对象组名称",
+                      "example": "test002"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "gid",
+                    "gp_name"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "custom",
+              "object"
+            ],
+            "example": {
+              "custom": [
+                "192.168.2.2"
+              ],
+              "object": [
+                {
+                  "type": 0,
+                  "gid": "IPGP5",
+                  "gp_name": "test002"
+                }
+              ]
+            }
+          },
+          "nat_addr": {
+            "type": "string",
+            "description": "NAT地址（action为snat或dnat时使用）",
+            "format": "ipv4",
+            "example": ""
+          },
+          "nat_port": {
+            "type": "string",
+            "description": "NAT端口（action为dnat时使用）",
+            "example": ""
+          },
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "",
+              "any",
+              "tcp",
+              "udp",
+              "tcp+udp"
+            ],
+            "description": "传输协议类型，空字符串或any表示不限制",
+            "example": "tcp"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": "test002"
+          },
+          "src_addr_inv": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "description": "源地址取反(0:不取反, 1:取反)",
+            "default": 0,
+            "example": 0
+          },
+          "dst_addr_inv": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "description": "目的地址取反(0:不取反, 1:取反)",
+            "default": 0,
+            "example": 0
+          },
+          "src_port": {
+            "type": "object",
+            "description": "源端口配置",
+            "properties": {
+              "custom": {
+                "type": "array",
+                "description": "自定义端口列表",
+                "items": {
+                  "type": "string"
+                },
+                "example": []
+              },
+              "object": {
+                "type": "array",
+                "description": "端口对象组",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "integer",
+                      "description": "对象类型",
+                      "example": 3
+                    },
+                    "gid": {
+                      "type": "string",
+                      "description": "对象组ID",
+                      "example": "PORTGP3"
+                    },
+                    "gp_name": {
+                      "type": "string",
+                      "description": "对象组名称",
+                      "example": "test999"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "gid",
+                    "gp_name"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "custom",
+              "object"
+            ],
+            "example": {
+              "custom": [],
+              "object": [
+                {
+                  "type": 3,
+                  "gid": "PORTGP3",
+                  "gp_name": "test999"
+                }
+              ]
+            }
+          },
+          "dst_port": {
+            "type": "object",
+            "description": "目标端口配置",
+            "properties": {
+              "custom": {
+                "type": "array",
+                "description": "自定义端口列表",
+                "items": {
+                  "type": "string"
+                },
+                "example": []
+              },
+              "object": {
+                "type": "array",
+                "description": "端口对象组",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "integer",
+                      "description": "对象类型",
+                      "example": 3
+                    },
+                    "gid": {
+                      "type": "string",
+                      "description": "对象组ID",
+                      "example": "PORTGP4"
+                    },
+                    "gp_name": {
+                      "type": "string",
+                      "description": "对象组名称",
+                      "example": "test1000"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "gid",
+                    "gp_name"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "custom",
+              "object"
+            ],
+            "example": {
+              "custom": [],
+              "object": [
+                {
+                  "type": 3,
+                  "gid": "PORTGP4",
+                  "gp_name": "test1000"
+                }
+              ]
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/SuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/CreateBusinessErrorResponse"
+          }
+        ],
+        "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "CreateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "nat-rules",
+      "x-displayName": "NAT规则策略管理",
+      "description": "NAT规则策略的增删改查操作，支持filter、dnat、snat三种动作类型"
+    }
+  ]
+}

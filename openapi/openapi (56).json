@@ -1,0 +1,1567 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "IPSEC VPN客户端管理API",
+    "version": "1.0.0",
+    "summary": "IPSEC VPN客户端的完整管理功能",
+    "description": "提供IPSEC VPN客户端的完整管理功能，包括：\n- IPSEC客户端的创建、查询、更新、删除\n- 客户端启用/停用状态控制\n- 支持分页、模糊匹配和过滤功能\n- 支持导入导出\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com/api/v4.0",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com/api/v4.0",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/vpn/ipsec/clients": {
+      "get": {
+        "summary": "获取IPSEC客户端列表",
+        "description": "获取所有IPSEC客户端配置列表。\n支持分页、排序、模糊匹配和过滤功能。\n",
+        "operationId": "listIpsecClients",
+        "tags": [
+          "IPSEC VPN客户端"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "模糊匹配字段名称，与 pattern 参数联合使用",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "comment",
+                "remote_addr",
+                "interface",
+                "authby",
+                "leftsubnet",
+                "rightsubnet",
+                "leftid",
+                "rightid"
+              ],
+              "example": "name"
+            }
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "description": "模糊匹配内容，与 key 参数联合使用",
+            "schema": {
+              "type": "string",
+              "example": "test"
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：==、!=、>、>=、<、<=\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,field2==value2\n\n使用示例：\n- 单条件：filter=enabled==yes\n- AND条件：filter=enabled==yes&filter=interface==wan1\n- OR条件：filter=name==test1,name==test2\n",
+            "schema": {
+              "type": "string",
+              "example": "enabled==yes"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取IPSEC客户端列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IpsecClientListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "创建IPSEC客户端",
+        "description": "添加新的IPSEC VPN客户端配置。\n\n**条件必填字段：**\n- `aggressive`：当 keyexchange=ikev1 时必填，枚举值 0|1\n- `secret`：当 authby=secret 时必填\n- `leftid`、`rightid`、`privatekey`、`leftcert`、`rightcert`：当 authby=pubkey 时必填\n- `dpddelay`、`dpdtimeout`：当 dpdaction 不为 none 时必填\n- `remote_addr`：当 leftid 和 rightid 不同时存在时必填\n",
+        "operationId": "createIpsecClient",
+        "tags": [
+          "IPSEC VPN客户端"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "IPSEC客户端配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IpsecClientInput"
+              },
+              "example": {
+                "name": "ipsecoffice",
+                "comment": "主办公室IPSec_VPN连接",
+                "remote_addr": "vpn.ikuai.cn",
+                "authby": "secret",
+                "leftsubnet": "192.168.1.0/24",
+                "rightsubnet": "192.168.99.0/24",
+                "interface": "wan1",
+                "enabled": "yes",
+                "keyexchange": "ikev2",
+                "aggressive": "0",
+                "ikelifetime": 3,
+                "ike_enc": "aes256",
+                "ike_auth": "sha256",
+                "ike_dh": "modp2048",
+                "secret": "sharedsecret123",
+                "lifetime": 1,
+                "esp_enc": "aes256",
+                "esp_auth": "sha256",
+                "dpdaction": "none",
+                "compress": "0"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "IPSEC客户端创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/vpn/ipsec/clients/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ipsecClientIdParam"
+        }
+      ],
+      "get": {
+        "summary": "获取指定IPSEC客户端",
+        "description": "根据ID获取单个IPSEC客户端的详细配置信息。\n",
+        "operationId": "getIpsecClient",
+        "tags": [
+          "IPSEC VPN客户端"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取IPSEC客户端详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IpsecClientResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新IPSEC客户端",
+        "description": "完全更新现有的IPSEC客户端配置。\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateIpsecClient",
+        "tags": [
+          "IPSEC VPN客户端"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "完整的IPSEC客户端配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IpsecClientUpdateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "启用/停用IPSEC客户端",
+        "description": "部分更新现有的IPSEC客户端配置。\n主要用于启用/停用客户端状态。\n",
+        "operationId": "patchIpsecClient",
+        "tags": [
+          "IPSEC VPN客户端"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "部分更新数据（如启用状态）",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "enabled"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "string",
+                    "enum": [
+                      "yes",
+                      "no"
+                    ],
+                    "description": "客户端启用状态",
+                    "example": "yes"
+                  }
+                },
+                "example": {
+                  "enabled": "yes"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除IPSEC客户端",
+        "description": "删除指定的IPSEC客户端配置。\n删除后无法恢复，请谨慎操作。\n",
+        "operationId": "deleteIpsecClient",
+        "tags": [
+          "IPSEC VPN客户端"
+        ],
+        "responses": {
+          "200": {
+            "description": "IPSEC客户端删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "ipsecClientIdParam": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "IPSEC客户端ID",
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 1,
+          "example": 1
+        }
+      },
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 20,
+          "example": 20
+        }
+      },
+      "orderParam": {
+        "name": "order",
+        "in": "query",
+        "description": "排序方向，asc为升序（默认），desc为降序",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "asc",
+          "example": "asc"
+        }
+      },
+      "orderByParam": {
+        "name": "order_by",
+        "in": "query",
+        "description": "排序字段，支持id、name、remote_addr、interface等字段",
+        "schema": {
+          "type": "string",
+          "default": "id",
+          "example": "id"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源冲突（如唯一性冲突，需调整请求逻辑）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      },
+      "IpsecClientResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/IpsecClient"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "IpsecClientListResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 25
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/IpsecClient"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "IpsecClient": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "comment",
+          "remote_addr",
+          "authby",
+          "leftsubnet",
+          "rightsubnet",
+          "interface",
+          "enabled",
+          "keyexchange",
+          "aggressive",
+          "keyingtries",
+          "ikelifetime",
+          "ike_enc",
+          "ike_auth",
+          "ike_dh",
+          "secret",
+          "leftid",
+          "rightid",
+          "privatekey",
+          "leftcert",
+          "rightcert",
+          "lifetime",
+          "esp_enc",
+          "esp_auth",
+          "dpdaction",
+          "dpddelay",
+          "dpdtimeout",
+          "compress",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "客户端ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "客户端名称，必须以ipsec开头，仅支持英文、数字、下划线，总长度6-16字符",
+            "pattern": "^ipsec[a-zA-Z0-9_]*$",
+            "minLength": 6,
+            "maxLength": 16,
+            "example": "ipsecoffice"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": "主办公室IPSec_VPN连接"
+          },
+          "remote_addr": {
+            "type": "string",
+            "description": "远端服务器地址，支持IPv4/IPv6/域名",
+            "example": "vpn.ikuai.cn"
+          },
+          "authby": {
+            "type": "string",
+            "enum": [
+              "secret",
+              "pubkey"
+            ],
+            "description": "认证方式，secret为预共享密钥，pubkey为证书认证",
+            "example": "secret"
+          },
+          "leftsubnet": {
+            "type": "string",
+            "description": "本地子网，格式为IP/掩码",
+            "example": "192.168.1.0/24"
+          },
+          "rightsubnet": {
+            "type": "string",
+            "description": "远端子网，支持多个IP/掩码，逗号分隔，不可重复",
+            "example": "192.168.99.0/24"
+          },
+          "interface": {
+            "type": "string",
+            "description": "绑定的网络接口，auto表示自动选择，或指定WAN接口名称",
+            "example": "wan1"
+          },
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "客户端启用状态，yes为启用，no为停用",
+            "example": "yes"
+          },
+          "keyexchange": {
+            "type": "string",
+            "enum": [
+              "ikev1",
+              "ikev2"
+            ],
+            "description": "密钥交换协议版本",
+            "example": "ikev2"
+          },
+          "aggressive": {
+            "type": "string",
+            "enum": [
+              "0",
+              "1"
+            ],
+            "description": "激进模式，0为关闭，1为开启（仅keyexchange=ikev1时有效）",
+            "example": "0"
+          },
+          "keyingtries": {
+            "type": "integer",
+            "description": "重试次数，0表示无限重试",
+            "minimum": 0,
+            "example": 3
+          },
+          "ikelifetime": {
+            "type": "integer",
+            "description": "IKE密钥生命周期（小时）",
+            "minimum": 1,
+            "maximum": 72,
+            "example": 3
+          },
+          "ike_enc": {
+            "type": "string",
+            "enum": [
+              "",
+              "aes128",
+              "aes192",
+              "aes256",
+              "3des",
+              "des"
+            ],
+            "description": "IKE加密算法，留空表示使用默认算法组合",
+            "example": "aes256"
+          },
+          "ike_auth": {
+            "type": "string",
+            "enum": [
+              "",
+              "md5",
+              "sha1",
+              "sha256",
+              "sha512"
+            ],
+            "description": "IKE认证算法，留空表示使用默认算法组合",
+            "example": "sha256"
+          },
+          "ike_dh": {
+            "type": "string",
+            "enum": [
+              "",
+              "modp768",
+              "modp1024",
+              "modp1536",
+              "modp2048",
+              "modp3072",
+              "modp4096"
+            ],
+            "description": "IKE DH组，留空表示使用默认DH组",
+            "example": "modp2048"
+          },
+          "secret": {
+            "type": "string",
+            "description": "预共享密钥，authby=secret时必填，最大64字符",
+            "maxLength": 64,
+            "example": "sharedsecret123"
+          },
+          "leftid": {
+            "type": "string",
+            "description": "本地标识符，authby=pubkey时必填，最大100字符",
+            "maxLength": 100,
+            "example": "localgateway"
+          },
+          "rightid": {
+            "type": "string",
+            "description": "对方标识符，authby=pubkey时必填，最大100字符",
+            "maxLength": 100,
+            "example": "remotegateway"
+          },
+          "privatekey": {
+            "type": "string",
+            "description": "私钥内容，authby=pubkey时必填",
+            "example": ""
+          },
+          "leftcert": {
+            "type": "string",
+            "description": "本地证书内容，authby=pubkey时必填",
+            "example": ""
+          },
+          "rightcert": {
+            "type": "string",
+            "description": "远端证书内容，authby=pubkey时必填",
+            "example": ""
+          },
+          "lifetime": {
+            "type": "integer",
+            "description": "IPSec SA生命周期（小时）",
+            "minimum": 1,
+            "maximum": 72,
+            "example": 1
+          },
+          "esp_enc": {
+            "type": "string",
+            "enum": [
+              "",
+              "aes128",
+              "aes192",
+              "aes256",
+              "3des",
+              "des"
+            ],
+            "description": "ESP加密算法，留空表示使用默认算法组合",
+            "example": "aes256"
+          },
+          "esp_auth": {
+            "type": "string",
+            "enum": [
+              "",
+              "md5",
+              "sha1",
+              "sha256",
+              "sha512"
+            ],
+            "description": "ESP认证算法，留空表示使用默认算法组合",
+            "example": "sha256"
+          },
+          "dpdaction": {
+            "type": "string",
+            "enum": [
+              "none",
+              "clear",
+              "hold",
+              "restart"
+            ],
+            "description": "DPD操作，none表示不启用DPD",
+            "example": "none"
+          },
+          "dpddelay": {
+            "type": "integer",
+            "description": "DPD检测间隔（秒），dpdaction不为none时必填，范围5-300",
+            "minimum": 5,
+            "maximum": 300,
+            "example": 30
+          },
+          "dpdtimeout": {
+            "type": "integer",
+            "description": "DPD超时时间（秒），dpdaction不为none时必填",
+            "minimum": 60,
+            "maximum": 600,
+            "example": 150
+          },
+          "compress": {
+            "type": "string",
+            "enum": [
+              "0",
+              "1"
+            ],
+            "description": "数据压缩，0为关闭，1为开启",
+            "example": "0"
+          },
+          "status": {
+            "type": "integer",
+            "description": "连接状态，0=已停用，1=已连接，2=连接中",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "example": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "IpsecClientInput": {
+        "type": "object",
+        "required": [
+          "enabled",
+          "name",
+          "leftsubnet",
+          "rightsubnet",
+          "interface",
+          "keyexchange",
+          "authby",
+          "ikelifetime",
+          "lifetime",
+          "dpdaction",
+          "compress"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "客户端名称，必须以ipsec开头，仅支持英文、数字、下划线，总长度6-16字符，不可重复",
+            "pattern": "^ipsec[a-zA-Z0-9_]*$",
+            "minLength": 6,
+            "maxLength": 16,
+            "example": "ipsecoffice"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": "主办公室IPSec_VPN连接"
+          },
+          "remote_addr": {
+            "type": "string",
+            "description": "远端服务器地址，支持IPv4/IPv6/域名",
+            "example": "vpn.ikuai.cn"
+          },
+          "authby": {
+            "type": "string",
+            "enum": [
+              "secret",
+              "pubkey"
+            ],
+            "description": "认证方式，secret为预共享密钥，pubkey为证书认证",
+            "example": "secret"
+          },
+          "leftsubnet": {
+            "type": "string",
+            "description": "本地子网，格式为IP/掩码",
+            "example": "192.168.1.0/24"
+          },
+          "rightsubnet": {
+            "type": "string",
+            "description": "远端子网，支持多个IP/掩码，逗号分隔，不可重复；IKEv1模式下不支持多子网",
+            "example": "192.168.99.0/24"
+          },
+          "interface": {
+            "type": "string",
+            "description": "绑定的网络接口，auto表示自动选择，或指定WAN接口名称",
+            "example": "wan1"
+          },
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "客户端启用状态，yes为启用，no为停用",
+            "example": "yes"
+          },
+          "keyexchange": {
+            "type": "string",
+            "enum": [
+              "ikev1",
+              "ikev2"
+            ],
+            "description": "密钥交换协议版本",
+            "example": "ikev2"
+          },
+          "aggressive": {
+            "type": "string",
+            "enum": [
+              "0",
+              "1"
+            ],
+            "description": "激进模式，0为关闭，1为开启；当 keyexchange=ikev1 时必填",
+            "example": "0"
+          },
+          "ikelifetime": {
+            "type": "integer",
+            "description": "IKE密钥生命周期（小时）",
+            "minimum": 1,
+            "maximum": 72,
+            "example": 3
+          },
+          "ike_enc": {
+            "type": "string",
+            "enum": [
+              "",
+              "aes128",
+              "aes192",
+              "aes256",
+              "3des",
+              "des"
+            ],
+            "description": "IKE加密算法，留空表示使用默认算法组合",
+            "example": "aes256"
+          },
+          "ike_auth": {
+            "type": "string",
+            "enum": [
+              "",
+              "md5",
+              "sha1",
+              "sha256",
+              "sha512"
+            ],
+            "description": "IKE认证算法，留空表示使用默认算法组合",
+            "example": "sha256"
+          },
+          "ike_dh": {
+            "type": "string",
+            "enum": [
+              "",
+              "modp768",
+              "modp1024",
+              "modp1536",
+              "modp2048",
+              "modp3072",
+              "modp4096"
+            ],
+            "description": "IKE DH组，留空表示使用默认DH组",
+            "example": "modp2048"
+          },
+          "secret": {
+            "type": "string",
+            "description": "预共享密钥，authby=secret时必填，最大64字符",
+            "maxLength": 64,
+            "example": "sharedsecret123"
+          },
+          "leftid": {
+            "type": "string",
+            "description": "本地标识符，authby=pubkey时必填，最大100字符",
+            "maxLength": 100,
+            "example": "localgateway"
+          },
+          "rightid": {
+            "type": "string",
+            "description": "对方标识符，authby=pubkey时必填，最大100字符",
+            "maxLength": 100,
+            "example": "remotegateway"
+          },
+          "privatekey": {
+            "type": "string",
+            "description": "私钥内容，authby=pubkey时必填",
+            "example": ""
+          },
+          "leftcert": {
+            "type": "string",
+            "description": "本地证书内容，authby=pubkey时必填",
+            "example": ""
+          },
+          "rightcert": {
+            "type": "string",
+            "description": "远端证书内容，authby=pubkey时必填",
+            "example": ""
+          },
+          "lifetime": {
+            "type": "integer",
+            "description": "IPSec SA生命周期（小时）",
+            "minimum": 1,
+            "maximum": 72,
+            "example": 1
+          },
+          "esp_enc": {
+            "type": "string",
+            "enum": [
+              "",
+              "aes128",
+              "aes192",
+              "aes256",
+              "3des",
+              "des"
+            ],
+            "description": "ESP加密算法，留空表示使用默认算法组合",
+            "example": "aes256"
+          },
+          "esp_auth": {
+            "type": "string",
+            "enum": [
+              "",
+              "md5",
+              "sha1",
+              "sha256",
+              "sha512"
+            ],
+            "description": "ESP认证算法，留空表示使用默认算法组合",
+            "example": "sha256"
+          },
+          "dpdaction": {
+            "type": "string",
+            "enum": [
+              "none",
+              "clear",
+              "hold",
+              "restart"
+            ],
+            "description": "DPD操作，none表示不启用DPD",
+            "example": "none"
+          },
+          "dpddelay": {
+            "type": "integer",
+            "description": "DPD检测间隔（秒），dpdaction不为none时必填，范围5-300",
+            "minimum": 5,
+            "maximum": 300,
+            "example": 30
+          },
+          "dpdtimeout": {
+            "type": "integer",
+            "description": "DPD超时时间（秒），dpdaction不为none时必填",
+            "minimum": 60,
+            "maximum": 600,
+            "example": 150
+          },
+          "compress": {
+            "type": "string",
+            "enum": [
+              "0",
+              "1"
+            ],
+            "description": "数据压缩，0为关闭，1为开启",
+            "example": "0"
+          }
+        },
+        "additionalProperties": false
+      },
+      "IpsecClientUpdateInput": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "comment",
+          "remote_addr",
+          "leftsubnet",
+          "rightsubnet",
+          "interface",
+          "enabled",
+          "keyexchange",
+          "aggressive",
+          "ikelifetime",
+          "ike_enc",
+          "ike_auth",
+          "ike_dh",
+          "authby",
+          "secret",
+          "leftid",
+          "rightid",
+          "privatekey",
+          "leftcert",
+          "rightcert",
+          "lifetime",
+          "esp_enc",
+          "esp_auth",
+          "compress",
+          "dpdaction",
+          "dpddelay",
+          "dpdtimeout"
+        ],
+        "description": "**条件字段说明（全量修改时仍需传入，不适用时传空值）：**\n- `remote_addr`：leftid 和 rightid 不同时存在时必填；leftid 和 rightid 均有值时可传空值\n- `aggressive`：keyexchange=ikev1 时生效，ikev2 时传 \"0\"\n- `secret`：authby=secret 时必填；authby=pubkey 时传空值\n- `leftid`、`rightid`、`privatekey`、`leftcert`、`rightcert`：authby=pubkey 时必填；否则传空值\n- `dpddelay`、`dpdtimeout`：dpdaction 不为 none 时生效；dpdaction=none 时传 0\n",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "客户端ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "客户端名称，必须以ipsec开头，仅支持英文、数字、下划线，总长度6-16字符，不可重复",
+            "pattern": "^ipsec[a-zA-Z0-9_]*$",
+            "minLength": 6,
+            "maxLength": 16,
+            "example": "ipsecoffice"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": "主办公室IPSec_VPN连接"
+          },
+          "remote_addr": {
+            "type": "string",
+            "description": "远端服务器地址，支持IPv4/IPv6/域名",
+            "example": "vpn.ikuai.cn"
+          },
+          "authby": {
+            "type": "string",
+            "enum": [
+              "secret",
+              "pubkey"
+            ],
+            "description": "认证方式，secret为预共享密钥，pubkey为证书认证",
+            "example": "secret"
+          },
+          "leftsubnet": {
+            "type": "string",
+            "description": "本地子网，格式为IPv4/掩码",
+            "example": "192.168.1.0/24"
+          },
+          "rightsubnet": {
+            "type": "string",
+            "description": "远端子网，支持多个IPv4/掩码，逗号分隔，不可重复；IKEv1模式下不支持多子网",
+            "example": "192.168.99.0/24"
+          },
+          "interface": {
+            "type": "string",
+            "description": "绑定的网络接口，auto表示自动选择，或指定WAN接口名称",
+            "example": "wan1"
+          },
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "客户端启用状态，yes为启用，no为停用",
+            "example": "yes"
+          },
+          "keyexchange": {
+            "type": "string",
+            "enum": [
+              "ikev1",
+              "ikev2"
+            ],
+            "description": "密钥交换协议版本",
+            "example": "ikev2"
+          },
+          "aggressive": {
+            "type": "string",
+            "enum": [
+              "0",
+              "1"
+            ],
+            "description": "激进模式，0为关闭，1为开启；keyexchange=ikev1 时生效",
+            "example": "0"
+          },
+          "ikelifetime": {
+            "type": "integer",
+            "description": "IKE密钥生命周期（小时）",
+            "minimum": 1,
+            "maximum": 72,
+            "example": 3
+          },
+          "ike_enc": {
+            "type": "string",
+            "enum": [
+              "",
+              "aes128",
+              "aes192",
+              "aes256",
+              "3des",
+              "des"
+            ],
+            "description": "IKE加密算法，留空表示使用默认算法组合",
+            "example": "aes256"
+          },
+          "ike_auth": {
+            "type": "string",
+            "enum": [
+              "",
+              "md5",
+              "sha1",
+              "sha256",
+              "sha512"
+            ],
+            "description": "IKE认证算法，留空表示使用默认算法组合",
+            "example": "sha256"
+          },
+          "ike_dh": {
+            "type": "string",
+            "enum": [
+              "",
+              "modp768",
+              "modp1024",
+              "modp1536",
+              "modp2048",
+              "modp3072",
+              "modp4096"
+            ],
+            "description": "IKE DH组，留空表示使用默认DH组",
+            "example": "modp2048"
+          },
+          "secret": {
+            "type": "string",
+            "description": "预共享密钥，authby=secret时必填，最大64字符；authby=pubkey时传空值",
+            "maxLength": 64,
+            "example": "sharedsecret123"
+          },
+          "leftid": {
+            "type": "string",
+            "description": "本地标识符，authby=pubkey时必填，最大100字符；authby=secret时传空值",
+            "maxLength": 100,
+            "example": "localgateway"
+          },
+          "rightid": {
+            "type": "string",
+            "description": "对方标识符，authby=pubkey时必填，最大100字符；authby=secret时传空值",
+            "maxLength": 100,
+            "example": "remotegateway"
+          },
+          "privatekey": {
+            "type": "string",
+            "description": "私钥内容，authby=pubkey时必填；authby=secret时传空值",
+            "example": ""
+          },
+          "leftcert": {
+            "type": "string",
+            "description": "本地证书内容，authby=pubkey时必填；authby=secret时传空值",
+            "example": ""
+          },
+          "rightcert": {
+            "type": "string",
+            "description": "远端证书内容，authby=pubkey时必填；authby=secret时传空值",
+            "example": ""
+          },
+          "lifetime": {
+            "type": "integer",
+            "description": "IPSec SA生命周期（小时）",
+            "minimum": 1,
+            "maximum": 72,
+            "example": 1
+          },
+          "esp_enc": {
+            "type": "string",
+            "enum": [
+              "",
+              "aes128",
+              "aes192",
+              "aes256",
+              "3des",
+              "des"
+            ],
+            "description": "ESP加密算法，留空表示使用默认算法组合",
+            "example": "aes256"
+          },
+          "esp_auth": {
+            "type": "string",
+            "enum": [
+              "",
+              "md5",
+              "sha1",
+              "sha256",
+              "sha512"
+            ],
+            "description": "ESP认证算法，留空表示使用默认算法组合",
+            "example": "sha256"
+          },
+          "dpdaction": {
+            "type": "string",
+            "enum": [
+              "none",
+              "clear",
+              "hold",
+              "restart"
+            ],
+            "description": "DPD操作，none表示不启用DPD",
+            "example": "none"
+          },
+          "dpddelay": {
+            "type": "integer",
+            "description": "DPD检测间隔（秒），dpdaction不为none时生效，范围5-300；dpdaction=none时传0",
+            "minimum": 5,
+            "maximum": 300,
+            "example": 30
+          },
+          "dpdtimeout": {
+            "type": "integer",
+            "description": "DPD超时时间（秒），dpdaction不为none时生效，范围60-600；dpdaction=none时传0",
+            "minimum": 60,
+            "maximum": 600,
+            "example": 150
+          },
+          "compress": {
+            "type": "string",
+            "enum": [
+              "0",
+              "1"
+            ],
+            "description": "数据压缩，0为关闭，1为开启",
+            "example": "0"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "IPSEC VPN客户端",
+      "description": "IPSEC VPN客户端的管理和配置"
+    }
+  ]
+}

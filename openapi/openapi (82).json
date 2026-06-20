@@ -1,0 +1,1012 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "HTTP服务器管理API",
+    "version": "1.0.0",
+    "summary": "HTTP服务器管理完整功能",
+    "description": "提供HTTP服务器的完整管理功能，包括：\n- HTTP服务器的创建、查询、更新、删除\n- HTTP服务器启用/停用状态控制\n- 支持SSL加密、目录浏览、下载限速等配置\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/advanced-service/http-users": {
+      "get": {
+        "summary": "获取HTTP服务器列表",
+        "operationId": "listHttpServerUsers",
+        "tags": [
+          "http-server"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码（从1开始）",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "每页记录数",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 20
+            }
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "搜索字段名，与pattern联合使用",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "tagname",
+                "enabled",
+                "http_port",
+                "server_name"
+              ]
+            }
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "description": "搜索关键词，与key联合使用",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "排序字段",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "id",
+                "tagname",
+                "http_port"
+              ],
+              "default": "id"
+            }
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "description": "排序方式",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取HTTP服务器列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpServerListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "创建HTTP服务器",
+        "description": "创建HTTP服务器。\n\n`home_dir` 应先通过 `GET /api/v4.0/system/files?path=/` 查询可用存储目录，\n再从返回的 `results.data[].f_name` 组合为目录路径，例如 `/test-001`。\n",
+        "operationId": "createHttpServerUser",
+        "tags": [
+          "http-server"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HttpServerCreateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success",
+                      "rowid": 1
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/advanced-service/http-users/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/httpServerIdParam"
+        }
+      ],
+      "put": {
+        "summary": "更新HTTP服务器",
+        "description": "全量更新HTTP服务器配置。所有字段均为必填，即使未修改也必须携带原值。\n\n`home_dir` 应先通过 `GET /api/v4.0/system/files?path=/` 查询可用存储目录，\n再从返回的 `results.data[].f_name` 组合为目录路径，例如 `/test-001`。\n\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateHttpServerUser",
+        "tags": [
+          "http-server"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "全量更新，所有字段必填，未修改的字段须传原值",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HttpServerEditInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "启用/停用HTTP服务器",
+        "operationId": "patchHttpServerUser",
+        "tags": [
+          "http-server"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "enabled"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "string",
+                    "enum": [
+                      "yes",
+                      "no"
+                    ],
+                    "example": "yes"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除HTTP服务器",
+        "operationId": "deleteHttpServerUser",
+        "tags": [
+          "http-server"
+        ],
+        "responses": {
+          "200": {
+            "description": "删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "httpServerIdParam": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "HTTP服务器ID",
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 1
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "CreateResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "success"
+          },
+          "rowid": {
+            "type": "integer",
+            "description": "新创建的记录ID",
+            "minimum": 1,
+            "example": 1
+          }
+        },
+        "required": [
+          "message",
+          "rowid"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "HttpServer": {
+        "type": "object",
+        "required": [
+          "id",
+          "enabled",
+          "tagname",
+          "http_port",
+          "ssl_on",
+          "autoindex",
+          "download",
+          "home_dir",
+          "access"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "记录ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "description": "启用状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "服务器名称（唯一）",
+            "example": "myhttp"
+          },
+          "http_port": {
+            "type": "integer",
+            "description": "HTTP端口",
+            "minimum": 1,
+            "maximum": 65535,
+            "example": 8888
+          },
+          "server_name": {
+            "type": "string",
+            "description": "服务器域名（ServerName），可为空",
+            "default": "",
+            "example": ""
+          },
+          "ssl_on": {
+            "type": "integer",
+            "description": "是否开启SSL加密（0关闭，1开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "autoindex": {
+            "type": "integer",
+            "description": "是否开启目录浏览（0关闭，1开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "download": {
+            "type": "integer",
+            "description": "下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "home_dir": {
+            "type": "string",
+            "description": "用户目录路径。取值应来自 `GET /api/v4.0/system/files?path=/` 返回的存储目录路径；不可为 `/`，不可含 `..`",
+            "example": "/test-001"
+          },
+          "access": {
+            "type": "integer",
+            "description": "是否允许外网访问（0不允许，1允许）",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 1,
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "HttpServerCreateInput": {
+        "type": "object",
+        "description": "HTTP服务器创建输入",
+        "required": [
+          "enabled",
+          "tagname",
+          "http_port",
+          "ssl_on",
+          "autoindex",
+          "download",
+          "home_dir",
+          "access"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "description": "启用状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "服务器名称（唯一）",
+            "example": "myhttp"
+          },
+          "http_port": {
+            "type": "integer",
+            "description": "HTTP端口",
+            "minimum": 1,
+            "maximum": 65535,
+            "example": 8888
+          },
+          "server_name": {
+            "type": "string",
+            "description": "服务器域名（ServerName），可为空",
+            "default": "",
+            "example": ""
+          },
+          "ssl_on": {
+            "type": "integer",
+            "description": "是否开启SSL加密（0关闭，1开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "autoindex": {
+            "type": "integer",
+            "description": "是否开启目录浏览（0关闭，1开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "download": {
+            "type": "integer",
+            "description": "下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          },
+          "home_dir": {
+            "type": "string",
+            "description": "用户目录路径。先调用 `GET /api/v4.0/system/files?path=/` 获取可用目录，再填写对应目录路径；不可为 `/`，不可含 `..`",
+            "example": "/test-001"
+          },
+          "access": {
+            "type": "integer",
+            "description": "是否允许外网访问（0不允许，1允许）",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 1,
+            "example": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "HttpServerEditInput": {
+        "type": "object",
+        "description": "HTTP服务器全量编辑。所有字段均为必填，未修改的字段须传原值。\n\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "required": [
+          "enabled",
+          "tagname",
+          "http_port",
+          "server_name",
+          "ssl_on",
+          "autoindex",
+          "download",
+          "home_dir",
+          "access"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "description": "启用状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "服务器名称（唯一）",
+            "example": "myhttp"
+          },
+          "http_port": {
+            "type": "integer",
+            "description": "HTTP端口",
+            "minimum": 1,
+            "maximum": 65535,
+            "example": 8888
+          },
+          "server_name": {
+            "type": "string",
+            "description": "服务器域名（ServerName），可为空",
+            "example": ""
+          },
+          "ssl_on": {
+            "type": "integer",
+            "description": "是否开启SSL加密（0关闭，1开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "autoindex": {
+            "type": "integer",
+            "description": "是否开启目录浏览（0关闭，1开启）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "download": {
+            "type": "integer",
+            "description": "下载限速（KByte/s），0不限速",
+            "minimum": 0,
+            "example": 0
+          },
+          "home_dir": {
+            "type": "string",
+            "description": "用户目录路径。先调用 `GET /api/v4.0/system/files?path=/` 获取可用目录，再填写对应目录路径；不可为 `/`，不可含 `..`",
+            "example": "/test-001"
+          },
+          "access": {
+            "type": "integer",
+            "description": "是否允许外网访问（0不允许，1允许）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "HttpServerListResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "minimum": 0,
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/HttpServer"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "CreateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/CreateResponse"
+          },
+          {
+            "$ref": "#/components/schemas/CreateBusinessErrorResponse"
+          }
+        ],
+        "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "CreateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突（如名称或端口+域名重复）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "http-server",
+      "x-displayName": "HTTP服务器管理",
+      "description": "HTTP服务器的管理和配置，支持SSL、目录浏览、限速等功能"
+    }
+  ]
+}

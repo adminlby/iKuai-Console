@@ -1,0 +1,213 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "分流监控API",
+    "version": "1.0.0",
+    "summary": "分流监控统计查询",
+    "description": "提供分流监控的统计查询功能，包括：\n- 端口分流连接数统计\n- 协议分流连接数统计\n- 域名分流连接数统计\n- 多时间维度数据（今日、昨日、最近7天）\n\n**分流类型说明：**\n- 端口分流：基于端口的流量分流\n- 协议分流：基于L7协议识别的流量分流\n- 域名分流：基于域名的流量分流\n- 未分流：未被任何分流策略匹配的连接\n\n**数据更新：** 每3分钟自动更新\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/monitoring/flow-shunting": {
+      "get": {
+        "summary": "查询分流统计数据",
+        "description": "查询分流监控统计数据，包含今日、昨日、最近7天的连接数统计。\n\n**TYPE 参数：**\n- `data`: 统计数据（默认）\n",
+        "operationId": "getFlowShuntingStats",
+        "tags": [
+          "monitor-flow-shunting"
+        ],
+        "parameters": [
+          {
+            "name": "TYPE",
+            "in": "query",
+            "description": "返回数据类型",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "data"
+              ],
+              "default": "data"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回统计数据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlowShuntingResponse"
+                },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "results": {
+                        "data": {
+                          "today": {
+                            "llb_cnt": 100,
+                            "port_cnt": 50,
+                            "proto_cnt": 30,
+                            "domain_cnt": 20,
+                            "conn_cnt": 200
+                          },
+                          "yesterday": {
+                            "llb_cnt": 120,
+                            "port_cnt": 60,
+                            "proto_cnt": 35,
+                            "domain_cnt": 25,
+                            "conn_cnt": 240
+                          },
+                          "week": {
+                            "llb_cnt": 700,
+                            "port_cnt": 350,
+                            "proto_cnt": 210,
+                            "domain_cnt": 140,
+                            "conn_cnt": 1400
+                          }
+                        },
+                        "clean_time": 1646822400
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "FlowShuntingStats": {
+        "type": "object",
+        "description": "分流统计数据",
+        "properties": {
+          "llb_cnt": {
+            "type": "integer",
+            "description": "负载均衡连接数"
+          },
+          "port_cnt": {
+            "type": "integer",
+            "description": "端口分流连接数"
+          },
+          "proto_cnt": {
+            "type": "integer",
+            "description": "协议分流连接数"
+          },
+          "domain_cnt": {
+            "type": "integer",
+            "description": "域名分流连接数"
+          },
+          "conn_cnt": {
+            "type": "integer",
+            "description": "总连接数"
+          }
+        }
+      },
+      "FlowShuntingResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "object",
+                "description": "统计数据",
+                "properties": {
+                  "today": {
+                    "$ref": "#/components/schemas/FlowShuntingStats"
+                  },
+                  "yesterday": {
+                    "$ref": "#/components/schemas/FlowShuntingStats"
+                  },
+                  "week": {
+                    "$ref": "#/components/schemas/FlowShuntingStats"
+                  }
+                }
+              },
+              "clean_time": {
+                "type": "integer",
+                "description": "上次清空时间戳",
+                "format": "int64"
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求参数错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 400
+                },
+                "message": {
+                  "type": "string",
+                  "example": "参数错误"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 401
+                },
+                "message": {
+                  "type": "string",
+                  "example": "未认证或凭证无效"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "monitor-flow-shunting",
+      "x-displayName": "分流监控",
+      "description": "分流监控统计查询"
+    }
+  ]
+}

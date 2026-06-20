@@ -1,0 +1,30 @@
+node_modules
+**/node_modules
+dist
+**/dist
+dist-ssr
+*.local
+*.tsbuildinfo
+
+# env files (both frontend and backend keep their own)
+.env
+**/.env
+*.env
+!.env.example
+!**/.env.example
+
+# secrets / keys
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Claude Code local settings (may contain tokens in permission rules)
+.claude/settings.local.json
+
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

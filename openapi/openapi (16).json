@@ -1,0 +1,1681 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "负载监控API",
+    "version": "1.0.0",
+    "summary": "系统负载监控数据查询",
+    "description": "提供系统负载监控功能，包括：\n- 系统实时状态监控\n- CPU负载监控\n- 内存使用监控\n- 磁盘空间监控\n- 在线终端数监控\n- 连接数监控\n- 系统温度监控\n- 网络负载监控\n- 支持时间范围和数据聚合\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/monitoring/system": {
+      "get": {
+        "summary": "获取系统实时状态信息",
+        "description": "获取路由系统的实时状态信息，包括CPU、内存、连接数、流量、版本等。\n无需传入参数。\n",
+        "operationId": "getSystemInfo",
+        "tags": [
+          "monitor-load"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取系统实时状态",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemInfoResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "sysinfo": {
+                      "cpu": [
+                        "12.78%",
+                        "15.15%",
+                        "12.87%",
+                        "12.87%",
+                        "12.87%"
+                      ],
+                      "cputemp": [
+                        62
+                      ],
+                      "freq": [
+                        "2000",
+                        "2000",
+                        "2000",
+                        "2000"
+                      ],
+                      "gwid": "dc345846a78aa2521afe00916af191d7",
+                      "hostname": "iKuai",
+                      "ip_addr": "192.168.99.1",
+                      "link_status": 0,
+                      "memory": {
+                        "total": 1774768,
+                        "available": 919360,
+                        "free": 966748,
+                        "cached": 323988,
+                        "buffers": 15668,
+                        "used": "48%"
+                      },
+                      "online_user": {
+                        "count": 0,
+                        "count_2g": 0,
+                        "count_5g": 0,
+                        "count_wired": 0,
+                        "count_wireless": 0
+                      },
+                      "stream": {
+                        "connect_num": 78,
+                        "tcp_connect_num": 48,
+                        "udp_connect_num": 28,
+                        "icmp_connect_num": 2,
+                        "upload": 0,
+                        "download": 0,
+                        "total_up": 22867423,
+                        "total_down": 180169006
+                      },
+                      "uptime": 9837,
+                      "verinfo": {
+                        "modelname": "",
+                        "verstring": "4.0.111-beta x64 Enterprise Build202603131338",
+                        "version": "4.0.111",
+                        "build_date": 202603131338,
+                        "arch": "x86",
+                        "sysbit": "x64"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/cpu": {
+      "get": {
+        "summary": "获取CPU负载监控数据",
+        "description": "获取指定时间范围内的CPU负载监控数据。\n支持按小时、天、周、月进行数据聚合，可选择平均值或最大值。\n",
+        "operationId": "getCpuLoad",
+        "tags": [
+          "monitor-load"
+        ],
+        "parameters": [
+          {
+            "name": "datetype",
+            "in": "query",
+            "description": "数据聚合类型",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hour",
+                "day",
+                "week",
+                "month"
+              ],
+              "example": "hour"
+            }
+          },
+          {
+            "name": "start_time",
+            "in": "query",
+            "description": "开始时间戳",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1763532000
+            }
+          },
+          {
+            "name": "end_time",
+            "in": "query",
+            "description": "结束时间戳",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1763536500
+            }
+          },
+          {
+            "name": "math",
+            "in": "query",
+            "description": "数学计算方式",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "avg",
+                "max"
+              ],
+              "example": "avg"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取CPU负载数据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CpuLoadResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "cpu": [
+                      {
+                        "cpu": 0,
+                        "timestamp": 1763532960
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/memory": {
+      "get": {
+        "summary": "获取内存使用监控数据",
+        "description": "获取指定时间范围内的内存使用监控数据。\n支持按小时、天、周、月进行数据聚合，可选择平均值或最大值。\n",
+        "operationId": "getMemoryLoad",
+        "tags": [
+          "monitor-load"
+        ],
+        "parameters": [
+          {
+            "name": "datetype",
+            "in": "query",
+            "description": "数据聚合类型",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hour",
+                "day",
+                "week",
+                "month"
+              ],
+              "example": "hour"
+            }
+          },
+          {
+            "name": "start_time",
+            "in": "query",
+            "description": "开始时间戳",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1763532000
+            }
+          },
+          {
+            "name": "end_time",
+            "in": "query",
+            "description": "结束时间戳",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1763536500
+            }
+          },
+          {
+            "name": "math",
+            "in": "query",
+            "description": "数学计算方式",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "avg",
+                "max"
+              ],
+              "example": "avg"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取内存使用数据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryLoadResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "memory": [
+                      {
+                        "timestamp": 1763532960,
+                        "memory": 1067964,
+                        "memory_use": 60
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/disk": {
+      "get": {
+        "summary": "获取磁盘空间使用监控数据",
+        "description": "获取指定时间范围内的磁盘空间使用监控数据。\n支持按小时、天、周、月进行数据聚合，可选择平均值或最大值。\n",
+        "operationId": "getDiskSpaceLoad",
+        "tags": [
+          "monitor-load"
+        ],
+        "parameters": [
+          {
+            "name": "datetype",
+            "in": "query",
+            "description": "数据聚合类型",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hour",
+                "day",
+                "week",
+                "month"
+              ],
+              "example": "hour"
+            }
+          },
+          {
+            "name": "start_time",
+            "in": "query",
+            "description": "开始时间戳",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1763532000
+            }
+          },
+          {
+            "name": "end_time",
+            "in": "query",
+            "description": "结束时间戳",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1763536500
+            }
+          },
+          {
+            "name": "math",
+            "in": "query",
+            "description": "数学计算方式",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "avg",
+                "max"
+              ],
+              "example": "avg"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取磁盘空间使用数据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiskSpaceLoadResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "disk_space_used": [
+                      {
+                        "timestamp": 1763532960,
+                        "disk_space_use": 75,
+                        "disk_space_used": 2543
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/terminals": {
+      "get": {
+        "summary": "获取在线终端数监控数据",
+        "description": "获取指定时间范围内的在线终端数监控数据。\n支持按小时、天、周、月进行数据聚合，可选择平均值或最大值。\n",
+        "operationId": "getOnTerminalLoad",
+        "tags": [
+          "monitor-load"
+        ],
+        "parameters": [
+          {
+            "name": "datetype",
+            "in": "query",
+            "description": "数据聚合类型",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hour",
+                "day",
+                "week",
+                "month"
+              ],
+              "example": "hour"
+            }
+          },
+          {
+            "name": "start_time",
+            "in": "query",
+            "description": "开始时间戳",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1763532000
+            }
+          },
+          {
+            "name": "end_time",
+            "in": "query",
+            "description": "结束时间戳",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1763536500
+            }
+          },
+          {
+            "name": "math",
+            "in": "query",
+            "description": "数学计算方式",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "avg",
+                "max"
+              ],
+              "example": "avg"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取在线终端数数据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnTerminalLoadResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "on_terminal": [
+                      {
+                        "on_terminal": 1,
+                        "timestamp": 1763532960
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/connections": {
+      "get": {
+        "summary": "获取连接数监控数据",
+        "description": "获取指定时间范围内的连接数监控数据。\n支持按小时、天、周、月进行数据聚合，可选择平均值或最大值。\n",
+        "operationId": "getConnNumLoad",
+        "tags": [
+          "monitor-load"
+        ],
+        "parameters": [
+          {
+            "name": "datetype",
+            "in": "query",
+            "description": "数据聚合类型",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hour",
+                "day",
+                "week",
+                "month"
+              ],
+              "example": "hour"
+            }
+          },
+          {
+            "name": "start_time",
+            "in": "query",
+            "description": "开始时间戳",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1763532000
+            }
+          },
+          {
+            "name": "end_time",
+            "in": "query",
+            "description": "结束时间戳",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1763536500
+            }
+          },
+          {
+            "name": "math",
+            "in": "query",
+            "description": "数学计算方式",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "avg",
+                "max"
+              ],
+              "example": "avg"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取连接数数据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnNumLoadResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "conn_num": [
+                      {
+                        "conn_num": 6,
+                        "timestamp": 1763532960
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/cputemp": {
+      "get": {
+        "summary": "获取系统温度监控数据",
+        "description": "获取指定时间范围内的系统温度监控数据。\n支持按小时、天、周、月进行数据聚合，可选择平均值或最大值。\n",
+        "operationId": "getCpuTempLoad",
+        "tags": [
+          "monitor-load"
+        ],
+        "parameters": [
+          {
+            "name": "datetype",
+            "in": "query",
+            "description": "数据聚合类型",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hour",
+                "day",
+                "week",
+                "month"
+              ],
+              "example": "hour"
+            }
+          },
+          {
+            "name": "start_time",
+            "in": "query",
+            "description": "开始时间戳",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1763532000
+            }
+          },
+          {
+            "name": "end_time",
+            "in": "query",
+            "description": "结束时间戳",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1763536500
+            }
+          },
+          {
+            "name": "math",
+            "in": "query",
+            "description": "数学计算方式",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "avg",
+                "max"
+              ],
+              "example": "avg"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取系统温度数据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CpuTempLoadResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "cputemp1": [
+                      {
+                        "cputemp1": 56,
+                        "timestamp": 1763532960
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/network": {
+      "get": {
+        "summary": "获取网络负载监控数据",
+        "description": "获取指定时间范围内的网络负载监控数据。\n支持按小时、天、周、月进行数据聚合，可选择平均值或最大值。\n",
+        "operationId": "getNetworkLoad",
+        "tags": [
+          "monitor-load"
+        ],
+        "parameters": [
+          {
+            "name": "datetype",
+            "in": "query",
+            "description": "数据聚合类型",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hour",
+                "day",
+                "week",
+                "month"
+              ],
+              "example": "hour"
+            }
+          },
+          {
+            "name": "start_time",
+            "in": "query",
+            "description": "开始时间戳",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1763532000
+            }
+          },
+          {
+            "name": "end_time",
+            "in": "query",
+            "description": "结束时间戳",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1763536500
+            }
+          },
+          {
+            "name": "math",
+            "in": "query",
+            "description": "数学计算方式",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "avg",
+                "max"
+              ],
+              "example": "avg"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取网络负载数据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetworkLoadResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "rate_stat": [
+                      {
+                        "timestamp": 1764152520,
+                        "max_upload": 0,
+                        "max_download": 0,
+                        "rx_packages": 1534,
+                        "tx_packages": 752
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "请求参数错误"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "未认证或凭证无效"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "无权限访问"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "资源不存在"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "example": {
+                    "message": "服务器内部错误（查看服务器日志、修复异常）"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "CpuLoad": {
+        "type": "object",
+        "required": [
+          "cpu",
+          "timestamp"
+        ],
+        "properties": {
+          "cpu": {
+            "type": "integer",
+            "description": "CPU使用率百分比",
+            "minimum": 0,
+            "maximum": 100,
+            "example": 15
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "时间戳（Unix时间戳）",
+            "example": 1763532960
+          }
+        },
+        "additionalProperties": false
+      },
+      "CpuLoadResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "cpu": {
+                "type": "array",
+                "description": "CPU负载数据列表",
+                "items": {
+                  "$ref": "#/components/schemas/CpuLoad"
+                }
+              }
+            },
+            "required": [
+              "cpu"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "MemoryLoad": {
+        "type": "object",
+        "required": [
+          "timestamp",
+          "memory",
+          "memory_use"
+        ],
+        "properties": {
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "时间戳（Unix时间戳）",
+            "example": 1763532960
+          },
+          "memory": {
+            "type": "integer",
+            "description": "内存使用量（KB）",
+            "minimum": 0,
+            "example": 1067964
+          },
+          "memory_use": {
+            "type": "integer",
+            "description": "内存使用率百分比",
+            "minimum": 0,
+            "maximum": 100,
+            "example": 60
+          }
+        },
+        "additionalProperties": false
+      },
+      "MemoryLoadResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "memory": {
+                "type": "array",
+                "description": "内存使用数据列表",
+                "items": {
+                  "$ref": "#/components/schemas/MemoryLoad"
+                }
+              }
+            },
+            "required": [
+              "memory"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "DiskSpaceLoad": {
+        "type": "object",
+        "required": [
+          "timestamp",
+          "disk_space_use",
+          "disk_space_used"
+        ],
+        "properties": {
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "时间戳（Unix时间戳）",
+            "example": 1763532960
+          },
+          "disk_space_use": {
+            "type": "integer",
+            "description": "磁盘空间使用率百分比",
+            "minimum": 0,
+            "maximum": 100,
+            "example": 75
+          },
+          "disk_space_used": {
+            "type": "integer",
+            "description": "已使用磁盘空间（MB）",
+            "minimum": 0,
+            "example": 2543
+          }
+        },
+        "additionalProperties": false
+      },
+      "DiskSpaceLoadResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "disk_space_used": {
+                "type": "array",
+                "description": "磁盘空间使用数据列表",
+                "items": {
+                  "$ref": "#/components/schemas/DiskSpaceLoad"
+                }
+              }
+            },
+            "required": [
+              "disk_space_used"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "OnTerminalLoad": {
+        "type": "object",
+        "required": [
+          "on_terminal",
+          "timestamp"
+        ],
+        "properties": {
+          "on_terminal": {
+            "type": "integer",
+            "description": "在线终端数量",
+            "minimum": 0,
+            "example": 1
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "时间戳（Unix时间戳）",
+            "example": 1763532960
+          }
+        },
+        "additionalProperties": false
+      },
+      "OnTerminalLoadResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "on_terminal": {
+                "type": "array",
+                "description": "在线终端数数据列表",
+                "items": {
+                  "$ref": "#/components/schemas/OnTerminalLoad"
+                }
+              }
+            },
+            "required": [
+              "on_terminal"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "ConnNumLoad": {
+        "type": "object",
+        "required": [
+          "conn_num",
+          "timestamp"
+        ],
+        "properties": {
+          "conn_num": {
+            "type": "integer",
+            "description": "连接数",
+            "minimum": 0,
+            "example": 6
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "时间戳（Unix时间戳）",
+            "example": 1763532960
+          }
+        },
+        "additionalProperties": false
+      },
+      "ConnNumLoadResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "conn_num": {
+                "type": "array",
+                "description": "连接数数据列表",
+                "items": {
+                  "$ref": "#/components/schemas/ConnNumLoad"
+                }
+              }
+            },
+            "required": [
+              "conn_num"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "CpuTempLoad": {
+        "type": "object",
+        "required": [
+          "cputemp1",
+          "timestamp"
+        ],
+        "properties": {
+          "cputemp1": {
+            "type": "integer",
+            "description": "CPU温度（摄氏度）",
+            "minimum": 0,
+            "maximum": 100,
+            "example": 56
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "时间戳（Unix时间戳）",
+            "example": 1763532960
+          }
+        },
+        "additionalProperties": false
+      },
+      "CpuTempLoadResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "cputemp1": {
+                "type": "array",
+                "description": "CPU温度数据列表",
+                "items": {
+                  "$ref": "#/components/schemas/CpuTempLoad"
+                }
+              }
+            },
+            "required": [
+              "cputemp1"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "NetworkLoad": {
+        "type": "object",
+        "required": [
+          "timestamp",
+          "max_upload",
+          "max_download",
+          "rx_packages",
+          "tx_packages"
+        ],
+        "properties": {
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "时间戳（Unix时间戳）",
+            "example": 1764152520
+          },
+          "max_upload": {
+            "type": "integer",
+            "description": "最大上传速度（字节/秒）",
+            "minimum": 0,
+            "example": 0
+          },
+          "max_download": {
+            "type": "integer",
+            "description": "最大下载速度（字节/秒）",
+            "minimum": 0,
+            "example": 0
+          },
+          "rx_packages": {
+            "type": "integer",
+            "description": "接收包数量",
+            "minimum": 0,
+            "example": 1534
+          },
+          "tx_packages": {
+            "type": "integer",
+            "description": "发送包数量",
+            "minimum": 0,
+            "example": 752
+          }
+        },
+        "additionalProperties": false
+      },
+      "NetworkLoadResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "rate_stat": {
+                "type": "array",
+                "description": "网络负载数据列表",
+                "items": {
+                  "$ref": "#/components/schemas/NetworkLoad"
+                }
+              }
+            },
+            "required": [
+              "rate_stat"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "SysMemory": {
+        "type": "object",
+        "required": [
+          "total",
+          "available",
+          "free",
+          "cached",
+          "buffers",
+          "used"
+        ],
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "总内存（KB）",
+            "example": 1774768
+          },
+          "available": {
+            "type": "integer",
+            "description": "可用内存（KB）",
+            "example": 919360
+          },
+          "free": {
+            "type": "integer",
+            "description": "空闲内存（KB）",
+            "example": 966748
+          },
+          "cached": {
+            "type": "integer",
+            "description": "缓存内存（KB）",
+            "example": 323988
+          },
+          "buffers": {
+            "type": "integer",
+            "description": "缓冲内存（KB）",
+            "example": 15668
+          },
+          "used": {
+            "type": "string",
+            "description": "已用内存百分比",
+            "example": "48%"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SysOnlineUser": {
+        "type": "object",
+        "required": [
+          "count",
+          "count_2g",
+          "count_5g",
+          "count_wired",
+          "count_wireless"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "在线用户总数",
+            "example": 0
+          },
+          "count_2g": {
+            "type": "integer",
+            "description": "2G在线用户数",
+            "example": 0
+          },
+          "count_5g": {
+            "type": "integer",
+            "description": "5G在线用户数",
+            "example": 0
+          },
+          "count_wired": {
+            "type": "integer",
+            "description": "有线在线用户数",
+            "example": 0
+          },
+          "count_wireless": {
+            "type": "integer",
+            "description": "无线在线用户数",
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "SysStream": {
+        "type": "object",
+        "required": [
+          "connect_num",
+          "tcp_connect_num",
+          "udp_connect_num",
+          "icmp_connect_num",
+          "upload",
+          "download",
+          "total_up",
+          "total_down"
+        ],
+        "properties": {
+          "connect_num": {
+            "type": "integer",
+            "description": "当前连接数",
+            "example": 78
+          },
+          "tcp_connect_num": {
+            "type": "integer",
+            "description": "当前TCP连接数",
+            "example": 48
+          },
+          "udp_connect_num": {
+            "type": "integer",
+            "description": "当前UDP连接数",
+            "example": 28
+          },
+          "icmp_connect_num": {
+            "type": "integer",
+            "description": "当前ICMP连接数",
+            "example": 2
+          },
+          "upload": {
+            "type": "integer",
+            "description": "当前上行速率（B/S）",
+            "example": 0
+          },
+          "download": {
+            "type": "integer",
+            "description": "当前下行速率（B/S）",
+            "example": 0
+          },
+          "total_up": {
+            "type": "integer",
+            "description": "总上行流量（B）",
+            "example": 22867423
+          },
+          "total_down": {
+            "type": "integer",
+            "description": "总下行流量（B）",
+            "example": 180169006
+          }
+        },
+        "additionalProperties": false
+      },
+      "SysVerinfo": {
+        "type": "object",
+        "required": [
+          "modelname",
+          "verstring",
+          "version",
+          "build_date",
+          "arch",
+          "sysbit"
+        ],
+        "properties": {
+          "modelname": {
+            "type": "string",
+            "description": "设备型号名称",
+            "example": ""
+          },
+          "verstring": {
+            "type": "string",
+            "description": "版本信息字符串",
+            "example": "4.0.111-beta x64 Enterprise Build202603131338"
+          },
+          "version": {
+            "type": "string",
+            "description": "版本号",
+            "example": "4.0.111"
+          },
+          "build_date": {
+            "type": "integer",
+            "format": "int64",
+            "description": "构建时间",
+            "example": 202603131338
+          },
+          "arch": {
+            "type": "string",
+            "description": "系统架构",
+            "example": "x86"
+          },
+          "sysbit": {
+            "type": "string",
+            "description": "系统位数",
+            "example": "x64"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SysInfo": {
+        "type": "object",
+        "required": [
+          "cpu",
+          "cputemp",
+          "freq",
+          "gwid",
+          "hostname",
+          "ip_addr",
+          "link_status",
+          "memory",
+          "online_user",
+          "stream",
+          "uptime",
+          "verinfo"
+        ],
+        "properties": {
+          "cpu": {
+            "type": "array",
+            "description": "CPU使用率列表，第一项为所有核心平均值，后续依次为各核心使用率",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "12.78%",
+              "15.15%",
+              "12.87%"
+            ]
+          },
+          "cputemp": {
+            "type": "array",
+            "description": "CPU温度列表（摄氏度）",
+            "items": {
+              "type": "integer"
+            },
+            "example": [
+              62
+            ]
+          },
+          "freq": {
+            "type": "array",
+            "description": "各CPU核心频率列表（MHz）",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "2000",
+              "2000",
+              "2000",
+              "2000"
+            ]
+          },
+          "gwid": {
+            "type": "string",
+            "description": "路由ID",
+            "example": "dc345846a78aa2521afe00916af191d7"
+          },
+          "hostname": {
+            "type": "string",
+            "description": "路由主机名称",
+            "example": "iKuai"
+          },
+          "ip_addr": {
+            "type": "string",
+            "description": "路由LAN1 IP地址",
+            "example": "192.168.99.1"
+          },
+          "link_status": {
+            "type": "integer",
+            "description": "链路状态",
+            "example": 0
+          },
+          "memory": {
+            "$ref": "#/components/schemas/SysMemory"
+          },
+          "online_user": {
+            "$ref": "#/components/schemas/SysOnlineUser"
+          },
+          "stream": {
+            "$ref": "#/components/schemas/SysStream"
+          },
+          "uptime": {
+            "type": "integer",
+            "description": "运行时间（秒）",
+            "example": 9837
+          },
+          "verinfo": {
+            "$ref": "#/components/schemas/SysVerinfo"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SystemInfoResponse": {
+        "type": "object",
+        "required": [
+          "message",
+          "results"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "required": [
+              "sysinfo"
+            ],
+            "properties": {
+              "sysinfo": {
+                "$ref": "#/components/schemas/SysInfo"
+              }
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "monitor-load",
+      "x-displayName": "负载监控",
+      "description": "系统负载监控数据查询，包括CPU、内存、磁盘、终端、连接数、温度和网络监控"
+    }
+  ]
+}

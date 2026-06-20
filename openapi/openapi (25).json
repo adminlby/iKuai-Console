@@ -1,0 +1,1656 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "DHCP服务管理API",
+    "version": "1.0.0",
+    "summary": "DHCP服务的完整管理功能",
+    "description": "提供DHCP服务的完整管理功能，包括：\n- 策略配置和更新\n- 地址池管理\n- 服务状态控制\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/network/dhcp/services": {
+      "get": {
+        "summary": "获取所有DHCP策略",
+        "description": "获取当前配置的所有DHCP服务策略列表。\n支持分页、过滤和排序功能。\n",
+        "operationId": "listDhcpServices",
+        "tags": [
+          "dhcp-service"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "过滤条件，支持精确匹配和多条件组合。\n\n支持的操作符：\n- \"==（等于）\"\n- \"!=（不等于）\"\n- \">（大于）\"\n- \">=（大于等于）\"\n- \"<（小于）\"\n- \"<=（小于等于）\"\n\n多条件连接语法：\n- AND逻辑：filter=field1==value1&filter=field2==value2\n- OR逻辑：filter=field1==value1,filter=field2==value2\n\n使用示例：\n- 单条件：filter=enabled==yes\n- AND条件：filter=lease>3600&filter=interface==eth0\n- OR条件：filter=dns1==8.8.8.8,filter=dns2==8.8.4.4\n",
+            "schema": {
+              "type": "string",
+              "example": "enabled==yes"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取DHCP策略列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DhcpServiceListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "创建DHCP策略",
+        "description": "添加新的DHCP服务策略，包括地址池、DNS、WINS等配置。\n所有必需字段必须提供。\n",
+        "operationId": "createDhcpService",
+        "tags": [
+          "dhcp-service"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "DHCP服务配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DHCPServiceInput"
+              },
+              "example": {
+                "enabled": "yes",
+                "interface": "eth0",
+                "phy_ifnames": "eth0,veth0",
+                "addr_pool": "192.168.1.100-192.168.1.200",
+                "exclude_pool": "192.168.1.101,192.168.1.102",
+                "netmask": "255.255.255.0",
+                "gateway": "192.168.1.1",
+                "dns1": "8.8.8.8",
+                "dns2": "8.8.4.4",
+                "wins1": "192.168.1.10",
+                "wins2": "192.168.1.11",
+                "domain": "example.com",
+                "next_server": "192.168.1.2",
+                "lease": 3600,
+                "delay": 600,
+                "opt_type15": 0,
+                "opt15": "example.local",
+                "opt_type28": 1,
+                "opt28": "192.168.1.255",
+                "opt_type43": 2,
+                "opt43": "vendor-specific-data",
+                "opt_type60": 0,
+                "opt60": "PXEClient",
+                "opt_type66": 2,
+                "opt66": "tftp.example.com",
+                "opt_type67": 2,
+                "opt67": "pxelinux.0",
+                "opt_type80": 1,
+                "opt80": "client-identifier",
+                "opt_type119": 2,
+                "opt119": "example.com,corp.com",
+                "opt_type125": 0,
+                "opt125": "",
+                "opt_type128": 1,
+                "opt128": "192.168.1.100",
+                "opt_type138": 1,
+                "opt138": "192.168.1.100",
+                "opt_type121": 1,
+                "opt121": "192.168.1.0,255.255.255.0,192.168.1.1",
+                "check_addr_valid": 1,
+                "check_relay_only": 0
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DhcpErrorResponse"
+                },
+                "example": {
+                  "message": "请求参数不合法"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "description": "资源冲突（名称已存在或地址池冲突）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DhcpErrorResponse"
+                },
+                "example": {
+                  "message": "名称已存在或地址池冲突"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/network/dhcp/services/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/dhcpServiceIdParam"
+        }
+      ],
+      "get": {
+        "summary": "获取指定DHCP策略",
+        "description": "根据策略ID获取单个DHCP服务策略的详细信息。\n需要提供有效的策略ID。\n",
+        "operationId": "getDhcpService",
+        "tags": [
+          "dhcp-service"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取DHCP策略详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DhcpServiceResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新DHCP策略",
+        "description": "完全更新现有的DHCP服务策略配置。\n需要提供所有字段。\n\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateDhcpService",
+        "tags": [
+          "dhcp-service"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "完整的DHCP服务配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DHCPServiceInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "启用/停用DHCP策略",
+        "description": "部分更新现有的DHCP服务策略配置。\n主要用于启用/停用策略状态。\n",
+        "operationId": "patchDhcpService",
+        "tags": [
+          "dhcp-service"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "部分更新数据（如启用状态）",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "enabled"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "string",
+                    "enum": [
+                      "yes",
+                      "no"
+                    ],
+                    "description": "服务启用状态",
+                    "example": "yes"
+                  }
+                }
+              },
+              "example": {
+                "enabled": "yes"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除DHCP策略",
+        "description": "删除指定的DHCP服务策略。\n删除后无法恢复，请谨慎操作。\n",
+        "operationId": "deleteDhcpService",
+        "tags": [
+          "dhcp-service"
+        ],
+        "responses": {
+          "200": {
+            "description": "DHCP策略删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/network/dhcp/services:restart": {
+      "post": {
+        "summary": "重启DHCP服务",
+        "description": "重启DHCP服务，所有配置更改将生效。\n服务重启期间可能会有短暂的服务中断。\n",
+        "operationId": "restartDhcpService",
+        "tags": [
+          "dhcp-service-control"
+        ],
+        "responses": {
+          "200": {
+            "description": "DHCP服务重启成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "description": "服务重启异常",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DhcpErrorResponse"
+                },
+                "example": {
+                  "message": "服务重新启动异常"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "dhcpServiceIdParam": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "DHCP策略ID",
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 1,
+          "example": 1
+        }
+      },
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 20,
+          "example": 20
+        }
+      },
+      "orderParam": {
+        "name": "order",
+        "in": "query",
+        "description": "排序方向，asc为升序（默认），desc为降序",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "asc",
+          "example": "asc"
+        }
+      },
+      "orderByParam": {
+        "name": "order_by",
+        "in": "query",
+        "description": "排序字段，支持id、interface、lease等字段",
+        "schema": {
+          "type": "string",
+          "default": "id",
+          "example": "id"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源冲突（如唯一性冲突，需调整请求逻辑）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "成功状态码，创建接口中为0",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "DhcpServiceResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DHCPService"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "DhcpServiceListResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "总记录数",
+                "example": 25
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DHCPService"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "DhcpErrorResponse": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "DHCP业务错误信息描述"
+          }
+        }
+      },
+      "DHCPService": {
+        "type": "object",
+        "required": [
+          "id",
+          "enabled",
+          "tagname",
+          "interface",
+          "phy_ifnames",
+          "addr_pool",
+          "netmask",
+          "gateway"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "策略ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "服务启用状态，yes为启用（默认），no为停用",
+            "example": "yes"
+          },
+          "tagname": {
+            "type": "string",
+            "description": "名称，支持中文、英文、数字、下划线和连字符，1-15个字符，不能以下划线或连字符开头",
+            "minLength": 1,
+            "maxLength": 15,
+            "example": "iKuai-DHCP"
+          },
+          "interface": {
+            "type": "string",
+            "description": "绑定的网络接口名称",
+            "pattern": "^[a-zA-Z0-9]+$",
+            "minLength": 1,
+            "maxLength": 20,
+            "example": "lan1"
+          },
+          "phy_ifnames": {
+            "type": "string",
+            "description": "绑定的物理网卡名称，多个用逗号分隔",
+            "pattern": "^[a-zA-Z0-9,]+$",
+            "minLength": 1,
+            "example": "eth0,veth0"
+          },
+          "addr_pool": {
+            "type": "string",
+            "description": "DHCP地址池范围，格式为起始IP-结束IP",
+            "pattern": "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)-((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$",
+            "example": "192.168.1.100-192.168.1.200"
+          },
+          "exclude_pool": {
+            "type": "string",
+            "description": "排除的地址范围，在地址池中不分配的IP，多个用逗号分隔",
+            "pattern": "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(,((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))*$",
+            "example": "192.168.1.101,192.168.1.102"
+          },
+          "netmask": {
+            "type": "string",
+            "description": "子网掩码",
+            "format": "ipv4",
+            "example": "255.255.255.0"
+          },
+          "gateway": {
+            "type": "string",
+            "description": "默认网关地址",
+            "format": "ipv4",
+            "example": "192.168.1.1"
+          },
+          "dns1": {
+            "type": "string",
+            "description": "主DNS服务器地址，默认为223.5.5.5",
+            "format": "ipv4",
+            "default": "223.5.5.5",
+            "example": "8.8.8.8"
+          },
+          "dns2": {
+            "type": "string",
+            "description": "次DNS服务器地址，默认为223.6.6.6",
+            "format": "ipv4",
+            "default": "223.6.6.6",
+            "example": "8.8.4.4"
+          },
+          "wins1": {
+            "type": "string",
+            "description": "主WINS服务器地址，用于Windows客户端",
+            "format": "ipv4",
+            "example": "192.168.1.10"
+          },
+          "wins2": {
+            "type": "string",
+            "description": "次WINS服务器地址，用于Windows客户端",
+            "format": "ipv4",
+            "example": "192.168.1.11"
+          },
+          "domain": {
+            "type": "string",
+            "description": "DNS域名",
+            "format": "hostname",
+            "example": "example.com"
+          },
+          "next_server": {
+            "type": "string",
+            "description": "下一跳服务器IP地址，通常用于PXE启动",
+            "format": "ipv4",
+            "example": "192.168.1.2"
+          },
+          "lease": {
+            "type": "integer",
+            "description": "IP地址租赁时间（秒），默认为3600（1小时）",
+            "minimum": 1,
+            "maximum": 525600,
+            "default": 3600,
+            "example": 3600
+          },
+          "delay": {
+            "type": "integer",
+            "description": "过期地址保留时间（秒），默认为600（10分钟）",
+            "minimum": 0,
+            "maximum": 2160,
+            "default": 600,
+            "example": 600
+          },
+          "opt_type15": {
+            "type": "integer",
+            "description": "Option type 15类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type28": {
+            "type": "integer",
+            "description": "Option type 28类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type43": {
+            "type": "integer",
+            "description": "Option type 43类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type60": {
+            "type": "integer",
+            "description": "Option type 60类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type66": {
+            "type": "integer",
+            "description": "Option type 66类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type67": {
+            "type": "integer",
+            "description": "Option type 67类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type80": {
+            "type": "integer",
+            "description": "Option type 80类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type119": {
+            "type": "integer",
+            "description": "Option type 119类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type125": {
+            "type": "integer",
+            "description": "Option type 125类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type128": {
+            "type": "integer",
+            "description": "Option type 128类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type138": {
+            "type": "integer",
+            "description": "Option type 138类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type121": {
+            "type": "integer",
+            "description": "Option type 121类型，0: 16进制 2: 路由列表（IP/掩码 网关）",
+            "enum": [
+              0,
+              2
+            ],
+            "default": 2,
+            "example": 2
+          },
+          "opt15": {
+            "type": "string",
+            "description": "Option 15内容，用于指定用户的DNS域名",
+            "default": "",
+            "example": ""
+          },
+          "opt28": {
+            "type": "string",
+            "description": "Option 28内容，广播地址配置",
+            "default": "",
+            "example": ""
+          },
+          "opt43": {
+            "type": "string",
+            "description": "Option 43内容，供应商特定信息的配置内容",
+            "default": "",
+            "example": ""
+          },
+          "opt60": {
+            "type": "string",
+            "description": "Option 60内容，供应商类别标识符，用于标识设备厂商类型",
+            "default": "",
+            "example": ""
+          },
+          "opt66": {
+            "type": "string",
+            "description": "Option 66内容，TFTP服务器名称，用于PXE启动",
+            "default": "",
+            "example": ""
+          },
+          "opt67": {
+            "type": "string",
+            "description": "Option 67内容，PXE启动文件名配置",
+            "default": "",
+            "example": ""
+          },
+          "opt80": {
+            "type": "string",
+            "description": "Option 80内容，客户端标识符用于唯一识别客户端",
+            "default": "",
+            "example": ""
+          },
+          "opt119": {
+            "type": "string",
+            "description": "Option 119内容，域名搜索列表，指定DNS搜索域",
+            "default": "",
+            "example": ""
+          },
+          "opt125": {
+            "type": "string",
+            "description": "Option 125内容，供应商标识符，用于识别DHCP供应商设备",
+            "default": "",
+            "example": ""
+          },
+          "opt128": {
+            "type": "string",
+            "description": "Option 128内容，微软PXE启动相关配置",
+            "default": "",
+            "example": ""
+          },
+          "opt138": {
+            "type": "string",
+            "description": "Option 138内容，微软特定选项用于远程启动",
+            "default": "",
+            "example": ""
+          },
+          "opt121": {
+            "type": "string",
+            "description": "Option 121内容，静态路由配置，指定客户端应添加到路由表的路由",
+            "default": "",
+            "example": ""
+          },
+          "check_addr_valid": {
+            "type": "integer",
+            "description": "是否检查IP地址有效性，1为检查，0为不检查",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 1,
+            "example": 1
+          },
+          "check_relay_only": {
+            "type": "integer",
+            "description": "是否只能使用与中继请求，1为是，0为否",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "DHCPServiceInput": {
+        "type": "object",
+        "required": [
+          "enabled",
+          "tagname",
+          "interface",
+          "phy_ifnames",
+          "addr_pool",
+          "netmask",
+          "gateway",
+          "lease",
+          "delay",
+          "check_addr_valid",
+          "check_relay_only"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "服务启用状态，yes为启用（默认），no为停用",
+            "example": "yes"
+          },
+          "tagname": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 15,
+            "description": "名称，支持中文、英文、数字、下划线和连字符，1-15个字符，不能以下划线或连字符开头",
+            "example": "iKuai-DHCP"
+          },
+          "interface": {
+            "type": "string",
+            "description": "绑定的网络接口名称",
+            "pattern": "^[a-zA-Z0-9]+$",
+            "minLength": 1,
+            "maxLength": 20,
+            "example": "lan1"
+          },
+          "phy_ifnames": {
+            "type": "string",
+            "description": "绑定的物理网卡名称，多个用逗号分隔",
+            "pattern": "^[a-zA-Z0-9,]+$",
+            "minLength": 1,
+            "example": "eth0,veth0"
+          },
+          "addr_pool": {
+            "type": "string",
+            "description": "DHCP地址池范围，格式为起始IP-结束IP",
+            "pattern": "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)-((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$",
+            "example": "192.168.1.100-192.168.1.200"
+          },
+          "exclude_pool": {
+            "type": "string",
+            "description": "排除的地址范围，在地址池中不分配的IP，多个用逗号分隔",
+            "pattern": "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(,((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))*$",
+            "example": "192.168.1.101,192.168.1.102"
+          },
+          "netmask": {
+            "type": "string",
+            "description": "子网掩码",
+            "format": "ipv4",
+            "example": "255.255.255.0"
+          },
+          "gateway": {
+            "type": "string",
+            "description": "默认网关地址",
+            "format": "ipv4",
+            "example": "192.168.1.1"
+          },
+          "dns1": {
+            "type": "string",
+            "description": "主DNS服务器地址，默认为223.5.5.5",
+            "format": "ipv4",
+            "default": "223.5.5.5",
+            "example": "8.8.8.8"
+          },
+          "dns2": {
+            "type": "string",
+            "description": "次DNS服务器地址，默认为223.6.6.6",
+            "format": "ipv4",
+            "default": "223.6.6.6",
+            "example": "8.8.4.4"
+          },
+          "wins1": {
+            "type": "string",
+            "description": "主WINS服务器地址，用于Windows客户端",
+            "format": "ipv4",
+            "example": "192.168.1.10"
+          },
+          "wins2": {
+            "type": "string",
+            "description": "次WINS服务器地址，用于Windows客户端",
+            "format": "ipv4",
+            "example": "192.168.1.11"
+          },
+          "domain": {
+            "type": "string",
+            "description": "DNS域名",
+            "format": "hostname",
+            "example": "example.com"
+          },
+          "next_server": {
+            "type": "string",
+            "description": "下一跳服务器IP地址，通常用于PXE启动",
+            "format": "ipv4",
+            "example": "192.168.1.2"
+          },
+          "lease": {
+            "type": "integer",
+            "description": "IP地址租赁时间（秒），默认为3600（1小时）",
+            "minimum": 1,
+            "maximum": 525600,
+            "default": 3600,
+            "example": 3600
+          },
+          "delay": {
+            "type": "integer",
+            "description": "过期地址保留时间（秒），默认为600（10分钟）",
+            "minimum": 0,
+            "maximum": 2160,
+            "default": 600,
+            "example": 600
+          },
+          "opt_type15": {
+            "type": "integer",
+            "description": "Option type 15类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type28": {
+            "type": "integer",
+            "description": "Option type 28类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type43": {
+            "type": "integer",
+            "description": "Option type 43类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type60": {
+            "type": "integer",
+            "description": "Option type 60类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type66": {
+            "type": "integer",
+            "description": "Option type 66类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type67": {
+            "type": "integer",
+            "description": "Option type 67类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type80": {
+            "type": "integer",
+            "description": "Option type 80类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type119": {
+            "type": "integer",
+            "description": "Option type 119类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type125": {
+            "type": "integer",
+            "description": "Option type 125类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type128": {
+            "type": "integer",
+            "description": "Option type 128类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type138": {
+            "type": "integer",
+            "description": "Option type 138类型，0: 16进制 1: IP地址 2: 字符串",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "opt_type121": {
+            "type": "integer",
+            "description": "Option type 121类型，0: 16进制 2: 路由列表（IP/掩码 网关）",
+            "enum": [
+              0,
+              2
+            ],
+            "default": 2,
+            "example": 2
+          },
+          "opt15": {
+            "type": "string",
+            "description": "Option 15内容，用于指定用户的DNS域名",
+            "default": "",
+            "example": ""
+          },
+          "opt28": {
+            "type": "string",
+            "description": "Option 28内容，广播地址配置",
+            "default": "",
+            "example": ""
+          },
+          "opt43": {
+            "type": "string",
+            "description": "Option 43内容，供应商特定信息的配置内容",
+            "default": "",
+            "example": ""
+          },
+          "opt60": {
+            "type": "string",
+            "description": "Option 60内容，供应商类别标识符，用于标识设备厂商类型",
+            "default": "",
+            "example": ""
+          },
+          "opt66": {
+            "type": "string",
+            "description": "Option 66内容，TFTP服务器名称，用于PXE启动",
+            "default": "",
+            "example": ""
+          },
+          "opt67": {
+            "type": "string",
+            "description": "Option 67内容，PXE启动文件名配置",
+            "default": "",
+            "example": ""
+          },
+          "opt80": {
+            "type": "string",
+            "description": "Option 80内容，客户端标识符用于唯一识别客户端",
+            "default": "",
+            "example": ""
+          },
+          "opt119": {
+            "type": "string",
+            "description": "Option 119内容，域名搜索列表，指定DNS搜索域",
+            "default": "",
+            "example": ""
+          },
+          "opt125": {
+            "type": "string",
+            "description": "Option 125内容，供应商标识符，用于识别DHCP供应商设备",
+            "default": "",
+            "example": ""
+          },
+          "opt128": {
+            "type": "string",
+            "description": "Option 128内容，微软PXE启动相关配置",
+            "default": "",
+            "example": ""
+          },
+          "opt138": {
+            "type": "string",
+            "description": "Option 138内容，微软特定选项用于远程启动",
+            "default": "",
+            "example": ""
+          },
+          "opt121": {
+            "type": "string",
+            "description": "Option 121内容，静态路由配置，指定客户端应添加到路由表的路由",
+            "default": "",
+            "example": ""
+          },
+          "check_addr_valid": {
+            "type": "integer",
+            "description": "是否检查IP地址有效性，1为检查，0为不检查",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 1,
+            "example": 1
+          },
+          "check_relay_only": {
+            "type": "integer",
+            "description": "是否只能使用与中继请求，1为是，0为否",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/SuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/CreateBusinessErrorResponse"
+          }
+        ],
+        "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "CreateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "dhcp-service",
+      "x-displayName": "DHCP服务",
+      "description": "DHCP服务策略的管理和配置"
+    },
+    {
+      "name": "dhcp-service-control",
+      "x-displayName": "DHCP服务控制",
+      "description": "DHCP服务的重启控制"
+    }
+  ]
+}

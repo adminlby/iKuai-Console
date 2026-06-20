@@ -1,0 +1,815 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "无线监控管理API",
+    "version": "1.0.0",
+    "summary": "无线网络监控的完整功能",
+    "description": "提供无线网络监控的完整功能，包括：\n- 无线AP和终端统计信息\n- 无线流量统计监控\n- 无线网络评分分析\n- SSID终端数量统计\n- 信道占用情况统计\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/monitoring/wireless-statistics": {
+      "get": {
+        "summary": "获取无线监控统计信息",
+        "description": "获取无线网络的统计数据，包括AP状态统计和客户端状态统计，\n如AP在线数量、终端数量、频段分布等信息。\n",
+        "operationId": "getWirelessStatistics",
+        "tags": [
+          "monitor-wireless"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取无线统计信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WirelessStatisticsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/wireless-traffic": {
+      "get": {
+        "summary": "获取无线流量统计",
+        "description": "获取最近24小时内AP设备的无线流量统计数据，包括五分钟累计流量和实时上下行速率。\n可通过apmac参数过滤指定AP的数据，不提供则汇总所有AP数据。\n",
+        "operationId": "getWirelessTraffic",
+        "tags": [
+          "monitor-wireless"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/apmacParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取无线流量统计",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WirelessTrafficResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/wireless-score": {
+      "get": {
+        "summary": "获取无线网络评分",
+        "description": "获取最近24小时内无线网络质量评分，包括用户活跃度、空口健康度、信道负载、\n关联稳定度、延迟、信号覆盖度、丢包率等评分指标。\n",
+        "operationId": "getWirelessScore",
+        "tags": [
+          "monitor-wireless"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取无线网络评分",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WirelessScoreResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/ssid-clients": {
+      "get": {
+        "summary": "获取SSID终端统计",
+        "description": "获取各SSID的终端连接历史统计信息，按每小时汇总。\n可通过ssid参数过滤指定SSID的数据，不提供则返回所有SSID数据。\n",
+        "operationId": "getWirelessSsidClients",
+        "tags": [
+          "monitor-wireless"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ssidParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取SSID终端统计",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WirelessSsidClientsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/channel-clients": {
+      "get": {
+        "summary": "获取信道终端统计",
+        "description": "获取各信道的终端连接历史统计信息，按每小时汇总。\n可通过channel参数过滤指定信道的数据，不提供则返回所有信道数据。\n",
+        "operationId": "getWirelessChannelClients",
+        "tags": [
+          "monitor-wireless"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/channelParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取信道终端统计",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WirelessChannelClientsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "apmacParam": {
+        "name": "apmac",
+        "in": "query",
+        "description": "AP设备MAC地址，不提供则汇总所有AP数据",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "pattern": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$",
+          "example": "00:00:00:00:00:00"
+        }
+      },
+      "ssidParam": {
+        "name": "ssid",
+        "in": "query",
+        "description": "SSID名称，不提供则返回所有SSID数据",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 100,
+          "example": "iKuai01_2G"
+        }
+      },
+      "channelParam": {
+        "name": "channel",
+        "in": "query",
+        "description": "无线信道号，不提供则返回所有信道数据",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 165,
+          "example": 1
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息",
+            "example": "请求语法错误或参数不合法"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "WirelessStatisticsResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/WirelessStatisticsResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "WirelessStatisticsResults": {
+        "type": "object",
+        "required": [
+          "ap_status",
+          "clt_status"
+        ],
+        "properties": {
+          "ap_status": {
+            "$ref": "#/components/schemas/ApStatus"
+          },
+          "clt_status": {
+            "$ref": "#/components/schemas/CltStatus"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApStatus": {
+        "type": "object",
+        "required": [
+          "ap_count",
+          "ap_online",
+          "ap_offline",
+          "ap_perfer_5g",
+          "ap_roaming"
+        ],
+        "properties": {
+          "ap_count": {
+            "type": "integer",
+            "description": "AP总数",
+            "minimum": 0,
+            "example": 3
+          },
+          "ap_online": {
+            "type": "integer",
+            "description": "在线AP数量",
+            "minimum": 0,
+            "example": 3
+          },
+          "ap_offline": {
+            "type": "integer",
+            "description": "离线AP数量",
+            "minimum": 0,
+            "example": 0
+          },
+          "ap_perfer_5g": {
+            "type": "integer",
+            "description": "偏好5G的AP数量",
+            "minimum": 0,
+            "example": 3
+          },
+          "ap_roaming": {
+            "type": "integer",
+            "description": "支持漫游的AP数量",
+            "minimum": 0,
+            "example": 3
+          }
+        },
+        "additionalProperties": false
+      },
+      "CltStatus": {
+        "type": "object",
+        "required": [
+          "clt_count",
+          "clt_count_2g",
+          "clt_count_5g",
+          "clt_max_online",
+          "clt_active",
+          "clt_inactive"
+        ],
+        "properties": {
+          "clt_count": {
+            "type": "integer",
+            "description": "终端总数",
+            "minimum": 0,
+            "example": 1
+          },
+          "clt_count_2g": {
+            "type": "integer",
+            "description": "2G终端数量",
+            "minimum": 0,
+            "example": 0
+          },
+          "clt_count_5g": {
+            "type": "integer",
+            "description": "5G终端数量",
+            "minimum": 0,
+            "example": 1
+          },
+          "clt_max_online": {
+            "type": "integer",
+            "description": "最近24小时最大在线终端数",
+            "minimum": 0,
+            "example": 3
+          },
+          "clt_active": {
+            "type": "integer",
+            "description": "活跃终端数",
+            "minimum": 0,
+            "example": 0
+          },
+          "clt_inactive": {
+            "type": "integer",
+            "description": "非活跃终端数",
+            "minimum": 0,
+            "example": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "WirelessTrafficResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/WirelessTrafficResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "WirelessTrafficResults": {
+        "type": "object",
+        "properties": {
+          "total_count_flow": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WirelessTrafficFlow"
+            },
+            "description": "最近24小时流量统计数据列表（按时间戳分组）"
+          }
+        },
+        "required": [
+          "total_count_flow"
+        ],
+        "additionalProperties": false
+      },
+      "WirelessTrafficFlow": {
+        "type": "object",
+        "required": [
+          "id",
+          "timestamp",
+          "upload",
+          "download",
+          "count5m_up",
+          "count5m_down"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "记录ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "时间戳（Unix时间戳）",
+            "example": 1763804700
+          },
+          "upload": {
+            "type": "integer",
+            "description": "上行速率汇总（bps）",
+            "minimum": 0,
+            "example": 1024
+          },
+          "download": {
+            "type": "integer",
+            "description": "下行速率汇总（bps）",
+            "minimum": 0,
+            "example": 2048
+          },
+          "count5m_up": {
+            "type": "integer",
+            "format": "int64",
+            "description": "五分钟上行累计流量（字节）",
+            "minimum": 0,
+            "example": 0
+          },
+          "count5m_down": {
+            "type": "integer",
+            "format": "int64",
+            "description": "五分钟下行累计流量（字节）",
+            "minimum": 0,
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "WirelessScoreResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/WirelessScoreResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "WirelessScoreResults": {
+        "type": "object",
+        "properties": {
+          "total_count_net_status": {
+            "$ref": "#/components/schemas/WirelessNetworkScore"
+          }
+        },
+        "required": [
+          "total_count_net_status"
+        ],
+        "additionalProperties": false
+      },
+      "WirelessNetworkScore": {
+        "type": "object",
+        "required": [
+          "score_active_user",
+          "score_chutil_load",
+          "score_channf_load",
+          "score_conn_sta",
+          "delay",
+          "coverage",
+          "dropptk"
+        ],
+        "properties": {
+          "score_active_user": {
+            "type": "integer",
+            "description": "用户活跃度评分",
+            "minimum": 0,
+            "example": 74
+          },
+          "score_chutil_load": {
+            "type": "integer",
+            "description": "空口健康度评分",
+            "minimum": 0,
+            "example": 95
+          },
+          "score_channf_load": {
+            "type": "integer",
+            "description": "信道负载评分",
+            "minimum": 0,
+            "example": 100
+          },
+          "score_conn_sta": {
+            "type": "integer",
+            "description": "关联稳定度评分",
+            "minimum": 0,
+            "example": 98
+          },
+          "delay": {
+            "type": "integer",
+            "description": "延迟（毫秒）",
+            "minimum": 0,
+            "example": 0
+          },
+          "coverage": {
+            "type": "integer",
+            "description": "信号覆盖度",
+            "minimum": 0,
+            "example": 100
+          },
+          "dropptk": {
+            "type": "integer",
+            "description": "丢包率（2G+5G合计均值）",
+            "minimum": 0,
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "WirelessSsidClientsResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/WirelessSsidClientsResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "WirelessSsidClientsResults": {
+        "type": "object",
+        "properties": {
+          "ssid_sta_history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SsidStaHistory"
+            },
+            "description": "SSID终端历史数据（每小时汇总）"
+          }
+        },
+        "required": [
+          "ssid_sta_history"
+        ],
+        "additionalProperties": false
+      },
+      "SsidStaHistory": {
+        "type": "object",
+        "required": [
+          "total",
+          "timestamp",
+          "ssid"
+        ],
+        "properties": {
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "时间戳（Unix时间戳，整点）",
+            "example": 1763784900
+          },
+          "ssid": {
+            "type": "string",
+            "description": "SSID名称",
+            "maxLength": 100,
+            "example": "iKuai01_2G"
+          },
+          "total": {
+            "type": "integer",
+            "description": "终端总数（inactive+active之和）",
+            "minimum": 0,
+            "example": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "WirelessChannelClientsResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/WirelessChannelClientsResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "WirelessChannelClientsResults": {
+        "type": "object",
+        "properties": {
+          "channel_sta_history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChannelStaHistory"
+            },
+            "description": "信道终端历史数据（每小时汇总）"
+          }
+        },
+        "required": [
+          "channel_sta_history"
+        ],
+        "additionalProperties": false
+      },
+      "ChannelStaHistory": {
+        "type": "object",
+        "required": [
+          "apnum",
+          "timestamp",
+          "channel",
+          "online"
+        ],
+        "properties": {
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "时间戳（Unix时间戳，整点）",
+            "example": 1763784900
+          },
+          "channel": {
+            "type": "integer",
+            "description": "信道号",
+            "minimum": 1,
+            "maximum": 165,
+            "example": 1
+          },
+          "online": {
+            "type": "integer",
+            "description": "在线终端数",
+            "minimum": 0,
+            "example": 0
+          },
+          "apnum": {
+            "type": "integer",
+            "description": "使用该信道的AP个数",
+            "minimum": 0,
+            "example": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "monitor-wireless",
+      "x-displayName": "无线监控",
+      "description": "无线网络监控，包括AP状态、流量统计、网络评分、SSID和信道监控"
+    }
+  ]
+}

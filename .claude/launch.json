@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "ikuai-frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "frontend", "run", "dev"],
+      "port": 5273
+    },
+    {
+      "name": "ikuai-mock-acon",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "frontend", "run", "dev", "--", "--port", "5291"],
+      "port": 5291,
+      "env": { "VITE_ALLOW_MOCK": "1", "VITE_IKUAI_BASE": "https://127.0.0.1:1" }
+    }
+  ]
+}

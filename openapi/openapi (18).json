@@ -1,0 +1,1419 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "应用协议监控管理API",
+    "version": "1.0.0",
+    "summary": "应用协议流量监控和统计分析功能",
+    "description": "提供应用协议监控的完整功能，包括：\n- 最近24小时应用协议流量统计\n- 协议分类流量汇总\n- 协议分类历史速率（每5分钟一个数据点）\n- 当前应用协议速率使用详情\n- 应用协议历史速率使用详情\n- 访问指定应用协议的终端列表\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/monitoring/app-traffic-summary": {
+      "get": {
+        "summary": "获取最近24小时应用协议流量统计",
+        "description": "获取最近24小时的应用协议流量统计信息，包括应用名称、分类、\n总流量、上下行流量等详细数据。支持分页查询，不支持key、pattern、filter。\n",
+        "operationId": "getAppTrafficSummary",
+        "tags": [
+          "monitor-app-traffic"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取最近24小时应用协议流量统计",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppTrafficSummaryResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "proto3_day": [
+                      {
+                        "appname": "阿里云",
+                        "appname_level1": "云服务",
+                        "appname_level2": "传输下载",
+                        "total": 95062858,
+                        "id": 2,
+                        "total_down": 47258077,
+                        "total_up": 47804781,
+                        "appid": 2540017
+                      },
+                      {
+                        "appname": "HTTPS",
+                        "appname_level1": "基础协议",
+                        "appname_level2": "网络协议",
+                        "total": 80009645,
+                        "id": 3,
+                        "total_down": 71440106,
+                        "total_up": 8569539,
+                        "appid": 1000020
+                      }
+                    ],
+                    "proto3_day_total": 56,
+                    "proto3_day_total_flow": 733339966
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/protocols": {
+      "get": {
+        "summary": "获取最近24小时协议分类流量汇总",
+        "description": "查询最近24小时协议分类的流量使用详情，返回各协议大类的流量汇总。\n协议大类包括：网络协议、传输下载、休闲娱乐、生活服务、办公协作、\n社交通讯、效率工具、网络游戏、金融理财、学习教育等。\n支持时间段范围查询，不支持limit、page、key、pattern、filter。\n",
+        "operationId": "listProtocolsTraffic",
+        "tags": [
+          "monitor-app-traffic"
+        ],
+        "parameters": [
+          {
+            "name": "starttime",
+            "in": "query",
+            "required": false,
+            "description": "查询起始时间戳（Unix时间戳）",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1773215100
+            }
+          },
+          {
+            "name": "stoptime",
+            "in": "query",
+            "required": false,
+            "description": "查询结束时间戳（Unix时间戳）",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1773215100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取应用协议分类流量汇总",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProtocolsTrafficResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "data": [
+                      {
+                        "proto": "1000000:1499999",
+                        "proto_name": "网络协议",
+                        "total": 256535748864
+                      },
+                      {
+                        "proto": "2500000:2999999",
+                        "proto_name": "传输下载",
+                        "total": 171852275684
+                      },
+                      {
+                        "proto": "3000000:3499999",
+                        "proto_name": "休闲娱乐",
+                        "total": 52848833471
+                      },
+                      {
+                        "proto": "4:7",
+                        "proto_name": "未知应用",
+                        "total": 25864048498
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/protocols/history-load": {
+      "get": {
+        "summary": "获取协议分类历史速率",
+        "description": "查询最近24小时协议分类的速率使用详情，每5分钟一个数据点。\n返回各协议分类的上下行速率、总流量、连接数等信息。\n支持时间段范围查询（可选），不支持limit、page、key、pattern、filter。\n",
+        "operationId": "getProtocolsHistoryLoad",
+        "tags": [
+          "monitor-app-traffic"
+        ],
+        "parameters": [
+          {
+            "name": "starttime",
+            "in": "query",
+            "required": false,
+            "description": "查询起始时间戳（Unix时间戳，可选）",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1773215100
+            }
+          },
+          {
+            "name": "stoptime",
+            "in": "query",
+            "required": false,
+            "description": "查询结束时间戳（Unix时间戳，可选）",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1773215100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取应用协议分类历史速率数据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProtocolsHistoryLoadResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "data": [
+                      {
+                        "proto": "3500000:3999999",
+                        "proto_name": "效率工具",
+                        "id": 112451,
+                        "timestamp": 1773215100,
+                        "conn_cnt": 59,
+                        "upload": 40033,
+                        "download": 309602,
+                        "total_up": 5975668,
+                        "total_down": 8691312,
+                        "total": 14666980
+                      },
+                      {
+                        "proto": "4:7",
+                        "proto_name": "未知应用",
+                        "id": 112452,
+                        "timestamp": 1773215100,
+                        "conn_cnt": 240,
+                        "upload": 4678,
+                        "download": 4911,
+                        "total_up": 2313328,
+                        "total_down": 18727212,
+                        "total": 21040540
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/app-protocols/load": {
+      "get": {
+        "summary": "获取当前应用协议速率使用详情",
+        "description": "查询当前各应用协议的速率使用详情，包括当前连接数、上下行速率、总流量等。\n支持分页查询，支持按上下行流量进行排序，不支持key、pattern、filter。\n",
+        "operationId": "listAppProtocolsLoad",
+        "tags": [
+          "monitor-app-traffic"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/limitParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderParam"
+          },
+          {
+            "$ref": "#/components/parameters/orderByParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取当前应用协议速率使用详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppProtocolsLoadResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "data": [
+                      {
+                        "appid": 2580003,
+                        "appname": "IOS更新",
+                        "proto1_name": "2500000:2999999",
+                        "total_up": 814625315,
+                        "total_down": 112532061362,
+                        "conn_cnt": 0,
+                        "upload": 0,
+                        "download": 0,
+                        "id": 1,
+                        "total": 113346686677,
+                        "proto2_name": "2580001:2590000"
+                      },
+                      {
+                        "appid": 1000024,
+                        "appname": "IOS更新",
+                        "proto1_name": "1000000:1499999",
+                        "total_up": 4293602113,
+                        "total_down": 80956644079,
+                        "conn_cnt": 61,
+                        "upload": 20077,
+                        "download": 434711,
+                        "id": 2,
+                        "total": 85250246192,
+                        "proto2_name": "1000001:1010000"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/app-protocols/history-load": {
+      "get": {
+        "summary": "获取应用协议历史速率使用详情",
+        "description": "查询指定应用协议的最近24小时历史速率使用详情，每5分钟一个数据点。\n例如可查询微信、QQ的最近24小时历史速率负载。\n支持时间段范围查询，必须指定应用协议ID（appids），支持多个ID以逗号分隔。\n不支持limit、page、key、pattern、filter。\n",
+        "operationId": "getAppProtocolsHistoryLoad",
+        "tags": [
+          "monitor-app-traffic"
+        ],
+        "parameters": [
+          {
+            "name": "starttime",
+            "in": "query",
+            "required": false,
+            "description": "查询起始时间戳（Unix时间戳，可选）",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1773215100
+            }
+          },
+          {
+            "name": "stoptime",
+            "in": "query",
+            "required": false,
+            "description": "查询结束时间戳（Unix时间戳，可选）",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1773215100
+            }
+          },
+          {
+            "name": "appids",
+            "in": "query",
+            "required": true,
+            "description": "应用协议ID，必须指定，支持多个ID以逗号分隔（如 2580003,2580004）",
+            "schema": {
+              "type": "string",
+              "example": "2580003,2580004"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取应用协议历史速率使用详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppProtocolsHistoryLoadResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "data": [
+                      {
+                        "id": 2148885,
+                        "timestamp": 1773216900,
+                        "appid": 2580003,
+                        "appname": "微信",
+                        "conn_cnt": 16,
+                        "upload": 1294,
+                        "download": 2838,
+                        "total_up": 2418577,
+                        "total_down": 216010661,
+                        "total": 218429238
+                      },
+                      {
+                        "id": 2149034,
+                        "timestamp": 1773217200,
+                        "appid": 2580003,
+                        "appname": "微信",
+                        "conn_cnt": 5,
+                        "upload": 0,
+                        "download": 0,
+                        "total_up": 2290568,
+                        "total_down": 209349430,
+                        "total": 211639998
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/monitoring/app-protocols/terminal-load": {
+      "get": {
+        "summary": "获取访问指定应用协议的终端列表",
+        "description": "查询有哪些终端访问过指定的应用协议，列出终端当前的上下行速率、\n总流量、连接数、主机名、MAC地址等信息。\n必须指定应用协议ID（appid）。\n不支持limit、page、key、pattern、filter。\n",
+        "operationId": "getAppProtocolTerminalLoad",
+        "tags": [
+          "monitor-app-traffic"
+        ],
+        "parameters": [
+          {
+            "name": "appid",
+            "in": "query",
+            "required": true,
+            "description": "应用协议ID，必须指定",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 2580003
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取访问指定应用协议的终端列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppProtocolTerminalLoadResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "data": [
+                      {
+                        "conn_cnt": 0,
+                        "upload": 0,
+                        "download": 0,
+                        "comment": "",
+                        "ipaddr_int": 3232236433,
+                        "hostname": "ghuadeMBP",
+                        "client_model": "",
+                        "client_type": "MacOS",
+                        "mac": "00:e0:4c:78:a8:06",
+                        "ipaddr": "192.168.3.145",
+                        "termname": "",
+                        "id": 1,
+                        "uptime": 1773147773,
+                        "total_up": 53352,
+                        "total_down": 138375
+                      },
+                      {
+                        "conn_cnt": 0,
+                        "upload": 0,
+                        "download": 0,
+                        "comment": "",
+                        "ipaddr_int": 3232236548,
+                        "hostname": "iKuaigaideiMac2",
+                        "client_model": "iQOO%20Neo5%20SE",
+                        "client_type": "Android",
+                        "mac": "04:9d:05:53:46:33",
+                        "ipaddr": "192.168.4.4",
+                        "termname": "",
+                        "id": 2,
+                        "uptime": 1773147773,
+                        "total_up": 560,
+                        "total_down": 720
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "页码（从1开始）",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "example": 1
+        }
+      },
+      "limitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "每页记录数",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 20,
+          "example": 20
+        }
+      },
+      "orderParam": {
+        "name": "order",
+        "in": "query",
+        "description": "排序方向，asc为升序（默认），desc为降序",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "asc",
+          "example": "desc"
+        }
+      },
+      "orderByParam": {
+        "name": "order_by",
+        "in": "query",
+        "description": "排序字段，支持按上行（upload、total_up）或下行（download、total_down）流量排序",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "upload",
+            "download",
+            "total_up",
+            "total_down"
+          ],
+          "default": "total_down",
+          "example": "total_down"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息",
+            "example": "请求语法错误或参数不合法"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "AppTrafficSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/AppTrafficSummaryResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "AppTrafficSummaryResults": {
+        "type": "object",
+        "properties": {
+          "proto3_day": {
+            "type": "array",
+            "description": "应用协议流量统计列表",
+            "items": {
+              "$ref": "#/components/schemas/AppTrafficItem"
+            }
+          },
+          "proto3_day_total": {
+            "type": "integer",
+            "description": "总应用数量",
+            "example": 56
+          },
+          "proto3_day_total_flow": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总应用流量（字节）",
+            "example": 733339966
+          }
+        },
+        "required": [
+          "proto3_day",
+          "proto3_day_total",
+          "proto3_day_total_flow"
+        ],
+        "additionalProperties": false
+      },
+      "AppTrafficItem": {
+        "type": "object",
+        "required": [
+          "appname",
+          "appname_level1",
+          "appname_level2",
+          "total",
+          "total_down",
+          "total_up",
+          "appid",
+          "id"
+        ],
+        "properties": {
+          "appname": {
+            "type": "string",
+            "description": "应用名称",
+            "maxLength": 100,
+            "example": "阿里云"
+          },
+          "appname_level1": {
+            "type": "string",
+            "description": "应用一级分类",
+            "maxLength": 100,
+            "example": "云服务"
+          },
+          "appname_level2": {
+            "type": "string",
+            "description": "应用二级分类",
+            "maxLength": 100,
+            "example": "传输下载"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "应用总流量（字节）",
+            "minimum": 0,
+            "example": 95062858
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "记录ID",
+            "minimum": 1,
+            "example": 2
+          },
+          "total_down": {
+            "type": "integer",
+            "format": "int64",
+            "description": "应用下行总流量（字节）",
+            "minimum": 0,
+            "example": 47258077
+          },
+          "total_up": {
+            "type": "integer",
+            "format": "int64",
+            "description": "应用上行总流量（字节）",
+            "minimum": 0,
+            "example": 47804781
+          },
+          "appid": {
+            "type": "integer",
+            "format": "int64",
+            "description": "应用ID",
+            "minimum": 1,
+            "example": 2540017
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProtocolsTrafficResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/ProtocolsTrafficResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "ProtocolsTrafficResults": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "应用协议分类流量列表",
+            "items": {
+              "$ref": "#/components/schemas/ProtocolTrafficItem"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "ProtocolTrafficItem": {
+        "type": "object",
+        "required": [
+          "proto",
+          "proto_name",
+          "total"
+        ],
+        "properties": {
+          "proto": {
+            "type": "string",
+            "description": "应用协议ID范围",
+            "example": "1000000:1499999"
+          },
+          "proto_name": {
+            "type": "string",
+            "description": "应用协议分类名称",
+            "maxLength": 100,
+            "example": "网络协议"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "应用协议分类总流量（字节）",
+            "minimum": 0,
+            "example": 256535748864
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProtocolsHistoryLoadResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/ProtocolsHistoryLoadResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "ProtocolsHistoryLoadResults": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "应用协议分类历史速率数据列表",
+            "items": {
+              "$ref": "#/components/schemas/ProtocolHistoryLoadItem"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "ProtocolHistoryLoadItem": {
+        "type": "object",
+        "required": [
+          "proto",
+          "proto_name",
+          "id",
+          "timestamp",
+          "conn_cnt",
+          "upload",
+          "download",
+          "total_up",
+          "total_down",
+          "total"
+        ],
+        "properties": {
+          "proto": {
+            "type": "string",
+            "description": "应用协议ID范围",
+            "example": "3500000:3999999"
+          },
+          "proto_name": {
+            "type": "string",
+            "description": "应用协议分类名称",
+            "maxLength": 100,
+            "example": "效率工具"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "记录ID",
+            "minimum": 1,
+            "example": 112451
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "时间戳（Unix时间戳）",
+            "example": 1773215100
+          },
+          "conn_cnt": {
+            "type": "integer",
+            "description": "连接数",
+            "minimum": 0,
+            "example": 59
+          },
+          "upload": {
+            "type": "integer",
+            "format": "int64",
+            "description": "上行速率（字节/秒）",
+            "minimum": 0,
+            "example": 40033
+          },
+          "download": {
+            "type": "integer",
+            "format": "int64",
+            "description": "下行速率（字节/秒）",
+            "minimum": 0,
+            "example": 309602
+          },
+          "total_up": {
+            "type": "integer",
+            "format": "int64",
+            "description": "上行总流量（字节）",
+            "minimum": 0,
+            "example": 5975668
+          },
+          "total_down": {
+            "type": "integer",
+            "format": "int64",
+            "description": "下行总流量（字节）",
+            "minimum": 0,
+            "example": 8691312
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总流量（字节）",
+            "minimum": 0,
+            "example": 14666980
+          }
+        },
+        "additionalProperties": false
+      },
+      "AppProtocolsLoadResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/AppProtocolsLoadResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "AppProtocolsLoadResults": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "当前应用协议速率使用详情列表",
+            "items": {
+              "$ref": "#/components/schemas/AppProtocolLoadItem"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "AppProtocolLoadItem": {
+        "type": "object",
+        "required": [
+          "appid",
+          "appname",
+          "proto1_name",
+          "proto2_name",
+          "total_up",
+          "total_down",
+          "conn_cnt",
+          "upload",
+          "download",
+          "id",
+          "total"
+        ],
+        "properties": {
+          "appid": {
+            "type": "integer",
+            "format": "int64",
+            "description": "应用协议ID",
+            "minimum": 1,
+            "example": 2580003
+          },
+          "appname": {
+            "type": "string",
+            "description": "应用协议名称",
+            "maxLength": 100,
+            "example": "IOS更新"
+          },
+          "proto1_name": {
+            "type": "string",
+            "description": "应用协议一级分类ID范围",
+            "example": "2500000:2999999"
+          },
+          "proto2_name": {
+            "type": "string",
+            "description": "应用协议二级分类ID范围",
+            "example": "2580001:2590000"
+          },
+          "total_up": {
+            "type": "integer",
+            "format": "int64",
+            "description": "应用协议上行总流量（字节）",
+            "minimum": 0,
+            "example": 814625315
+          },
+          "total_down": {
+            "type": "integer",
+            "format": "int64",
+            "description": "应用协议下行总流量（字节）",
+            "minimum": 0,
+            "example": 112532061362
+          },
+          "conn_cnt": {
+            "type": "integer",
+            "description": "应用协议当前连接数",
+            "minimum": 0,
+            "example": 0
+          },
+          "upload": {
+            "type": "integer",
+            "format": "int64",
+            "description": "应用协议当前上行速率（字节/秒）",
+            "minimum": 0,
+            "example": 0
+          },
+          "download": {
+            "type": "integer",
+            "format": "int64",
+            "description": "应用协议当前下行速率（字节/秒）",
+            "minimum": 0,
+            "example": 0
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "记录ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "应用协议总流量（字节）",
+            "minimum": 0,
+            "example": 113346686677
+          }
+        },
+        "additionalProperties": false
+      },
+      "AppProtocolsHistoryLoadResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/AppProtocolsHistoryLoadResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "AppProtocolsHistoryLoadResults": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "应用协议历史速率数据列表",
+            "items": {
+              "$ref": "#/components/schemas/AppProtocolHistoryLoadItem"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "AppProtocolHistoryLoadItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "timestamp",
+          "appid",
+          "appname",
+          "conn_cnt",
+          "upload",
+          "download",
+          "total_up",
+          "total_down",
+          "total"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "记录ID",
+            "minimum": 1,
+            "example": 2148885
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "时间戳（Unix时间戳）",
+            "example": 1773216900
+          },
+          "appid": {
+            "type": "integer",
+            "format": "int64",
+            "description": "应用协议ID",
+            "minimum": 1,
+            "example": 2580003
+          },
+          "appname": {
+            "type": "string",
+            "description": "应用协议名称",
+            "maxLength": 100,
+            "example": "微信"
+          },
+          "conn_cnt": {
+            "type": "integer",
+            "description": "连接数",
+            "minimum": 0,
+            "example": 16
+          },
+          "upload": {
+            "type": "integer",
+            "format": "int64",
+            "description": "上行速率（字节/秒）",
+            "minimum": 0,
+            "example": 1294
+          },
+          "download": {
+            "type": "integer",
+            "format": "int64",
+            "description": "下行速率（字节/秒）",
+            "minimum": 0,
+            "example": 2838
+          },
+          "total_up": {
+            "type": "integer",
+            "format": "int64",
+            "description": "上行总流量（字节）",
+            "minimum": 0,
+            "example": 2418577
+          },
+          "total_down": {
+            "type": "integer",
+            "format": "int64",
+            "description": "下行总流量（字节）",
+            "minimum": 0,
+            "example": 216010661
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总流量（字节）",
+            "minimum": 0,
+            "example": 218429238
+          }
+        },
+        "additionalProperties": false
+      },
+      "AppProtocolTerminalLoadResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/AppProtocolTerminalLoadResults"
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "AppProtocolTerminalLoadResults": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "访问指定应用协议的终端列表",
+            "items": {
+              "$ref": "#/components/schemas/AppProtocolTerminalItem"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "AppProtocolTerminalItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "ipaddr",
+          "ipaddr_int",
+          "mac",
+          "hostname",
+          "client_type",
+          "conn_cnt",
+          "upload",
+          "download",
+          "total_up",
+          "total_down",
+          "uptime",
+          "comment"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "记录ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "ipaddr": {
+            "type": "string",
+            "description": "终端IP地址",
+            "format": "ipv4",
+            "example": "192.168.3.145"
+          },
+          "ipaddr_int": {
+            "type": "integer",
+            "format": "int64",
+            "description": "终端IP地址（整数形式）",
+            "example": 3232236433
+          },
+          "mac": {
+            "type": "string",
+            "description": "终端MAC地址",
+            "pattern": "^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$",
+            "example": "00:e0:4c:78:a8:06"
+          },
+          "hostname": {
+            "type": "string",
+            "description": "主机名",
+            "maxLength": 200,
+            "example": "ghuadeMBP"
+          },
+          "termname": {
+            "type": "string",
+            "description": "终端名称",
+            "maxLength": 200,
+            "example": ""
+          },
+          "client_type": {
+            "type": "string",
+            "description": "终端类型",
+            "maxLength": 100,
+            "example": "MacOS"
+          },
+          "client_model": {
+            "type": "string",
+            "description": "终端型号",
+            "maxLength": 200,
+            "example": ""
+          },
+          "conn_cnt": {
+            "type": "integer",
+            "description": "连接数",
+            "minimum": 0,
+            "example": 0
+          },
+          "upload": {
+            "type": "integer",
+            "format": "int64",
+            "description": "上行速率（字节/秒）",
+            "minimum": 0,
+            "example": 0
+          },
+          "download": {
+            "type": "integer",
+            "format": "int64",
+            "description": "下行速率（字节/秒）",
+            "minimum": 0,
+            "example": 0
+          },
+          "total_up": {
+            "type": "integer",
+            "format": "int64",
+            "description": "上行总流量（字节）",
+            "minimum": 0,
+            "example": 53352
+          },
+          "total_down": {
+            "type": "integer",
+            "format": "int64",
+            "description": "下行总流量（字节）",
+            "minimum": 0,
+            "example": 138375
+          },
+          "uptime": {
+            "type": "integer",
+            "format": "int64",
+            "description": "上线时间戳（Unix时间戳）",
+            "example": 1773147773
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer {token}\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "monitor-app-traffic",
+      "x-displayName": "应用协议监控",
+      "description": "应用协议流量监控和统计分析，支持流量汇总、历史速率、终端访问查询"
+    }
+  ]
+}

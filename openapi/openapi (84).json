@@ -1,0 +1,616 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SNMP服务管理API",
+    "version": "1.0.0",
+    "summary": "SNMP服务配置管理",
+    "description": "提供SNMP服务的配置管理功能，包括：\n- SNMP服务基础配置（单条记录，仅GET/PUT）\n- 支持SNMP v2c/v3版本\n- v3认证和加密配置（条件必填）\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/advanced-service/snmpd-config": {
+      "get": {
+        "summary": "获取SNMP服务配置",
+        "operationId": "getSnmpdConfig",
+        "tags": [
+          "snmp-service"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取SNMP配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SnmpdConfigResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新SNMP服务配置",
+        "description": "全量更新SNMP服务配置。所有15个字段均为必填，即使未修改也必须携带原值。\n条件必填规则：\n- version=2时：community必填\n- version=3时：username、security必填\n- security为authNoPriv时：auth_proto（MD5/SHA）、auth_pass（>=8字符）必填\n- security为authPriv时：auth_proto、auth_pass、priv_proto（DES/AES）、priv_pass（>=8字符）必填\n\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateSnmpdConfig",
+        "tags": [
+          "snmp-service"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "全量更新，所有字段必填，未修改的字段须传原值",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SnmpdConfigEditInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "SnmpdConfig": {
+        "type": "object",
+        "required": [
+          "id",
+          "enabled",
+          "listen_port",
+          "version",
+          "community",
+          "rw"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "配置ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "description": "服务开启状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "no"
+          },
+          "listen_port": {
+            "type": "integer",
+            "description": "SNMP监听端口，范围 2-65535，600-799 为系统保留不可用",
+            "minimum": 2,
+            "maximum": 65535,
+            "default": 161,
+            "example": 161
+          },
+          "syslocation": {
+            "type": "string",
+            "description": "物理位置信息",
+            "default": "",
+            "example": ""
+          },
+          "syscontact": {
+            "type": "string",
+            "description": "联系信息",
+            "default": "",
+            "example": ""
+          },
+          "sysname": {
+            "type": "string",
+            "description": "系统名称",
+            "default": "",
+            "example": ""
+          },
+          "version": {
+            "type": "integer",
+            "description": "SNMP版本（仅支持2和3）",
+            "enum": [
+              2,
+              3
+            ],
+            "default": 2,
+            "example": 2
+          },
+          "community": {
+            "type": "string",
+            "description": "团体名（v2使用），version=2时必填",
+            "default": "public",
+            "example": "public"
+          },
+          "source": {
+            "type": "string",
+            "description": "可访问的IP地址/网段",
+            "default": "",
+            "example": ""
+          },
+          "rw": {
+            "type": "string",
+            "description": "读写权限",
+            "enum": [
+              "ro",
+              "rw"
+            ],
+            "default": "ro",
+            "example": "ro"
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名（v3使用），version=3时必填",
+            "default": "",
+            "example": ""
+          },
+          "security": {
+            "type": "string",
+            "description": "安全级别（v3使用），version=3时必填，取值为authNoPriv或authPriv",
+            "enum": [
+              "authNoPriv",
+              "authPriv"
+            ],
+            "example": "authNoPriv"
+          },
+          "auth_proto": {
+            "type": "string",
+            "description": "认证模式（v3使用），security为authNoPriv或authPriv时必填",
+            "enum": [
+              "MD5",
+              "SHA"
+            ],
+            "default": "",
+            "example": ""
+          },
+          "auth_pass": {
+            "type": "string",
+            "description": "认证密码（v3使用），security为authNoPriv或authPriv时必填，8-30字符",
+            "minLength": 8,
+            "maxLength": 30,
+            "default": "",
+            "example": ""
+          },
+          "priv_proto": {
+            "type": "string",
+            "description": "加密模式（v3使用），security为authPriv时必填",
+            "enum": [
+              "DES",
+              "AES"
+            ],
+            "default": "",
+            "example": ""
+          },
+          "priv_pass": {
+            "type": "string",
+            "description": "加密密码（v3使用），security为authPriv时必填，8-30字符",
+            "minLength": 8,
+            "maxLength": 30,
+            "default": "",
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "SnmpdConfigEditInput": {
+        "type": "object",
+        "description": "SNMP配置全量编辑。未修改的字段须传原值。\n条件必填规则：\n- version=2 时：community 必填\n- version=3 时：username 必填；security 必填（authNoPriv 或 authPriv）\n- security 为 authNoPriv 或 authPriv 时：auth_proto、auth_pass 必填\n- security 为 authPriv 时：priv_proto、priv_pass 必填\n",
+        "required": [
+          "enabled",
+          "listen_port",
+          "syslocation",
+          "syscontact",
+          "sysname",
+          "version",
+          "community",
+          "source",
+          "rw",
+          "username",
+          "security",
+          "auth_proto",
+          "auth_pass",
+          "priv_proto",
+          "priv_pass"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "description": "服务开启状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "listen_port": {
+            "type": "integer",
+            "description": "SNMP监听端口，范围 1-65535，600-799 为系统保留不可用",
+            "minimum": 2,
+            "maximum": 65535,
+            "example": 161
+          },
+          "syslocation": {
+            "type": "string",
+            "description": "物理位置信息",
+            "example": ""
+          },
+          "syscontact": {
+            "type": "string",
+            "description": "联系信息",
+            "example": ""
+          },
+          "sysname": {
+            "type": "string",
+            "description": "系统名称",
+            "example": ""
+          },
+          "version": {
+            "type": "integer",
+            "description": "SNMP版本（仅支持2和3）",
+            "enum": [
+              2,
+              3
+            ],
+            "example": 2
+          },
+          "community": {
+            "type": "string",
+            "description": "团体名（v2使用），version=2时不可为空",
+            "example": "public"
+          },
+          "source": {
+            "type": "string",
+            "description": "可访问的IP地址/网段",
+            "example": ""
+          },
+          "rw": {
+            "type": "string",
+            "description": "读写权限",
+            "enum": [
+              "ro",
+              "rw"
+            ],
+            "example": "ro"
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名（v3使用），version=3时不可为空",
+            "example": ""
+          },
+          "security": {
+            "type": "string",
+            "description": "安全级别（v3使用），version=3时必须为authNoPriv或authPriv",
+            "enum": [
+              "authNoPriv",
+              "authPriv"
+            ],
+            "example": "authNoPriv"
+          },
+          "auth_proto": {
+            "type": "string",
+            "description": "认证模式，security为authNoPriv或authPriv时必须为MD5或SHA",
+            "enum": [
+              "MD5",
+              "SHA"
+            ],
+            "example": ""
+          },
+          "auth_pass": {
+            "type": "string",
+            "description": "认证密码，security为authNoPriv或authPriv时必填，8-30字符",
+            "minLength": 8,
+            "maxLength": 30,
+            "example": ""
+          },
+          "priv_proto": {
+            "type": "string",
+            "description": "加密模式，security为authPriv时必须为DES或AES",
+            "enum": [
+              "DES",
+              "AES"
+            ],
+            "example": ""
+          },
+          "priv_pass": {
+            "type": "string",
+            "description": "加密密码，security为authPriv时必填，8-30字符",
+            "minLength": 8,
+            "maxLength": 30,
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "SnmpdConfigResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SnmpdConfig"
+                }
+              }
+            },
+            "required": [
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "snmp-service",
+      "x-displayName": "SNMP服务管理",
+      "description": "SNMP服务配置管理，支持v2c/v3版本和认证加密"
+    }
+  ]
+}

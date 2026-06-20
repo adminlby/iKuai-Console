@@ -1,0 +1,637 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "VRRP热备管理API",
+    "version": "1.0.0",
+    "summary": "VRRP热备的完整管理功能",
+    "description": "提供VRRP热备的完整管理功能，包括：\n- 热备配置管理\n- 热备服务启停控制\n- 主从模式设置\n- 心跳接口配置\n- 虚拟IP管理\n- 配置同步控制\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/system/vrrp/config": {
+      "get": {
+        "summary": "获取热备配置",
+        "description": "获取当前VRRP热备的配置信息，包括启用状态、工作模式、\n优先级、心跳接口、虚拟IP等配置。不支持filter和limit。\n",
+        "operationId": "getVrrpConfig",
+        "tags": [
+          "vrrp-config"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取VRRP热备配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VrrpConfigResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "设置热备配置",
+        "description": "配置VRRP热备的各项参数，包括工作模式、优先级、心跳接口、\n虚拟IP、配置同步等设置。支持主模式、备份模式、负载模式。\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateVrrpConfig",
+        "tags": [
+          "vrrp-config"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "VRRP热备配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VrrpConfigInput"
+              },
+              "example": {
+                "enabled": "yes",
+                "type": 1,
+                "prio": 150,
+                "gateway": "8.8.8.8",
+                "ifnames": "wan1,wan2",
+                "auto_sync": 0,
+                "single_line": 0,
+                "ignore_wanstatus": 1,
+                "interfaces": "wan1,wan2",
+                "virtual_ips": "192.168.1.254,10.0.0.254",
+                "ht_iface": "eth0",
+                "remote_addr": "192.168.1.100"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "VRRP热备配置更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/system/vrrp:start": {
+      "post": {
+        "summary": "开启热备配置",
+        "description": "启动VRRP热备服务，使热备配置生效。\n启动前请确保热备参数配置正确。\n",
+        "operationId": "startVrrpService",
+        "tags": [
+          "vrrp-control"
+        ],
+        "responses": {
+          "200": {
+            "description": "VRRP热备服务启动成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "description": "VRRP热备服务启动异常",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VrrpErrorResponse"
+                },
+                "example": {
+                  "message": "VRRP热备服务启动异常"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/system/vrrp:stop": {
+      "post": {
+        "summary": "关闭热备配置",
+        "description": "停止VRRP热备服务，停止热备功能。\n停止前请确认不会影响现有业务的高可用性。\n",
+        "operationId": "stopVrrpService",
+        "tags": [
+          "vrrp-control"
+        ],
+        "responses": {
+          "200": {
+            "description": "VRRP热备服务停止成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "description": "VRRP热备服务停止异常",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VrrpErrorResponse"
+                },
+                "example": {
+                  "message": "VRRP热备服务停止异常"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源冲突（如唯一性冲突，需调整请求逻辑）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "VrrpErrorResponse": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "VRRP业务错误信息描述"
+          }
+        }
+      },
+      "VrrpConfigResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "example": 1
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/VrrpConfig"
+                }
+              }
+            },
+            "required": [
+              "total",
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "VrrpConfig": {
+        "type": "object",
+        "required": [
+          "enabled",
+          "type",
+          "prio",
+          "gateway",
+          "ifnames",
+          "auto_sync",
+          "single_line",
+          "ignore_wanstatus",
+          "interfaces",
+          "virtual_ips",
+          "ht_iface",
+          "remote_addr"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "开启状态，yes为启用，no为停用",
+            "example": "no"
+          },
+          "type": {
+            "type": "integer",
+            "description": "工作模式，1=主备模式，3=负载模式",
+            "enum": [
+              1,
+              3
+            ],
+            "example": 1
+          },
+          "prio": {
+            "type": "integer",
+            "description": "优先级",
+            "minimum": 0,
+            "maximum": 255,
+            "example": 150
+          },
+          "gateway": {
+            "type": "string",
+            "description": "PING 探测的目标 IP 地址",
+            "format": "ipv4",
+            "example": "8.8.8.8"
+          },
+          "ifnames": {
+            "type": "string",
+            "description": "外网接口探测列表，逗号分隔的 WAN 接口名（如 wan1,wan2）",
+            "example": "wan1,wan2"
+          },
+          "auto_sync": {
+            "type": "integer",
+            "description": "是否开启配置的自动同步（0=否，1=是），仅企业版支持",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "single_line": {
+            "type": "integer",
+            "description": "是否开启单线环境（0=否，1=是）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "ignore_wanstatus": {
+            "type": "integer",
+            "description": "是否开启外网检测（0=否，1=是）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "interfaces": {
+            "type": "string",
+            "description": "传输链路接口列表",
+            "example": ""
+          },
+          "virtual_ips": {
+            "type": "string",
+            "description": "传输链路对应接口的虚拟IP",
+            "example": ""
+          },
+          "ht_iface": {
+            "type": "string",
+            "description": "心跳接口",
+            "example": ""
+          },
+          "remote_addr": {
+            "type": "string",
+            "description": "对端的 IP 地址（心跳线）",
+            "format": "ipv4",
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "VrrpConfigInput": {
+        "type": "object",
+        "description": "PUT 全量修改，所有字段均为必填，未修改的字段须传原值",
+        "required": [
+          "enabled",
+          "type",
+          "prio",
+          "gateway",
+          "ifnames",
+          "auto_sync",
+          "single_line",
+          "ignore_wanstatus",
+          "interfaces",
+          "virtual_ips",
+          "ht_iface",
+          "remote_addr"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "开启状态，yes为启用，no为停用",
+            "example": "yes"
+          },
+          "type": {
+            "type": "integer",
+            "description": "工作模式，1=主备模式，3=负载模式",
+            "enum": [
+              1,
+              3
+            ],
+            "example": 1
+          },
+          "prio": {
+            "type": "integer",
+            "description": "优先级",
+            "minimum": 0,
+            "maximum": 255,
+            "example": 150
+          },
+          "method": {
+            "type": "integer",
+            "description": "探测方式，0=DNS+PING，1=DNS，2=PING",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "default": 2,
+            "example": 2
+          },
+          "domain": {
+            "type": "string",
+            "description": "DNS探测域名",
+            "default": "www.baidu.com",
+            "example": "www.baidu.com"
+          },
+          "dns": {
+            "type": "string",
+            "description": "DNS服务地址",
+            "default": "114.114.114.114",
+            "example": "114.114.114.114"
+          },
+          "gateway": {
+            "type": "string",
+            "description": "PING 探测的目标 IP 地址",
+            "format": "ipv4",
+            "example": "8.8.8.8"
+          },
+          "interval": {
+            "type": "integer",
+            "description": "心跳间隔（秒）",
+            "minimum": 1,
+            "maximum": 255,
+            "default": 3,
+            "example": 3
+          },
+          "ifnames": {
+            "type": "string",
+            "description": "外网接口探测列表",
+            "example": "wan1,wan2"
+          },
+          "auto_sync": {
+            "type": "integer",
+            "description": "是否开启配置的自动同步（0=否，1=是），仅企业版支持",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "single_line": {
+            "type": "integer",
+            "description": "是否开启单线环境（0=否，1=是）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "ignore_wanstatus": {
+            "type": "integer",
+            "description": "是否开启外网检测（0=否，1=是）",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "interfaces": {
+            "type": "string",
+            "description": "传输链路接口列表",
+            "example": "wan1,wan2"
+          },
+          "virtual_ips": {
+            "type": "string",
+            "description": "传输链路对应接口的虚拟IP",
+            "example": "192.168.1.254,10.0.0.254"
+          },
+          "ht_iface": {
+            "type": "string",
+            "description": "心跳接口",
+            "example": "eth0"
+          },
+          "remote_addr": {
+            "type": "string",
+            "description": "对端的 IP 地址（心跳线）",
+            "format": "ipv4",
+            "example": "192.168.1.100"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "vrrp-config",
+      "x-displayName": "VRRP热备配置",
+      "description": "VRRP热备配置管理，包括工作模式、优先级、心跳接口等设置"
+    },
+    {
+      "name": "vrrp-control",
+      "x-displayName": "VRRP热备控制",
+      "description": "VRRP热备服务的启动和停止控制"
+    }
+  ]
+}

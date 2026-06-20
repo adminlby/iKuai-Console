@@ -1,0 +1,1053 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "系统备份管理API",
+    "version": "1.0.0",
+    "summary": "系统配置备份与自动备份策略管理",
+    "description": "提供系统配置备份的完整管理功能，包括：\n- 查询备份文件列表及磁盘使用情况\n- 查询/保存自动备份策略（执行周期、时间、文件保留天数）\n- 手动立即创建备份\n- 删除备份文件\n- 恢复指定备份\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/system/backup": {
+      "get": {
+        "summary": "获取备份信息",
+        "description": "查询备份文件列表及磁盘使用情况。\n",
+        "operationId": "getBackupSnapshots",
+        "tags": [
+          "backup"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取备份信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SnapshotsResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "backup_info": [
+                      {
+                        "id": 1,
+                        "timestamp": 1712500000,
+                        "filename": "20240407120000.bak",
+                        "backtype": 1,
+                        "version": "4.0.100",
+                        "filesize": 204800
+                      },
+                      {
+                        "id": 2,
+                        "timestamp": 1712600000,
+                        "filename": "20240408100000.bak",
+                        "backtype": 2,
+                        "version": "4.0.100",
+                        "filesize": 210000
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "手动备份配置",
+        "description": "立即将当前系统配置打包为备份文件（`.bak`）并保存。无需请求体。\n",
+        "operationId": "createBackupSnapshot",
+        "tags": [
+          "backup"
+        ],
+        "responses": {
+          "200": {
+            "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "comment",
+                          "type": "format",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除备份文件",
+        "description": "删除指定备份文件及其数据库记录。通过 query 参数 `srcfile` 指定要删除的备份文件，无需请求体。\n",
+        "operationId": "deleteBackupSnapshot",
+        "tags": [
+          "backup"
+        ],
+        "parameters": [
+          {
+            "name": "srcfile",
+            "in": "query",
+            "required": true,
+            "description": "要删除的备份文件名，格式为 `YYYYMMDDHHmmss.bak`",
+            "schema": {
+              "type": "string",
+              "example": "20240407120000.bak"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "备份文件删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteSuccessResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/system/backup:restore": {
+      "post": {
+        "summary": "恢复备份",
+        "description": "将系统配置恢复至指定备份文件。`srcfile` 需放在请求体中传入。操作成功后系统将自动重启（约 2 秒后）。\n\n**`restore_type` 说明：**\n- `0`（默认）：仅恢复配置，不切换固件版本\n- `1`：同时恢复固件版本（需从云端下载对应固件，耗时较长）\n\n**`sync_bind_cloud` 说明：**\n- `0`（默认）：不同步云平台绑定信息\n- `1`：同步导入云平台绑定信息，此时 `cloud_comment` 为必填\n\n**版本兼容限制：**\n- 4.0 配置不可恢复到 3.x 设备\n- 4.0 设备不可恢复 3.x 配置\n",
+        "operationId": "restoreBackupSnapshot",
+        "tags": [
+          "backup"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreRequest"
+              },
+              "examples": {
+                "simple": {
+                  "summary": "仅恢复配置",
+                  "value": {
+                    "srcfile": "20240407120000.bak",
+                    "restore_type": 0,
+                    "sync_bind_cloud": 0,
+                    "cloud_comment": "branch-office-router"
+                  }
+                },
+                "with_cloud": {
+                  "summary": "恢复配置并同步云平台绑定信息",
+                  "value": {
+                    "srcfile": "20240407120000.bak",
+                    "restore_type": 0,
+                    "sync_bind_cloud": 1,
+                    "cloud_comment": "branch-office-router"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：恢复任务已触发\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "srcfile",
+                          "type": "not_found",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v4.0/system/backup-auto": {
+      "get": {
+        "summary": "获取自动备份策略",
+        "description": "查询当前自动备份策略配置。\n",
+        "operationId": "getBackupSettings",
+        "tags": [
+          "backup"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取自动备份策略",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupSettingsResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "Success",
+                  "results": {
+                    "data": [
+                      {
+                        "id": 1,
+                        "enabled": "yes",
+                        "strategy": "week",
+                        "time": "08:00",
+                        "cycle_time": "1234567",
+                        "valid_days": 30
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "保存自动备份策略",
+        "description": "更新自动备份策略配置。\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n\n**`cycle_time` 格式说明（依 `strategy` 而定）：**\n- `strategy=one`（单次）：具体日期，格式 `YYYY-MM-DD`，如 `2024-04-07`\n- `strategy=week`（每天）：填 `all`\n- `strategy=week`（每周）：填星期组合串，如 `135`（周一三五），至少选 1 天\n- `strategy=month`（每月）：填月内执行日，范围 `1-31`，如 `15`\n",
+        "operationId": "saveBackupSettings",
+        "tags": [
+          "backup"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupSettingsRequest"
+              },
+              "examples": {
+                "weekly": {
+                  "summary": "每周一三五 08:00 执行，保留 30 天",
+                  "value": {
+                    "id": 1,
+                    "enabled": "yes",
+                    "strategy": "week",
+                    "time": "08:00",
+                    "cycle_time": "135",
+                    "valid_days": 30
+                  }
+                },
+                "daily": {
+                  "summary": "每天 02:00 执行，保留 7 天",
+                  "value": {
+                    "id": 1,
+                    "enabled": "yes",
+                    "strategy": "week",
+                    "time": "02:00",
+                    "cycle_time": "all",
+                    "valid_days": 7
+                  }
+                },
+                "monthly": {
+                  "summary": "每月 15 号执行，不限期保留",
+                  "value": {
+                    "id": 1,
+                    "enabled": "yes",
+                    "strategy": "month",
+                    "time": "00:00",
+                    "cycle_time": "15",
+                    "valid_days": 0
+                  }
+                },
+                "once": {
+                  "summary": "单次执行",
+                  "value": {
+                    "id": 1,
+                    "enabled": "yes",
+                    "strategy": "one",
+                    "time": "10:00",
+                    "cycle_time": "2024-04-07",
+                    "valid_days": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "cycle_time",
+                          "type": "format",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息",
+            "example": "请求语法错误或参数不合法"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "DeleteSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示删除成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "CreateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/CreateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/CreateBusinessErrorResponse"
+          }
+        ],
+        "description": "创建/添加操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：创建成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "CreateSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示创建成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "success"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "CreateBusinessErrorResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "success"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "additionalProperties": false
+      },
+      "BackupSnapshot": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "快照记录ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "timestamp": {
+            "type": "integer",
+            "description": "备份创建时间（Unix 时间戳，秒）",
+            "example": 1712500000
+          },
+          "filename": {
+            "type": "string",
+            "description": "备份文件名（.bak 格式）",
+            "example": "20240407120000.bak"
+          },
+          "backtype": {
+            "type": "integer",
+            "description": "备份类型：1=手动备份，2=自动备份",
+            "enum": [
+              1,
+              2
+            ],
+            "example": 1
+          },
+          "version": {
+            "type": "string",
+            "description": "备份时的固件版本号",
+            "example": "4.0.100"
+          },
+          "filesize": {
+            "type": "integer",
+            "description": "备份文件大小（字节）",
+            "minimum": 0,
+            "example": 204800
+          }
+        },
+        "required": [
+          "id",
+          "timestamp",
+          "filename",
+          "backtype",
+          "version",
+          "filesize"
+        ],
+        "additionalProperties": false
+      },
+      "SnapshotsResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码 (0=成功)",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/SnapshotsResults"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "SnapshotsResults": {
+        "type": "object",
+        "properties": {
+          "backup_info": {
+            "type": "array",
+            "description": "备份文件列表",
+            "items": {
+              "$ref": "#/components/schemas/BackupSnapshot"
+            }
+          }
+        },
+        "required": [
+          "backup_info"
+        ],
+        "additionalProperties": false
+      },
+      "BackupSettings": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "策略记录ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "description": "是否启用自动备份",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "strategy": {
+            "type": "string",
+            "description": "备份周期类型：one=单次，week=每日/每周，month=每月",
+            "enum": [
+              "one",
+              "week",
+              "month"
+            ],
+            "example": "week"
+          },
+          "time": {
+            "type": "string",
+            "description": "执行时间，格式 HH:mm",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "example": "08:00"
+          },
+          "cycle_time": {
+            "type": "string",
+            "description": "执行周期值，含义依 strategy 而定：\n- one：具体日期（YYYY-MM-DD）\n- week：星期组合串（如 \"135\"）或 \"all\"（每天）\n- month：月内执行日（1-31 的数字字符串）\n",
+            "example": "1234567"
+          },
+          "valid_days": {
+            "type": "integer",
+            "description": "自动备份文件保留天数，0 表示不限期",
+            "minimum": 0,
+            "maximum": 365,
+            "example": 30
+          }
+        },
+        "required": [
+          "id",
+          "enabled",
+          "strategy",
+          "time",
+          "cycle_time",
+          "valid_days"
+        ],
+        "additionalProperties": false
+      },
+      "BackupSettingsResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码 (0=成功)",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "$ref": "#/components/schemas/BackupSettingsResults"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "BackupSettingsResults": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "自动备份策略列表",
+            "items": {
+              "$ref": "#/components/schemas/BackupSettings"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "BackupSettingsRequest": {
+        "type": "object",
+        "required": [
+          "id",
+          "enabled",
+          "strategy",
+          "time",
+          "cycle_time",
+          "valid_days"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "当前备份策略记录ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "description": "是否启用自动备份",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "strategy": {
+            "type": "string",
+            "description": "备份周期类型：one=单次，week=每日/每周，month=每月",
+            "enum": [
+              "one",
+              "week",
+              "month"
+            ],
+            "example": "week"
+          },
+          "time": {
+            "type": "string",
+            "description": "执行时间，格式 HH:mm",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "example": "08:00"
+          },
+          "cycle_time": {
+            "type": "string",
+            "description": "执行周期值，格式依 strategy 而定（见接口描述）",
+            "example": "135"
+          },
+          "valid_days": {
+            "type": "integer",
+            "description": "自动备份文件保留天数，0 表示不限期",
+            "minimum": 0,
+            "maximum": 365,
+            "example": 30
+          }
+        },
+        "additionalProperties": false
+      },
+      "RestoreRequest": {
+        "type": "object",
+        "required": [
+          "srcfile"
+        ],
+        "properties": {
+          "srcfile": {
+            "type": "string",
+            "description": "要恢复的备份文件名，格式为 `YYYYMMDDHHmmss.bak`",
+            "example": "20240407120000.bak"
+          },
+          "restore_type": {
+            "type": "integer",
+            "description": "恢复类型：0=仅恢复配置，1=同时恢复固件版本",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "sync_bind_cloud": {
+            "type": "integer",
+            "description": "是否同步导入云平台绑定信息：0=否，1=是（此时 cloud_comment 必填）",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "cloud_comment": {
+            "type": "string",
+            "description": "云端设备备注名称，sync_bind_cloud=1 时必填，长度 1-63 字符，支持 @ - _ + . 等特殊字符（不支持冒号）",
+            "minLength": 1,
+            "maxLength": 63,
+            "example": "branch-office-router"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer {token}\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "backup",
+      "x-displayName": "系统备份",
+      "description": "系统配置备份文件管理及自动备份策略配置"
+    }
+  ]
+}

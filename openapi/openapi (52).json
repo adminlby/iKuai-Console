@@ -1,0 +1,628 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "L2TP服务器管理API",
+    "version": "1.0.0",
+    "summary": "L2TP服务器配置管理",
+    "description": "提供L2TP服务器的配置管理功能，包括：\n- L2TP服务基础配置\n- IPSec预共享密钥配置\n- 地址池和DNS配置\n- 网络连接控制\n- 安全和性能设置\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/vpn/l2tp/services": {
+      "get": {
+        "summary": "获取L2TP服务器配置",
+        "description": "获取当前L2TP服务器的配置信息。\n包括服务状态、网络配置、IPSec设置等。\n",
+        "operationId": "getL2tpServerConfig",
+        "tags": [
+          "l2tp-server"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取L2TP配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/L2tpServerConfigResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "data": [
+                      {
+                        "enabled": "no",
+                        "server_ip": "10.1.0.1",
+                        "server_port": 1701,
+                        "addr_pool": "10.1.0.2-10.1.0.254",
+                        "dns1": "114.114.114.114",
+                        "force_ipsec": 0,
+                        "dns2": "119.29.29.29",
+                        "rightid": "",
+                        "mtu": 1400,
+                        "mru": 1400,
+                        "ipsec_secret": "",
+                        "leftid": "",
+                        "id": 1
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新L2TP服务器配置",
+        "description": "更新L2TP服务器的配置信息。\n支持更新网络配置、IPSec设置、安全参数等。\n\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updateL2tpServerConfig",
+        "tags": [
+          "l2tp-server"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "L2TP服务器配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/L2tpServerConfigInput"
+              },
+              "example": {
+                "enabled": "yes",
+                "server_ip": "10.1.0.1",
+                "server_port": 1701,
+                "addr_pool": "10.1.0.2-10.1.0.254",
+                "dns1": "114.114.114.114",
+                "dns2": "119.29.29.29",
+                "mtu": 1400,
+                "mru": 1400,
+                "ipsec_secret": "mysecret",
+                "leftid": "vpn.example.com",
+                "rightid": "",
+                "force_ipsec": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源冲突（如唯一性冲突，需调整请求逻辑）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "L2tpServerConfig": {
+        "type": "object",
+        "required": [
+          "id",
+          "enabled",
+          "server_ip",
+          "server_port",
+          "addr_pool",
+          "dns1",
+          "dns2",
+          "mtu",
+          "mru",
+          "force_ipsec"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "配置ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "description": "服务开启状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "no"
+          },
+          "server_ip": {
+            "type": "string",
+            "description": "服务器地址",
+            "example": "10.1.0.1"
+          },
+          "server_port": {
+            "type": "integer",
+            "description": "服务器端口",
+            "minimum": 1,
+            "maximum": 65535,
+            "default": 1701,
+            "example": 1701
+          },
+          "addr_pool": {
+            "type": "string",
+            "description": "客户端地址池",
+            "example": "10.1.0.2-10.1.0.254"
+          },
+          "dns1": {
+            "type": "string",
+            "description": "DNS服务器1，必须为合法IP",
+            "example": "114.114.114.114"
+          },
+          "dns2": {
+            "type": "string",
+            "description": "DNS服务器2，必须为合法IP",
+            "example": "119.29.29.29"
+          },
+          "mtu": {
+            "type": "integer",
+            "description": "MTU值",
+            "minimum": 1000,
+            "maximum": 1492,
+            "example": 1400
+          },
+          "mru": {
+            "type": "integer",
+            "description": "MRU值",
+            "minimum": 1000,
+            "maximum": 1492,
+            "example": 1400
+          },
+          "ipsec_secret": {
+            "type": "string",
+            "description": "IPSec预共享密钥",
+            "maxLength": 64,
+            "example": ""
+          },
+          "leftid": {
+            "type": "string",
+            "description": "IPSec本地标识（允许为空，最多100个字符）",
+            "maxLength": 100,
+            "example": ""
+          },
+          "rightid": {
+            "type": "string",
+            "description": "IPSec对端标识（允许为空，最多100个字符）",
+            "maxLength": 100,
+            "example": ""
+          },
+          "force_ipsec": {
+            "type": "integer",
+            "description": "禁止非加密的连接，0为允许，1为禁止",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "L2tpServerConfigInput": {
+        "type": "object",
+        "required": [
+          "enabled",
+          "server_ip",
+          "server_port",
+          "addr_pool",
+          "dns1",
+          "dns2",
+          "mtu",
+          "mru",
+          "force_ipsec"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "description": "服务开启状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "yes"
+          },
+          "server_ip": {
+            "type": "string",
+            "description": "服务器地址，必须为合法IP",
+            "default": "10.1.0.1",
+            "example": "10.1.0.1"
+          },
+          "server_port": {
+            "type": "integer",
+            "description": "服务器端口，不传时默认1701",
+            "minimum": 1,
+            "maximum": 65535,
+            "default": 1701,
+            "example": 1701
+          },
+          "addr_pool": {
+            "type": "string",
+            "description": "客户端地址池",
+            "default": "10.1.0.2-10.1.0.254",
+            "example": "10.1.0.2-10.1.0.254"
+          },
+          "dns1": {
+            "type": "string",
+            "description": "DNS服务器1，必须为合法IP",
+            "default": "114.114.114.114",
+            "example": "114.114.114.114"
+          },
+          "dns2": {
+            "type": "string",
+            "description": "DNS服务器2，必须为合法IP",
+            "default": "119.29.29.29",
+            "example": "119.29.29.29"
+          },
+          "mtu": {
+            "type": "integer",
+            "description": "MTU值",
+            "minimum": 1000,
+            "maximum": 1492,
+            "default": 1400,
+            "example": 1400
+          },
+          "mru": {
+            "type": "integer",
+            "description": "MRU值",
+            "minimum": 1000,
+            "maximum": 1492,
+            "default": 1400,
+            "example": 1400
+          },
+          "ipsec_secret": {
+            "type": "string",
+            "description": "IPSec预共享密钥",
+            "maxLength": 64,
+            "example": "mysecret"
+          },
+          "leftid": {
+            "type": "string",
+            "description": "IPSec本地标识（允许为空，最多100个字符）",
+            "maxLength": 100,
+            "example": "vpn.example.com"
+          },
+          "rightid": {
+            "type": "string",
+            "description": "IPSec对端标识（允许为空，最多100个字符）",
+            "maxLength": 100,
+            "example": ""
+          },
+          "force_ipsec": {
+            "type": "integer",
+            "description": "禁止非加密的连接，0为允许，1为禁止",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "L2tpServerConfigResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/L2tpServerConfig"
+                }
+              }
+            },
+            "required": [
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "l2tp-server",
+      "x-displayName": "L2TP服务器管理",
+      "description": "L2TP服务器的配置管理，包括IPSec设置和网络配置"
+    }
+  ]
+}

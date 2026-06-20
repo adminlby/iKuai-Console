@@ -1,0 +1,1035 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "PPPoE服务器管理API",
+    "version": "1.0.0",
+    "summary": "PPPoE服务器配置管理",
+    "description": "提供PPPoE服务器的配置管理功能，包括：\n- PPPoE服务基础配置\n- 认证方式配置（本地账户/RADIUS）\n- 地址池和网络配置\n- 连接控制和限速设置\n- VLAN绑定和定时重启功能\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://staging.example.com",
+      "description": "测试环境"
+    }
+  ],
+  "paths": {
+    "/api/v4.0/network/pppoe/services": {
+      "get": {
+        "summary": "获取PPPoE服务器配置",
+        "description": "获取当前PPPoE服务器的配置信息。\n包括服务状态、认证方式、网络配置、RADIUS设置等。\n",
+        "operationId": "getPppoeServerConfig",
+        "tags": [
+          "pppoe-server"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取PPPoE配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PppoeServerConfigResponse"
+                },
+                "example": {
+                  "message": "Success",
+                  "results": {
+                    "data": [
+                      {
+                        "id": 1,
+                        "enabled": "no",
+                        "server_name": "iKuai",
+                        "force_verify_name": 0,
+                        "server_ip": "10.1.1.1",
+                        "dns1": "114.114.114.114",
+                        "dns2": "119.29.29.29",
+                        "authmode": 0,
+                        "nas_identifier": "iKuai",
+                        "nas_ip_address": "",
+                        "radius_ip": "127.0.0.1",
+                        "secret": "123",
+                        "authport": 1812,
+                        "accountport": 1813,
+                        "comment": "",
+                        "addr_pool": "10.1.1.2-10.1.1.254",
+                        "interface": "lan1",
+                        "rate_limit_lan": 1,
+                        "drop_client": 1,
+                        "force_pppoe": 0,
+                        "enhance_check": 1,
+                        "share_deny": 0,
+                        "bind_vlan": 0,
+                        "verify_vlan": 1,
+                        "bind_iface": 0,
+                        "mtu": 1480,
+                        "mru": 1480,
+                        "lcp_echo_interval": 10,
+                        "lcp_echo_failure": 3,
+                        "maxconnect": 0,
+                        "restart_timer": 0,
+                        "restart_week": "",
+                        "restart_time": ""
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新PPPoE服务器配置",
+        "description": "更新PPPoE服务器的配置信息。\n支持更新认证方式、网络配置、RADIUS设置、连接控制等。\n\n> **注意：** 本接口为全量修改，请求时需传入所有字段。无需修改的字段请保持原值或传空值，未传入的字段可能被重置。\n",
+        "operationId": "updatePppoeServerConfig",
+        "tags": [
+          "pppoe-server"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "PPPoE服务器配置数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PppoeServerConfigInput"
+              },
+              "example": {
+                "enabled": "no",
+                "server_name": "iKuai",
+                "force_verify_name": 0,
+                "server_ip": "10.1.1.1",
+                "dns1": "114.114.114.114",
+                "dns2": "119.29.29.29",
+                "authmode": 0,
+                "nas_identifier": "iKuai",
+                "nas_ip_address": "",
+                "radius_ip": "127.0.0.1",
+                "secret": "123",
+                "authport": 1812,
+                "accountport": 1813,
+                "addr_pool": "10.1.1.2-10.1.1.254",
+                "interface": "lan1",
+                "rate_limit_lan": 1,
+                "drop_client": 1,
+                "force_pppoe": 0,
+                "enhance_check": 1,
+                "share_deny": 0,
+                "bind_vlan": 0,
+                "verify_vlan": 1,
+                "bind_iface": 0,
+                "mtu": 1480,
+                "mru": 1480,
+                "lcp_echo_interval": 10,
+                "lcp_echo_failure": 3,
+                "maxconnect": 0,
+                "restart_timer": 0,
+                "restart_week": "",
+                "restart_time": ""
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOperationResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "业务成功",
+                    "value": {
+                      "code": 0,
+                      "message": "Success"
+                    }
+                  },
+                  "bizErrorSimple": {
+                    "summary": "业务失败，无明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法"
+                    }
+                  },
+                  "bizErrorWithDetails": {
+                    "summary": "业务失败，含字段明细",
+                    "value": {
+                      "code": 30001,
+                      "message": "请求参数不合法",
+                      "details": [
+                        {
+                          "field": "key1",
+                          "type": "unique",
+                          "msg": "详细的错误输出"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "请求语法错误或参数不合法",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "请求语法错误或参数不合法（检查请求体/参数、JSON 格式）"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证或凭证无效",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "未认证或凭证无效（需登录/刷新 token）"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "无权限访问（检查授权、权限配置）"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源不存在（检查 URL、路由、资源是否已删除）"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源冲突",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "资源冲突（如唯一性冲突，需调整请求逻辑）"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "服务器内部错误（查看服务器日志、修复异常）"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "错误信息"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "PppoeServerConfig": {
+        "type": "object",
+        "required": [
+          "id",
+          "enabled",
+          "server_name",
+          "force_verify_name",
+          "server_ip",
+          "dns1",
+          "dns2",
+          "authmode",
+          "nas_identifier",
+          "nas_ip_address",
+          "radius_ip",
+          "secret",
+          "authport",
+          "accountport",
+          "comment",
+          "addr_pool",
+          "interface",
+          "rate_limit_lan",
+          "drop_client",
+          "force_pppoe",
+          "enhance_check",
+          "share_deny",
+          "bind_vlan",
+          "verify_vlan",
+          "bind_iface",
+          "mtu",
+          "mru",
+          "lcp_echo_interval",
+          "lcp_echo_failure",
+          "maxconnect",
+          "restart_timer",
+          "restart_week",
+          "restart_time"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "配置ID",
+            "minimum": 1,
+            "example": 1
+          },
+          "enabled": {
+            "type": "string",
+            "description": "服务开启状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "no"
+          },
+          "server_name": {
+            "type": "string",
+            "description": "服务端名称",
+            "maxLength": 100,
+            "example": "iKuai"
+          },
+          "force_verify_name": {
+            "type": "integer",
+            "description": "强制校验服务名称，0为不强制，1为强制",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "server_ip": {
+            "type": "string",
+            "description": "服务器地址",
+            "example": "10.1.1.1"
+          },
+          "dns1": {
+            "type": "string",
+            "description": "DNS服务器1",
+            "example": "114.114.114.114"
+          },
+          "dns2": {
+            "type": "string",
+            "description": "DNS服务器2",
+            "example": "119.29.29.29"
+          },
+          "authmode": {
+            "type": "integer",
+            "description": "认证方式：0-本地账户，1-本地账户空密码，2-任意用户，3-RADIUS",
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "example": 0
+          },
+          "nas_identifier": {
+            "type": "string",
+            "description": "NAS标识（authmode=3时必填，1-60个字符）",
+            "minLength": 1,
+            "maxLength": 60,
+            "example": "iKuai"
+          },
+          "nas_ip_address": {
+            "type": "string",
+            "description": "NAS IP地址（authmode=3时必填，合法IP）",
+            "example": ""
+          },
+          "radius_ip": {
+            "type": "string",
+            "description": "RADIUS服务端IP（authmode=3时必填）",
+            "example": "127.0.0.1"
+          },
+          "secret": {
+            "type": "string",
+            "description": "共享密钥（authmode=3时必填，1-60个字符）",
+            "minLength": 1,
+            "maxLength": 60,
+            "example": "123"
+          },
+          "authport": {
+            "type": "integer",
+            "description": "认证端口（authmode=3时必填）",
+            "minimum": 1,
+            "maximum": 65535,
+            "default": 1812,
+            "example": 1812
+          },
+          "accountport": {
+            "type": "integer",
+            "description": "记账端口（authmode=3时必填）",
+            "minimum": 1,
+            "maximum": 65535,
+            "default": 1813,
+            "example": 1813
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": ""
+          },
+          "addr_pool": {
+            "type": "string",
+            "description": "客户端地址池，格式为IP范围，多个用逗号分隔",
+            "example": "10.1.1.2-10.1.1.254"
+          },
+          "interface": {
+            "type": "string",
+            "description": "内网线路",
+            "example": "lan1"
+          },
+          "rate_limit_lan": {
+            "type": "integer",
+            "description": "对内网访问限速，0为关闭，1为开启",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "drop_client": {
+            "type": "integer",
+            "description": "禁止客户端互访，0为关闭，1为开启",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "force_pppoe": {
+            "type": "integer",
+            "description": "强制拨号上网，0为关闭，1为开启",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "enhance_check": {
+            "type": "integer",
+            "description": "加强断线检测，0为关闭，1为开启",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "share_deny": {
+            "type": "integer",
+            "description": "共享数超出处理动作：0-踢掉，1-拒绝连接",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "bind_vlan": {
+            "type": "integer",
+            "description": "支持VLAN(QinQ)透传，0为关闭，1为开启",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "verify_vlan": {
+            "type": "integer",
+            "description": "是否校验VLAN（依赖bind_vlan=1时生效），0为不校验，1为校验",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 1
+          },
+          "bind_iface": {
+            "type": "integer",
+            "description": "支持绑定iface，0为关闭，1为开启",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "mtu": {
+            "type": "integer",
+            "description": "MTU值",
+            "minimum": 1000,
+            "maximum": 1492,
+            "default": 1480,
+            "example": 1480
+          },
+          "mru": {
+            "type": "integer",
+            "description": "MRU值",
+            "minimum": 1000,
+            "maximum": 1492,
+            "default": 1480,
+            "example": 1480
+          },
+          "lcp_echo_interval": {
+            "type": "integer",
+            "description": "LCP echo间隔（秒）",
+            "minimum": 1,
+            "maximum": 60,
+            "default": 10,
+            "example": 10
+          },
+          "lcp_echo_failure": {
+            "type": "integer",
+            "description": "LCP echo失败次数",
+            "minimum": 1,
+            "maximum": 60,
+            "default": 3,
+            "example": 3
+          },
+          "maxconnect": {
+            "type": "integer",
+            "description": "客户端最大连接时长（小时），0表示不限制",
+            "minimum": 0,
+            "maximum": 8760,
+            "example": 0
+          },
+          "restart_timer": {
+            "type": "integer",
+            "description": "定时重启PPPoE服务，0为关闭，1为开启",
+            "enum": [
+              0,
+              1
+            ],
+            "example": 0
+          },
+          "restart_week": {
+            "type": "string",
+            "description": "定时重启周期，由星期数字组成（1=周一...7=周日），如1234567表示每天，12345表示周一至周五。仅restart_timer=1时有效",
+            "example": ""
+          },
+          "restart_time": {
+            "type": "string",
+            "description": "定时重启时间，格式HH:MM，多个用逗号分隔如06:00,18:00。仅restart_timer=1时有效",
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "PppoeServerConfigInput": {
+        "type": "object",
+        "description": "PUT全量修改，条件字段（verify_vlan/restart_week/restart_time）及选输字段无需强制传入",
+        "required": [
+          "enabled",
+          "force_verify_name",
+          "server_ip",
+          "dns1",
+          "dns2",
+          "authmode",
+          "nas_identifier",
+          "nas_ip_address",
+          "radius_ip",
+          "secret",
+          "authport",
+          "accountport",
+          "addr_pool",
+          "interface",
+          "rate_limit_lan",
+          "drop_client",
+          "force_pppoe",
+          "enhance_check",
+          "share_deny",
+          "bind_vlan",
+          "verify_vlan",
+          "bind_iface",
+          "mtu",
+          "mru",
+          "lcp_echo_interval",
+          "lcp_echo_failure",
+          "maxconnect",
+          "restart_timer",
+          "comment"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "string",
+            "description": "服务开启状态",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "example": "no"
+          },
+          "server_name": {
+            "type": "string",
+            "description": "服务端名称",
+            "maxLength": 100,
+            "default": "iKuai",
+            "example": "iKuai"
+          },
+          "force_verify_name": {
+            "type": "integer",
+            "description": "强制校验服务名称，0为不强制，1为强制，不传则不修改",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "server_ip": {
+            "type": "string",
+            "description": "服务器地址，必须为合法IP",
+            "example": "10.1.1.1"
+          },
+          "dns1": {
+            "type": "string",
+            "description": "DNS服务器1，必须为合法IP",
+            "example": "114.114.114.114"
+          },
+          "dns2": {
+            "type": "string",
+            "description": "DNS服务器2，必须为合法IP",
+            "example": "119.29.29.29"
+          },
+          "authmode": {
+            "type": "integer",
+            "description": "认证方式：0-本地账户，1-本地账户空密码，2-任意用户，3-RADIUS",
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "nas_identifier": {
+            "type": "string",
+            "description": "NAS标识（authmode=3时必填，1-60个字符）",
+            "minLength": 1,
+            "maxLength": 60,
+            "example": "iKuai"
+          },
+          "nas_ip_address": {
+            "type": "string",
+            "description": "NAS IP地址（authmode=3时必填，合法IP）",
+            "example": ""
+          },
+          "radius_ip": {
+            "type": "string",
+            "description": "RADIUS服务端IP（authmode=3时必填）",
+            "example": "127.0.0.1"
+          },
+          "secret": {
+            "type": "string",
+            "description": "共享密钥（authmode=3时必填，1-60个字符）",
+            "minLength": 1,
+            "maxLength": 60,
+            "example": "123"
+          },
+          "authport": {
+            "type": "integer",
+            "description": "认证端口（authmode=3时必填）",
+            "minimum": 1,
+            "maximum": 65535,
+            "default": 1812,
+            "example": 1812
+          },
+          "accountport": {
+            "type": "integer",
+            "description": "记账端口（authmode=3时必填）",
+            "minimum": 1,
+            "maximum": 65535,
+            "default": 1813,
+            "example": 1813
+          },
+          "addr_pool": {
+            "type": "string",
+            "description": "客户端地址池，格式为IP范围，多个用逗号分隔",
+            "default": "10.1.1.2-10.1.1.254",
+            "example": "10.1.1.2-10.1.1.254"
+          },
+          "comment": {
+            "type": "string",
+            "description": "备注信息，最多64个字符，不支持特殊字符",
+            "maxLength": 64,
+            "example": ""
+          },
+          "interface": {
+            "type": "string",
+            "description": "内网线路",
+            "default": "lan1",
+            "example": "lan1"
+          },
+          "rate_limit_lan": {
+            "type": "integer",
+            "description": "对内网访问限速，0为关闭，1为开启",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 1,
+            "example": 1
+          },
+          "drop_client": {
+            "type": "integer",
+            "description": "禁止客户端互访，0为关闭，1为开启",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 1,
+            "example": 1
+          },
+          "force_pppoe": {
+            "type": "integer",
+            "description": "强制拨号上网，0为关闭，1为开启",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "enhance_check": {
+            "type": "integer",
+            "description": "加强断线检测，0为关闭，1为开启",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 1,
+            "example": 1
+          },
+          "share_deny": {
+            "type": "integer",
+            "description": "共享数超出处理动作：0-踢掉，1-拒绝连接",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "bind_vlan": {
+            "type": "integer",
+            "description": "支持VLAN(QinQ)透传，0为关闭，1为开启",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "verify_vlan": {
+            "type": "integer",
+            "description": "是否校验VLAN（仅bind_vlan=1时必填），0为不校验，1为校验",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 1,
+            "example": 1
+          },
+          "bind_iface": {
+            "type": "integer",
+            "description": "支持绑定iface，0为关闭，1为开启",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "mtu": {
+            "type": "integer",
+            "description": "MTU值",
+            "minimum": 1000,
+            "maximum": 1492,
+            "default": 1480,
+            "example": 1480
+          },
+          "mru": {
+            "type": "integer",
+            "description": "MRU值",
+            "minimum": 1000,
+            "maximum": 1492,
+            "default": 1480,
+            "example": 1480
+          },
+          "lcp_echo_interval": {
+            "type": "integer",
+            "description": "LCP echo间隔（秒）",
+            "minimum": 1,
+            "maximum": 60,
+            "default": 10,
+            "example": 10
+          },
+          "lcp_echo_failure": {
+            "type": "integer",
+            "description": "LCP echo失败次数",
+            "minimum": 1,
+            "maximum": 60,
+            "default": 3,
+            "example": 3
+          },
+          "maxconnect": {
+            "type": "integer",
+            "description": "客户端最大连接时长（小时），0表示不限制",
+            "minimum": 0,
+            "maximum": 8760,
+            "default": 0,
+            "example": 0
+          },
+          "restart_timer": {
+            "type": "integer",
+            "description": "定时重启PPPoE服务，0为关闭，1为开启",
+            "enum": [
+              0,
+              1
+            ],
+            "default": 0,
+            "example": 0
+          },
+          "restart_week": {
+            "type": "string",
+            "description": "定时重启周期，由星期数字组成（1=周一...7=周日），如1234567表示每天。仅restart_timer=1时必填",
+            "example": ""
+          },
+          "restart_time": {
+            "type": "string",
+            "description": "定时重启时间，格式HH:MM，多个用逗号分隔如06:00,18:00。仅restart_timer=1时必填",
+            "example": ""
+          }
+        },
+        "additionalProperties": false
+      },
+      "PppoeServerConfigResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Success"
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PppoeServerConfig"
+                }
+              }
+            },
+            "required": [
+              "data"
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateOperationResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UpdateSuccessResponse"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateBusinessErrorResponse"
+          }
+        ],
+        "description": "更新/状态变更操作的业务响应。\n请以返回体中的 `code` 判断本次操作是否成功：\n- `code = 0`：更新成功\n- `code != 0`：HTTP 请求成功，但内部业务处理失败\n"
+      },
+      "UpdateSuccessResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，0表示更新成功",
+            "const": 0,
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息",
+            "example": "Success"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBusinessErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "业务状态码，非0表示内部业务处理失败",
+            "example": 30001,
+            "not": {
+              "const": 0
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "业务错误消息",
+            "example": "请求参数不合法"
+          },
+          "details": {
+            "type": "array",
+            "description": "业务校验错误明细，部分错误场景返回。\n`field`、`type`、`msg` 的具体内容由实际业务校验规则决定，不固定。\n",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationErrorDetail": {
+        "type": "object",
+        "required": [
+          "field",
+          "type",
+          "msg"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "出错字段名。\n该值由具体业务决定，可能是单字段名，也可能是组合字段标识。\n",
+            "example": "key1"
+          },
+          "type": {
+            "type": "string",
+            "description": "校验类型，由业务返回",
+            "example": "unique"
+          },
+          "msg": {
+            "type": "string",
+            "description": "具体错误说明，由业务返回",
+            "example": "详细的错误输出"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Bearer Token进行认证。\n在请求头中添加: Authorization: Bearer your-api-token-here\n"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "pppoe-server",
+      "x-displayName": "PPPoE服务器管理",
+      "description": "PPPoE服务器的配置管理，包括认证、网络、连接控制和RADIUS设置"
+    }
+  ]
+}
