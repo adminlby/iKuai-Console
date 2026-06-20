@@ -10,6 +10,89 @@ openapi/    爱快 v4.0 规范(98 份,字段依据)
 
 前后端各自有独立的 `package.json` 与 `.env`,可分别安装、运行、部署。
 
+> ⚠️ **关于定位:为了防止不必要的问题,当前版本设置为「只读看板」** —— 所有页面只做数据展示(监控、统计、状态总览),**不提供任何写入/修改设备配置的操作**。
+> 后续会逐步加入可写功能,请留意后续更新。
+
+## 运行截图
+
+> 截图取自真机(爱快 4.0.222),界面为 UniFi Network 风格,支持浅色 / 深色主题,右上角 `LIVE` 表示实时轮询中。
+
+### 总览与拓扑
+
+<table>
+<tr>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_125848_643.png" alt="总览"><br><sub><b>总览</b> · 全网健康度 / WiFi / 互联网流量 / ISP 延迟 / AP 负载</sub></td>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_125914_252.png" alt="拓扑"><br><sub><b>拓扑</b> · 网络拓扑图 + 线路实时监控</sub></td>
+</tr>
+</table>
+
+### 设备与客户端
+
+<table>
+<tr>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_125923_962.png" alt="设备"><br><sub><b>设备</b> · 网关 / 周边设备列表与状态</sub></td>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_130001_601.png" alt="客户端"><br><sub><b>客户端</b> · 在线终端、接口、实时上下行</sub></td>
+</tr>
+</table>
+
+### 网络
+
+<table>
+<tr>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_130016_914.png" alt="物理网口"><br><sub><b>物理网口</b> · 网口连接 / 速率 / 双工</sub></td>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_130023_093.png" alt="接口"><br><sub><b>接口</b> · WAN / LAN 配置总览</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_130032_399.png" alt="DHCP 策略"><br><sub><b>DHCP 策略</b> · 地址池 / 网关 / DNS / 租期</sub></td>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_130044_030.png" alt="静态分配"><br><sub><b>静态分配</b> · IP-MAC 绑定</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_130059_900.png" alt="DHCP 租约"><br><sub><b>DHCP 租约</b> · 当前已分配地址</sub></td>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_130141_611.png" alt="DNS 设置"><br><sub><b>DNS 设置</b> · 代理 / 缓存 / 防护状态</sub></td>
+</tr>
+</table>
+
+### 路由 · VPN · 认证 · 对象
+
+<table>
+<tr>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_130224_498.png" alt="负载分流"><br><sub><b>路由</b> · 负载分流 / 域名分流 / QoS / 静态路由</sub></td>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_130229_415.png" alt="VPN"><br><sub><b>VPN</b> · WireGuard / IPSec / OpenVPN / L2TP 等</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_130233_674.png" alt="认证"><br><sub><b>认证</b> · 在线认证用户 / 账号 / 套餐 / WEB 认证</sub></td>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_130237_897.png" alt="对象库"><br><sub><b>对象库</b> · IP / MAC / 域名 / 端口 / 时间对象</sub></td>
+</tr>
+</table>
+
+### 洞察(Insights)
+
+<table>
+<tr>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_130247_857.png" alt="流量"><br><sub><b>流量</b> · 应用 / 终端流量 TOP 排行</sub></td>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_130252_815.png" alt="射频"><br><sub><b>射频</b> · AP 射频 / 信道在用终端统计</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_130258_259.png" alt="负载"><br><sub><b>负载</b> · 性能 / 网络 / 在线终端 / 收发包趋势</sub></td>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_130312_177.png" alt="审计"><br><sub><b>审计</b> · 行为审计、协议占比与终端排行</sub></td>
+</tr>
+</table>
+
+### 服务 · 安全 · 日志 · 系统
+
+<table>
+<tr>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_130319_635.png" alt="服务"><br><sub><b>服务</b> · FTP / Samba / SNMP / HTTP 服务总览</sub></td>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_130330_891.png" alt="安全·访问控制"><br><sub><b>安全</b> · MAC / 域名 / URL 访问控制、ACL</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_130336_141.png" alt="安全·高级防护"><br><sub><b>安全</b> · 高级防护(禁 PING / DoS / TCP MSS 等)</sub></td>
+<td width="50%"><img src="images/ScreenShot_2026-06-20_130343_041.png" alt="系统信息"><br><sub><b>系统</b> · 系统信息、版本、维护与性能</sub></td>
+</tr>
+</table>
+
+> 截图中部分敏感字段(客户端名称、MAC、DNS、公网地址等)已做打码处理。
+
 ## 快速开始
 
 ```bash
