@@ -1,17 +1,20 @@
 import type { ReactNode } from 'react'
-import { IcChevronDown, IcWifi, IcMoon, IcSun } from './icons'
+import { IcChevronDown, IcWifi, IcMoon, IcSun, IcLogout } from './icons'
 import { Notifications } from './Notifications'
 
 /** UniFi-style top header: site picker · Network tab · centered wordmark · controls. */
 export function Header({
-  site, online, theme, onToggleTheme, badge,
+  site, online, theme, onToggleTheme, badge, user, onLogout,
 }: {
   site: string
   online: boolean
   theme: 'light' | 'dark'
   onToggleTheme: () => void
   badge?: ReactNode
+  user?: string | null
+  onLogout?: () => void
 }) {
+  const initial = (user || 'J').trim().charAt(0).toUpperCase() || 'J'
   return (
     <header className="uhead">
       <button className="site">
@@ -35,7 +38,12 @@ export function Header({
           {theme === 'light' ? <IcMoon /> : <IcSun />}
         </button>
         <Notifications />
-        <div className="havatar" title="Joe">J</div>
+        <div className="havatar" title={user || ''}>{initial}</div>
+        {onLogout && (
+          <button className="hbtn" title={user ? `退出登录(${user})` : '退出登录'} onClick={onLogout}>
+            <IcLogout />
+          </button>
+        )}
       </div>
     </header>
   )

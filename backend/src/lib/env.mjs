@@ -43,6 +43,16 @@ export const env = {
   // and reverse-proxies /api -> the iKuai device. Lets the whole app run as a
   // single process on a single port (no nginx / no vite preview needed).
   FRONTEND_DIR: get('FRONTEND_DIR', ''),
+  // Auth (login). Users live in MySQL (`users` table), passwords scrypt-hashed.
+  AUTH_ENABLED: get('AUTH_ENABLED', '1') !== '0',
+  // HMAC secret for signing the session cookie. If empty, a random one is
+  // generated per boot (logins reset on restart) — set it to persist sessions.
+  AUTH_SECRET: get('AUTH_SECRET', ''),
+  // First-boot seed account, created only when the users table is empty.
+  AUTH_USER: get('AUTH_USER', 'admin'),
+  AUTH_PASSWORD: get('AUTH_PASSWORD', ''),
+  // Session lifetime (hours).
+  AUTH_SESSION_HOURS: Number(get('AUTH_SESSION_HOURS', 24 * 7)),
   // MySQL
   DB_HOST: get('DB_HOST', '127.0.0.1'),
   DB_PORT: Number(get('DB_PORT', 3306)),

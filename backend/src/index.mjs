@@ -3,9 +3,10 @@
 // sample to MySQL, and serves aggregates (uptime %, latency, ISP name) over HTTP.
 import http from 'node:http'
 import { env } from './lib/env.mjs'
-import { initDb, dbReady, insertProbe, latest, rowsSince, uptimePct } from './lib/db.mjs'
+import { initDb, dbReady, insertProbe, latest, rowsSince, uptimePct, getUser, userCount, addUser } from './lib/db.mjs'
 import { runProbe } from './lib/probe.mjs'
 import { proxyApi, serveStatic } from './lib/web.mjs'
+import { hashPassword, verifyPassword, signToken, sessionFromReq, setCookieHeader, clearCookieHeader } from './lib/auth.mjs'
 
 let last = null   // last probe record (carries ISP-lookup cache between runs)
 
@@ -74,19 +75,84 @@ function toRow(p) {
   }
 }
 
-function sendJSON(res, code, body) {
+function sendJSON(res, code, body, extraHeaders) {
   res.writeHead(code, {
     'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': '*',
     'Cache-Control': 'no-store',
+    ...extraHeaders,
   })
   res.end(JSON.stringify(body))
+}
+
+/** Read + JSON-parse a request body (capped). Returns {} on empty/invalid. */
+function readJSON(req, limit = 1 << 20) {
+  return new Promise((resolve) => {
+    let data = '', size = 0
+    req.on('data', (c) => {
+      size += c.length
+      if (size > limit) { req.destroy(); resolve({}) } else data += c
+    })
+    req.on('end', () => { try { resolve(JSON.parse(data || '{}')) } catch { resolve({}) } })
+    req.on('error', () => resolve({}))
+  })
+}
+
+// ---- auth route handlers ----
+async function handleLogin(req, res) {
+  const { username, password } = await readJSON(req)
+  if (!username || !password) return sendJSON(res, 400, { error: '请输入用户名和密码' })
+  if (!dbReady()) return sendJSON(res, 503, { error: '数据库未就绪,请稍后再试' })
+  const u = await getUser(String(username))
+  if (!u || !verifyPassword(String(password), u.password)) {
+    return sendJSON(res, 401, { error: '用户名或密码错误' })
+  }
+  const token = signToken(u.username)
+  return sendJSON(res, 200, { ok: true, user: u.username }, { 'Set-Cookie': setCookieHeader(token) })
+}
+
+function handleMe(req, res) {
+  if (!env.AUTH_ENABLED) return sendJSON(res, 200, { user: null, authDisabled: true })
+  const s = sessionFromReq(req)
+  if (!s) return sendJSON(res, 401, { error: 'unauthorized' })
+  return sendJSON(res, 200, { user: s.username, exp: s.exp })
+}
+
+/** Create the seed account when the users table is empty (web/all role only). */
+async function ensureSeedUser() {
+  try {
+    if (!dbReady() || await userCount() > 0) return
+    const user = env.AUTH_USER || 'admin'
+    await addUser(user, hashPassword(env.AUTH_PASSWORD || 'admin'))
+    console.log(`[auth] seeded initial user "${user}"`)
+    if (!env.AUTH_PASSWORD) {
+      console.warn('[auth] ⚠ default password "admin" is in use — set AUTH_USER/AUTH_PASSWORD in ' +
+        'backend/.env (before first boot) or use `npm run user passwd <user> <newpass>` to change it.')
+    }
+  } catch (e) {
+    console.error('[auth] seed failed:', e.message)
+  }
 }
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost')
   try {
+    // --- auth endpoints (always reachable, even when logged out) ---
+    if (url.pathname === '/svc/auth/login') {
+      if (req.method !== 'POST') return sendJSON(res, 405, { error: 'method not allowed' })
+      return handleLogin(req, res)
+    }
+    if (url.pathname === '/svc/auth/logout') {
+      return sendJSON(res, 200, { ok: true }, { 'Set-Cookie': clearCookieHeader() })
+    }
+    if (url.pathname === '/svc/auth/me') return handleMe(req, res)
     if (url.pathname === '/svc/health') return sendJSON(res, 200, { ok: true, db: dbReady() })
+
+    // --- everything below needs a valid session (when auth is enabled) ---
+    const guarded = url.pathname.startsWith('/svc/isp') || url.pathname.startsWith('/api/')
+    if (env.AUTH_ENABLED && guarded && !sessionFromReq(req)) {
+      return sendJSON(res, 401, { error: 'unauthorized' })
+    }
+
     if (url.pathname === '/svc/isp/summary') return sendJSON(res, 200, await summary())
     if (url.pathname === '/svc/isp/history') {
       const hours = Math.min(168, Math.max(1, Number(url.searchParams.get('hours')) || 24))
@@ -96,6 +162,7 @@ const server = http.createServer(async (req, res) => {
     }
     // Single-server mode: reverse-proxy /api -> iKuai, then serve the frontend.
     if (url.pathname.startsWith('/api/')) return proxyApi(req, res, env)
+    // The SPA itself is served unauthenticated so the login page can load.
     if (env.FRONTEND_DIR) return serveStatic(req, res, env.FRONTEND_DIR)
     sendJSON(res, 404, { error: 'not found' })
   } catch (e) {
@@ -108,6 +175,7 @@ async function connectWithRetry(attempt = 1) {
   try {
     await initDb()
     console.log(`[db] connected to MySQL ${env.DB_USER}@${env.DB_HOST}:${env.DB_PORT}/${env.DB_NAME}`)
+    if (doServe && env.AUTH_ENABLED) await ensureSeedUser()
   } catch (e) {
     const wait = Math.min(30000, attempt * 5000)
     console.error(`[db] connect failed (${e.code || e.message}); retrying in ${wait / 1000}s. ` +
@@ -119,7 +187,7 @@ async function connectWithRetry(attempt = 1) {
 const doProbe = env.ROLE === 'all' || env.ROLE === 'probe'   // probe + write DB
 const doServe = env.ROLE === 'all' || env.ROLE === 'web'     // serve UI/api/svc + read DB
 
-console.log(`[svc] role=${env.ROLE}  iKuai: ${env.IKUAI_BASE}  db: mysql://${env.DB_HOST}:${env.DB_PORT}/${env.DB_NAME}`)
+console.log(`[svc] role=${env.ROLE}  iKuai: ${env.IKUAI_BASE}  db: mysql://${env.DB_HOST}:${env.DB_PORT}/${env.DB_NAME}  auth: ${env.AUTH_ENABLED ? 'on' : 'off'}`)
 connectWithRetry()   // both roles use MySQL (probe writes, web reads)
 
 if (doServe) {

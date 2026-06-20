@@ -593,3 +593,39 @@ input{font-family:inherit}
 .dh-period{font-size:13px;font-weight:600;color:#e1e1e1;margin-bottom:15px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .dh-row{display:flex;align-items:center;justify-content:space-between;line-height:1.9;font-size:14px}
 .dh-row b{font-size:15px;font-variant-numeric:tabular-nums}.dh-row .down{color:#30a9dc}.dh-row .up{color:#a762e3}.dh-row .good{color:#20c36a}
+
+/* ===== Login wall ===== */
+.login-wrap{
+  position:fixed;inset:0;display:grid;place-items:center;padding:24px;
+  background:radial-gradient(1200px 600px at 50% -10%,var(--blue-soft),transparent 60%),var(--bg);
+}
+.login-splash{
+  font-size:34px;font-weight:800;letter-spacing:.5px;color:var(--text-3);
+  animation:loginPulse 1.4s ease-in-out infinite;
+}
+@keyframes loginPulse{0%,100%{opacity:.45}50%{opacity:1}}
+.login-card{
+  width:min(380px,100%);background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;box-shadow:var(--shadow-lg);padding:32px 28px;
+  display:flex;flex-direction:column;gap:14px;
+}
+.login-brand{font-size:30px;font-weight:800;letter-spacing:.5px;text-align:center;color:var(--text)}
+.login-sub{font-size:13px;color:var(--text-2);text-align:center;margin-top:-8px;margin-bottom:6px}
+.login-field{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;color:var(--text-2)}
+.login-field input{
+  width:100%;box-sizing:border-box;padding:10px 12px;font-size:14px;color:var(--text);
+  background:var(--surface-2);border:1px solid var(--border);border-radius:9px;outline:none;
+  transition:border-color .15s,box-shadow .15s;
+}
+.login-field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft);background:var(--surface)}
+.login-err{
+  font-size:12.5px;color:var(--red);background:var(--red-soft);
+  border-radius:8px;padding:8px 10px;text-align:center;
+}
+.login-btn{
+  margin-top:4px;padding:11px 12px;font-size:14px;font-weight:700;letter-spacing:2px;color:#fff;
+  background:var(--blue);border:none;border-radius:9px;cursor:pointer;transition:background .15s,opacity .15s;
+}
+.login-btn:hover:not(:disabled){background:var(--blue-2)}
+.login-btn:disabled{opacity:.55;cursor:not-allowed}
+.login-foot{font-size:11px;color:var(--text-3);text-align:center;margin-top:6px}

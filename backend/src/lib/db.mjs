@@ -40,7 +40,53 @@ export async function initDb() {
       INDEX idx_probes_ts (ts)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id         INT AUTO_INCREMENT PRIMARY KEY,
+      username   VARCHAR(64)  NOT NULL UNIQUE,
+      password   VARCHAR(255) NOT NULL,   -- scrypt hash, never plaintext
+      created_at BIGINT       NOT NULL,
+      updated_at BIGINT       NOT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+  `)
   return pool
+}
+
+// ---- user accounts (login) ----
+export async function getUser(username) {
+  if (!pool) return null
+  const [rows] = await pool.query('SELECT * FROM users WHERE username = ? LIMIT 1', [username])
+  return rows[0] ?? null
+}
+
+export async function userCount() {
+  if (!pool) return 0
+  const [rows] = await pool.query('SELECT COUNT(*) AS n FROM users')
+  return Number(rows[0]?.n ?? 0)
+}
+
+export async function listUsers() {
+  if (!pool) return []
+  const [rows] = await pool.query('SELECT username, created_at, updated_at FROM users ORDER BY username')
+  return rows
+}
+
+export async function addUser(username, passwordHash) {
+  if (!pool) throw new Error('db not ready')
+  const now = Date.now()
+  await pool.query(
+    'INSERT INTO users (username, password, created_at, updated_at) VALUES (?, ?, ?, ?)',
+    [username, passwordHash, now, now],
+  )
+}
+
+export async function setUserPassword(username, passwordHash) {
+  if (!pool) throw new Error('db not ready')
+  const [r] = await pool.query(
+    'UPDATE users SET password = ?, updated_at = ? WHERE username = ?',
+    [passwordHash, Date.now(), username],
+  )
+  return r.affectedRows > 0
 }
 
 export const dbReady = () => pool != null

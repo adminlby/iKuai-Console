@@ -258,3 +258,8 @@ export const IcService = ({ size, style, className }: P) => (
     <path d="M7 7h.01M7 17h.01" />
   </svg>
 )
+export const IcLogout = ({ size, style, className }: P) => (
+  <svg viewBox="0 0 24 24" style={{ ...base(size), ...style }} className={className} {...S}>
+    <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3" /><path d="M10 17l-5-5 5-5" /><path d="M5 12h12" />
+  </svg>
+)

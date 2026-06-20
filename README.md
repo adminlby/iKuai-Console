@@ -132,6 +132,10 @@ npm run frontend           # 终端 B:前端 (http://localhost:5273)
 | `PROBE_INTERVAL_MS` | 探测间隔,默认 `300000`(5 分钟) |
 | `ISP_LOOKUP_URL` | 解析当前 ISP 名称的 geo-IP 服务(默认 ip-api.com) |
 | `DB_HOST` / `DB_PORT` / `DB_USER` / `DB_PASSWORD` / `DB_NAME` | MySQL 连接 |
+| `AUTH_ENABLED` | 是否开启登录(`1` 开启,`0` 关闭),默认 `1` |
+| `AUTH_SECRET` | 会话 Cookie 的 HMAC 签名密钥;留空则每次启动随机生成(重启后登录失效) |
+| `AUTH_USER` / `AUTH_PASSWORD` | 首次启动的初始账号(仅在 `users` 表为空时创建);默认 `admin` / `admin` |
+| `AUTH_SESSION_HOURS` | 登录会话有效期(小时),默认 `168`(7 天) |
 
 > `secure:false` 的 Vite 代理兼容自签名证书;浏览器只与 Vite 同源通信,无 CORS/混合内容。
 > ISP 名称解析会把路由器公网 IP 发送给第三方(ip-api.com),可通过 `ISP_LOOKUP_URL` 更换或自建。
@@ -150,6 +154,30 @@ mysql -u root -p < backend/sql/init.sql
 
 `probes` 表:每个探测周期一行 —— `ts`(unix 秒,主键)、`online`、`isp`、`ip`、以及到
 运营商/Cloudflare/Google/GitHub/Microsoft 的延迟(ms)。
+
+## 登录
+
+控制台带一个简单的登录门:账号存在 MySQL 的 `users` 表里,密码用 **scrypt 加盐哈希**(`node:crypto`,无第三方依赖,绝不明文存储)。登录态是一枚 **HttpOnly、HMAC 签名的会话 Cookie**(`AUTH_SECRET` 签名),后端对 `/api`(转发到爱快)与 `/svc/isp/*` 数据接口做鉴权拦截。
+
+- **首次启动**:`users` 表为空时,后端按 `AUTH_USER`/`AUTH_PASSWORD` 创建初始账号(默认 **`admin` / `admin`**,会在日志里告警)。请在首次启动前改好,或启动后用下面的命令改密。
+- **管理账号**(在 `backend/` 下运行):
+
+  ```bash
+  npm run user add    <用户名> <密码>     # 新建用户
+  npm run user passwd <用户名> <新密码>   # 改密码
+  npm run user list                        # 列出用户
+  ```
+
+- **关闭登录**:设 `AUTH_ENABLED=0`(适合内网可信环境)。
+- **持久会话**:设一个固定的 `AUTH_SECRET`(否则每次重启都需要重新登录):
+
+  ```bash
+  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  ```
+
+接口:`POST /svc/auth/login`、`POST /svc/auth/logout`、`GET /svc/auth/me`。
+
+> 开发模式(Vite)下 `/api` 由 Vite 直接代理到设备、不经后端,因此登录拦截只在“单进程/Docker 部署”(后端转发 `/api`)时对 `/api` 生效;前端 UI 始终有登录门。
 
 ## 后端接口
 
@@ -194,13 +222,14 @@ docker compose up -d --build
 
 ```
 frontend/
-  src/lib/        api.ts(iKuai 端点) svc.ts(后端客户端) format.ts usePoll.ts mock.ts
+  src/lib/        api.ts(iKuai 端点) svc.ts(后端客户端) auth.ts(登录) format.ts usePoll.ts mock.ts
   src/components/  Header Sidebar DevicePanel charts(纯SVG) ui icons
-  src/pages/      Dashboard.tsx
+  src/pages/      Dashboard.tsx … Login.tsx(登录页)
   vite.config.ts  tsconfig*.json  index.html  .env
 backend/
-  src/index.mjs   HTTP 接口 + 探测调度
-  src/lib/        env.mjs db.mjs(mysql2) ikuai.mjs probe.mjs
-  sql/init.sql    建库建表脚本
+  src/index.mjs   HTTP 接口 + 探测调度 + 登录鉴权
+  src/lib/        env.mjs db.mjs(mysql2) ikuai.mjs probe.mjs auth.mjs(scrypt 哈希 + 会话签名)
+  src/cli/user.mjs 账号管理 CLI(npm run user)
+  sql/init.sql    建库建表脚本(probes + users)
   .env
 ```

@@ -27,6 +27,19 @@ CREATE TABLE IF NOT EXISTS `probes` (
   KEY `idx_probes_ts` (`ts`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Console login accounts. Passwords are scrypt-hashed by the backend
+-- (`scrypt$N$r$p$salt$hash`) — never store plaintext here. On first boot the
+-- backend seeds AUTH_USER/AUTH_PASSWORD (default admin/admin) if this is empty.
+CREATE TABLE IF NOT EXISTS `users` (
+  `id`         INT          NOT NULL AUTO_INCREMENT,
+  `username`   VARCHAR(64)  NOT NULL,
+  `password`   VARCHAR(255) NOT NULL COMMENT 'scrypt hash, never plaintext',
+  `created_at` BIGINT       NOT NULL COMMENT 'unix ms',
+  `updated_at` BIGINT       NOT NULL COMMENT 'unix ms',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_users_username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Optional: a dedicated, least-privilege account for the backend.
 -- Adjust the password, then point backend/.env DB_USER / DB_PASSWORD at it.
 --

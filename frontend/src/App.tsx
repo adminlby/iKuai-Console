@@ -20,6 +20,8 @@ import { Auth } from './pages/Auth'
 import { Objects } from './pages/Objects'
 import { System } from './pages/System'
 import { Services } from './pages/Services'
+import { Login } from './pages/Login'
+import { auth } from './lib/auth'
 import { IcCollapse } from './components/icons'
 
 const VIEW_NAMES: Record<string, string> = {
@@ -28,6 +30,18 @@ const VIEW_NAMES: Record<string, string> = {
 }
 
 export default function App() {
+  // auth gate: 'checking' until /svc/auth/me resolves, then 'in' | 'out'
+  const [authState, setAuthState] = useState<'checking' | 'in' | 'out'>('checking')
+  const [user, setUser] = useState<string | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    auth.me()
+      .then((m) => { if (alive) { setUser(m.user); setAuthState('in') } })
+      .catch(() => { if (alive) setAuthState('out') })
+    return () => { alive = false }
+  }, [])
+
   const [view, setView] = useState('dashboard')
   const [panelOpen, setPanelOpen] = useState(true)
   const [railOpen, setRailOpen] = useState(false)
@@ -57,6 +71,20 @@ export default function App() {
   const online = sys.source === 'live'
   const isList = view === 'clients' || view === 'devices' || view === 'insights' || view === 'topology' || view === 'security' || view === 'networks' || view === 'routing' || view === 'vpn' || view === 'logs' || view === 'auth' || view === 'objects' || view === 'services' || view === 'system'
 
+  async function logout() {
+    try { await auth.logout() } catch { /* ignore */ }
+    setUser(null)
+    setAuthState('out')
+  }
+
+  // Auth gate — block the whole console until a session is confirmed.
+  if (authState === 'checking') {
+    return <div className="login-wrap"><div className="login-splash">iKuai</div></div>
+  }
+  if (authState === 'out') {
+    return <Login onSuccess={(u) => { setUser(u); setAuthState('in') }} />
+  }
+
   return (
     <div className="shell">
       <Header
@@ -65,6 +93,8 @@ export default function App() {
         theme={theme}
         onToggleTheme={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
         badge={<SourceBadge source={sys.source} error={sys.error} />}
+        user={user}
+        onLogout={logout}
       />
       <div className={`ubody ${isList ? 'list' : ''} ${railOpen ? 'rail-exp' : ''} ${!isList && !panelOpen ? 'panel-collapsed' : ''} ${isList && !subOpen ? 'sub-collapsed' : ''}`}>
         <Sidebar
