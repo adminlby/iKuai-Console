@@ -21,6 +21,7 @@ import { Objects } from './pages/Objects'
 import { System } from './pages/System'
 import { Services } from './pages/Services'
 import { Login } from './pages/Login'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { auth } from './lib/auth'
 import { IcCollapse } from './components/icons'
 
@@ -108,6 +109,7 @@ export default function App() {
             <IcCollapse style={subOpen ? undefined : { transform: 'rotate(180deg)' }} />
           </button>
         )}
+        <ErrorBoundary resetKey={view}>
         {view === 'clients' ? (
           <Clients sys={sys} />
         ) : view === 'devices' ? (
@@ -148,6 +150,7 @@ export default function App() {
               : <Placeholder name={VIEW_NAMES[view] ?? view} />}
           </>
         )}
+        </ErrorBoundary>
       </div>
     </div>
   )

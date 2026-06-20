@@ -468,7 +468,7 @@ export interface NatRule {
 }
 export interface DnatRule {
   id: number; tagname?: string; enabled: string; lan_addr?: string; lan_port?: string
-  protocol?: string; interface?: string; wan_port?: string; src_addr?: string; comment?: string
+  protocol?: string; interface?: string; wan_port?: string; src_addr?: unknown; comment?: string
 }
 export interface DmzRule {
   id: number; tagname?: string; enabled: string; interface?: string; lan_addr?: string

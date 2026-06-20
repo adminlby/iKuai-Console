@@ -13,6 +13,7 @@ import {
   mockWanVlanConfig, mockIfaceTrafficV6, mockDhcp6AccessRules, mockClientsIp6Online, mockClientsIp6Offline, mockCameras,
 } from '../lib/mock'
 import { fmtUptime, fmtMac, fmtBytes, fmtRateStr, fmtDateTime } from '../lib/format'
+import { flat } from '../lib/match'
 import { DataTable, type Column } from '../components/DataTable'
 import { IcSearch, IcGateway, IcWired, IcNetworks, IcInternet, IcCamera } from '../components/icons'
 
@@ -243,7 +244,7 @@ export function Networks() {
     { key: 'proto', label: '协议', render: (r) => <span className="pill gray">{(r.protocol || 'all').toUpperCase()}</span> },
     { key: 'wan', label: '外网端口', render: (r) => <span className="num">{r.interface || 'wan'} : {r.wan_port || '—'}</span> },
     { key: 'lan', label: '映射到', render: (r) => <span className="num" style={{ fontWeight: 600 }}>{r.lan_addr || '—'}{r.lan_port ? ` : ${r.lan_port}` : ''}</span> },
-    { key: 'src', label: '源限制', render: (r) => <span className="num muted">{r.src_addr || '全部'}</span> },
+    { key: 'src', label: '源限制', render: (r) => <span className="num muted">{flat(r.src_addr) || '全部'}</span> },
     { key: 'st', label: '状态', sort: (r) => (enabled(r.enabled) ? 1 : 0), render: (r) => <Status e={r.enabled} /> },
   ]
   const natCols: Column<NatRule>[] = [

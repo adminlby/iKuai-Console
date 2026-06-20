@@ -12,6 +12,8 @@ openapi/    爱快 v4.0 规范(98 份,字段依据)
 
 > ⚠️ **系统要求:仅支持 iKuai(爱快)4.0 及以上版本的系统** —— 依赖 iKuai **v4.0 REST API**(`/api/v4.0/...`),旧版固件(3.x 及更早,仅有 `/Action/call` 接口)不兼容。
 
+> ⚠️ **必须部署数据库(MySQL):** 后端用 MySQL 持久化 ISP 探测历史**以及登录账号**,因此 **MySQL 是必需依赖**,运行后端前请先准备好(见下方「[MySQL](#mysql)」)。如只是本地试跑前端,可不连库,但 ISP 历史与登录将不可用。
+
 > ⚠️ **关于定位:为了防止不必要的问题,当前版本设置为「只读看板」** —— 所有页面只做数据展示(监控、统计、状态总览),**不提供任何写入/修改设备配置的操作**。
 > 后续会逐步加入可写功能,请留意后续更新。
 
@@ -101,15 +103,18 @@ openapi/    爱快 v4.0 规范(98 份,字段依据)
 # 1) 安装依赖(两个工程)
 npm run install:all        # 等价于在 frontend/ 与 backend/ 各 npm install
 
-# 2) 准备数据库(见下方「MySQL」)并填好 backend/.env
+# 2) 准备数据库(必需,见下方「MySQL」)并填好 backend/.env
 
 # 3) 启动(两个终端)
 npm run backend            # 终端 A:ISP 探测后端 (:5274)
 npm run frontend           # 终端 B:前端 (http://localhost:5273)
+
+# 4) 浏览器打开 http://localhost:5273,用首次启动的默认账号 admin / admin 登录,并尽快改密:
+#    cd backend && npm run user passwd admin 你的新密码
 ```
 
 也可直接进入子目录运行:`cd frontend && npm run dev` / `cd backend && npm start`。
-> 只跑前端也能用:ISP 卡片/性能条会显示「后端未运行」,其余真实数据照常。
+> 登录与 ISP 历史都依赖后端 + MySQL;只跑前端时这两项不可用,其余真实数据照常。
 
 ## 配置
 
@@ -142,24 +147,29 @@ npm run frontend           # 终端 B:前端 (http://localhost:5273)
 
 ## MySQL
 
-后端用 **MySQL**(`mysql2`)持久化探测历史,已弃用 SQLite。
+> **必需依赖。** 后端用 **MySQL**(`mysql2`)持久化**探测历史**(`probes` 表)与**登录账号**(`users` 表),所以运行后端前必须先部署 MySQL(5.7+ / 8.x);已弃用 SQLite。
 
 ```bash
 # 初始化数据库与表(MySQL 5.7+ / 8.x)
 mysql -u root -p < backend/sql/init.sql
 ```
 
-`backend/sql/init.sql` 会创建 `ikuai_console` 库与 `probes` 表(脚本里附带可选的最小权限账号)。
-若 `backend/.env` 中的账号具备建库权限,后端**启动时也会自动建库建表**;连不上时会重试并照常对外服务。
+`backend/sql/init.sql` 会创建 `ikuai_console` 库与 `probes` / `users` 表(脚本里附带可选的最小权限账号)。
+若 `backend/.env` 中的账号具备建库权限,后端**启动时也会自动建库建表**;连不上时会重试并照常对外服务(但登录需要数据库就绪)。
 
-`probes` 表:每个探测周期一行 —— `ts`(unix 秒,主键)、`online`、`isp`、`ip`、以及到
-运营商/Cloudflare/Google/GitHub/Microsoft 的延迟(ms)。
+- `probes`:每个探测周期一行 —— `ts`(unix 秒,主键)、`online`、`isp`、`ip`、以及到运营商/Cloudflare/Google/GitHub/Microsoft 的延迟(ms)。
+- `users`:登录账号 —— `username`(唯一)、`password`(scrypt 哈希,**绝不明文**)、创建/更新时间。
 
 ## 登录
 
 控制台带一个简单的登录门:账号存在 MySQL 的 `users` 表里,密码用 **scrypt 加盐哈希**(`node:crypto`,无第三方依赖,绝不明文存储)。登录态是一枚 **HttpOnly、HMAC 签名的会话 Cookie**(`AUTH_SECRET` 签名),后端对 `/api`(转发到爱快)与 `/svc/isp/*` 数据接口做鉴权拦截。
 
-- **首次启动**:`users` 表为空时,后端按 `AUTH_USER`/`AUTH_PASSWORD` 创建初始账号(默认 **`admin` / `admin`**,会在日志里告警)。请在首次启动前改好,或启动后用下面的命令改密。
+- **首次启动默认 `admin` / `admin`**(`users` 表为空时,后端按 `AUTH_USER`/`AUTH_PASSWORD` 创建初始账号并在日志告警)。**请尽快改密**:
+
+  ```bash
+  cd backend && npm run user passwd admin 你的新密码
+  ```
+
 - **管理账号**(在 `backend/` 下运行):
 
   ```bash
@@ -168,12 +178,13 @@ mysql -u root -p < backend/sql/init.sql
   npm run user list                        # 列出用户
   ```
 
-- **关闭登录**:设 `AUTH_ENABLED=0`(适合内网可信环境)。
-- **持久会话**:设一个固定的 `AUTH_SECRET`(否则每次重启都需要重新登录):
+- **建议设置固定的 `AUTH_SECRET`**(在 `backend/.env` 里),否则每次重启都要重新登录。生成一个:
 
   ```bash
   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
   ```
+
+- **关闭登录**:设 `AUTH_ENABLED=0`(适合内网可信环境)。
 
 接口:`POST /svc/auth/login`、`POST /svc/auth/logout`、`GET /svc/auth/me`。
 

@@ -629,3 +629,16 @@ input{font-family:inherit}
 .login-btn:hover:not(:disabled){background:var(--blue-2)}
 .login-btn:disabled{opacity:.55;cursor:not-allowed}
 .login-foot{font-size:11px;color:var(--text-3);text-align:center;margin-top:6px}
+
+/* ===== Page error fallback (ErrorBoundary) ===== */
+.page-error{
+  max-width:440px;text-align:center;padding:32px 28px;background:var(--surface);
+  border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);
+}
+.pe-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px}
+.pe-msg{font-size:13px;color:var(--text-2);word-break:break-word;margin-bottom:16px}
+.pe-btn{
+  padding:8px 20px;font-size:13px;font-weight:600;color:#fff;background:var(--blue);
+  border:none;border-radius:8px;cursor:pointer;
+}
+.pe-btn:hover{background:var(--blue-2)}
