@@ -131,7 +131,9 @@ input{font-family:inherit}
 .havatar{
   width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:600;
   font-size:12px;background:linear-gradient(135deg,#8b5cf6,#06b6d4);cursor:pointer;margin-left:2px;
+  border:none;padding:0;font-family:inherit;line-height:1;transition:filter .15s,box-shadow .15s;
 }
+.havatar:hover{filter:brightness(1.06);box-shadow:0 0 0 3px var(--blue-soft)}
 
 /* source badge in header */
 .srcbadge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:5px 10px;border-radius:20px;border:1px solid var(--border);cursor:default}
@@ -642,3 +644,35 @@ input{font-family:inherit}
   border:none;border-radius:8px;cursor:pointer;
 }
 .pe-btn:hover{background:var(--blue-2)}
+
+/* ===== Modal (change password) ===== */
+.modal-overlay{
+  position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:24px;
+  background:rgba(16,24,40,.45);backdrop-filter:blur(2px);animation:modalFade .12s ease-out;
+}
+@keyframes modalFade{from{opacity:0}to{opacity:1}}
+.modal-card{
+  width:min(380px,100%);background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;box-shadow:var(--shadow-lg);padding:22px 22px 20px;
+  display:flex;flex-direction:column;gap:12px;animation:modalPop .14s ease-out;
+}
+@keyframes modalPop{from{transform:translateY(6px) scale(.98);opacity:0}to{transform:none;opacity:1}}
+.modal-head{display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:16px;font-weight:700;color:var(--text)}
+.modal-x{
+  border:none;background:none;color:var(--text-3);font-size:22px;line-height:1;cursor:pointer;
+  width:28px;height:28px;border-radius:7px;display:grid;place-items:center;
+}
+.modal-x:hover{background:var(--surface-2);color:var(--text)}
+.modal-sub{font-size:12.5px;color:var(--text-2);margin-top:-4px}
+.modal-ok{
+  font-size:14px;font-weight:600;color:var(--green);background:var(--green-soft);
+  border-radius:9px;padding:18px;text-align:center;
+}
+.modal-actions{display:flex;gap:10px;align-items:center;margin-top:4px}
+.modal-submit{flex:1;margin-top:0;letter-spacing:1px}
+.btn-ghost{
+  padding:11px 16px;font-size:14px;font-weight:600;color:var(--text-2);
+  background:var(--surface-2);border:1px solid var(--border);border-radius:9px;cursor:pointer;
+}
+.btn-ghost:hover{background:var(--surface-3);color:var(--text)}

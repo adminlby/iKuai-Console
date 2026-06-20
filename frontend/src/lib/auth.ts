@@ -32,4 +32,9 @@ export const auth = {
       body: JSON.stringify({ username, password }),
     }),
   logout: () => call<{ ok: boolean }>('/auth/logout', { method: 'POST' }),
+  changePassword: (oldPassword: string, newPassword: string) =>
+    call<{ ok: boolean }>('/auth/password', {
+      method: 'POST',
+      body: JSON.stringify({ oldPassword, newPassword }),
+    }),
 }

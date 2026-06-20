@@ -3,7 +3,7 @@
 // sample to MySQL, and serves aggregates (uptime %, latency, ISP name) over HTTP.
 import http from 'node:http'
 import { env } from './lib/env.mjs'
-import { initDb, dbReady, insertProbe, latest, rowsSince, uptimePct, getUser, userCount, addUser } from './lib/db.mjs'
+import { initDb, dbReady, insertProbe, latest, rowsSince, uptimePct, getUser, userCount, addUser, setUserPassword } from './lib/db.mjs'
 import { runProbe } from './lib/probe.mjs'
 import { proxyApi, serveStatic } from './lib/web.mjs'
 import { hashPassword, verifyPassword, signToken, sessionFromReq, setCookieHeader, clearCookieHeader } from './lib/auth.mjs'
@@ -117,6 +117,22 @@ function handleMe(req, res) {
   return sendJSON(res, 200, { user: s.username, exp: s.exp })
 }
 
+async function handlePassword(req, res) {
+  if (!env.AUTH_ENABLED) return sendJSON(res, 400, { error: '未开启登录' })
+  const s = sessionFromReq(req)
+  if (!s) return sendJSON(res, 401, { error: 'unauthorized' })
+  const { oldPassword, newPassword } = await readJSON(req)
+  if (!oldPassword || !newPassword) return sendJSON(res, 400, { error: '请输入当前密码和新密码' })
+  if (String(newPassword).length < 6) return sendJSON(res, 400, { error: '新密码至少 6 位' })
+  if (!dbReady()) return sendJSON(res, 503, { error: '数据库未就绪,请稍后再试' })
+  const u = await getUser(s.username)
+  if (!u || !verifyPassword(String(oldPassword), u.password)) {
+    return sendJSON(res, 401, { error: '当前密码不正确' })
+  }
+  await setUserPassword(s.username, hashPassword(String(newPassword)))
+  return sendJSON(res, 200, { ok: true })
+}
+
 /** Create the seed account when the users table is empty (web/all role only). */
 async function ensureSeedUser() {
   try {
@@ -145,6 +161,10 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(res, 200, { ok: true }, { 'Set-Cookie': clearCookieHeader() })
     }
     if (url.pathname === '/svc/auth/me') return handleMe(req, res)
+    if (url.pathname === '/svc/auth/password') {
+      if (req.method !== 'POST') return sendJSON(res, 405, { error: 'method not allowed' })
+      return handlePassword(req, res)
+    }
     if (url.pathname === '/svc/health') return sendJSON(res, 200, { ok: true, db: dbReady() })
 
     // --- everything below needs a valid session (when auth is enabled) ---

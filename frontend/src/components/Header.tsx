@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { IcChevronDown, IcWifi, IcMoon, IcSun, IcLogout } from './icons'
 import { Notifications } from './Notifications'
+import { ChangePasswordModal } from './ChangePasswordModal'
 
 /** UniFi-style top header: site picker · Network tab · centered wordmark · controls. */
 export function Header({
@@ -15,6 +16,7 @@ export function Header({
   onLogout?: () => void
 }) {
   const initial = (user || 'J').trim().charAt(0).toUpperCase() || 'J'
+  const [pwOpen, setPwOpen] = useState(false)
   return (
     <header className="uhead">
       <button className="site">
@@ -38,13 +40,14 @@ export function Header({
           {theme === 'light' ? <IcMoon /> : <IcSun />}
         </button>
         <Notifications />
-        <div className="havatar" title={user || ''}>{initial}</div>
+        <button className="havatar" title={user ? `${user} · 修改密码` : '修改密码'} onClick={() => setPwOpen(true)}>{initial}</button>
         {onLogout && (
           <button className="hbtn" title={user ? `退出登录(${user})` : '退出登录'} onClick={onLogout}>
             <IcLogout />
           </button>
         )}
       </div>
+      {pwOpen && <ChangePasswordModal user={user} onClose={() => setPwOpen(false)} />}
     </header>
   )
 }

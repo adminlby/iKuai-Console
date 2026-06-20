@@ -186,7 +186,9 @@ mysql -u root -p < backend/sql/init.sql
 
 - **关闭登录**:设 `AUTH_ENABLED=0`(适合内网可信环境)。
 
-接口:`POST /svc/auth/login`、`POST /svc/auth/logout`、`GET /svc/auth/me`。
+- **修改密码**:登录后点右上角**头像**即可弹窗改密(也可用上面的 `npm run user passwd`)。
+
+接口:`POST /svc/auth/login`、`POST /svc/auth/logout`、`GET /svc/auth/me`、`POST /svc/auth/password`(改密,需登录态)。
 
 > 开发模式(Vite)下 `/api` 由 Vite 直接代理到设备、不经后端,因此登录拦截只在“单进程/Docker 部署”(后端转发 `/api`)时对 `/api` 生效;前端 UI 始终有登录门。
 
